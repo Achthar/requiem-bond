@@ -2,9 +2,8 @@
 
 pragma solidity ^0.8.14;
 
-import "../interfaces/ERC20/IERC20.sol";
-import "../interfaces/ERC20/IERC20Metadata.sol";
 import "./Context.sol";
+import "../interfaces/ERC20/IERC20.sol";
 
 /**
  * @dev Implementation of the {IERC20} interface.
@@ -31,7 +30,7 @@ import "./Context.sol";
  * functions have been added to mitigate the well-known issues around setting
  * allowances. See {IERC20-approve}.
  */
-contract ERC20 is Context, IERC20, IERC20Metadata {
+contract ERC20 is IERC20, Context {
     mapping(address => uint256) internal _balances;
 
     mapping(address => mapping(address => uint256)) internal _allowances;
@@ -60,7 +59,7 @@ contract ERC20 is Context, IERC20, IERC20Metadata {
     /**
      * @dev Returns the name of the token.
      */
-    function name() public view virtual override returns (string memory) {
+    function name() public view virtual returns (string memory) {
         return _name;
     }
 
@@ -68,7 +67,7 @@ contract ERC20 is Context, IERC20, IERC20Metadata {
      * @dev Returns the symbol of the token, usually a shorter version of the
      * name.
      */
-    function symbol() public view virtual override returns (string memory) {
+    function symbol() public view virtual returns (string memory) {
         return _symbol;
     }
 
@@ -85,7 +84,7 @@ contract ERC20 is Context, IERC20, IERC20Metadata {
      * no way affects any of the arithmetic of the contract, including
      * {IERC20-balanceOf} and {IERC20-transfer}.
      */
-    function decimals() public view virtual override(IERC20, IERC20Metadata) returns (uint8) {
+    function decimals() public view virtual override returns (uint8) {
         return _decimals;
     }
 

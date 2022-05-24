@@ -12,7 +12,6 @@ import {
   BaseContract,
   ContractTransaction,
   Overrides,
-  PayableOverrides,
   CallOverrides,
 } from "ethers";
 import { BytesLike } from "@ethersproject/bytes";
@@ -39,7 +38,7 @@ interface TreasuryInterface extends ethers.utils.Interface {
     "execute(uint256)": FunctionFragment;
     "incurDebt(uint256,address)": FunctionFragment;
     "indexInRegistry(address,uint8)": FunctionFragment;
-    "initialize(address,address)": FunctionFragment;
+    "initialize()": FunctionFragment;
     "initialized()": FunctionFragment;
     "manage(address,uint256)": FunctionFragment;
     "mint(address,uint256)": FunctionFragment;
@@ -48,7 +47,6 @@ interface TreasuryInterface extends ethers.utils.Interface {
     "owner()": FunctionFragment;
     "permissionQueue(uint256)": FunctionFragment;
     "permissions(uint8,address)": FunctionFragment;
-    "proxiableUUID()": FunctionFragment;
     "queueTimelock(uint8,address,address)": FunctionFragment;
     "registry(uint8,uint256)": FunctionFragment;
     "renounceOwnership()": FunctionFragment;
@@ -63,8 +61,6 @@ interface TreasuryInterface extends ethers.utils.Interface {
     "totalDebt()": FunctionFragment;
     "totalReserves()": FunctionFragment;
     "transferOwnership(address)": FunctionFragment;
-    "upgradeTo(address)": FunctionFragment;
-    "upgradeToAndCall(address,bytes)": FunctionFragment;
     "useExcessReserves()": FunctionFragment;
     "withdraw(uint256,address)": FunctionFragment;
   };
@@ -124,7 +120,7 @@ interface TreasuryInterface extends ethers.utils.Interface {
   ): string;
   encodeFunctionData(
     functionFragment: "initialize",
-    values: [string, string]
+    values?: undefined
   ): string;
   encodeFunctionData(
     functionFragment: "initialized",
@@ -154,10 +150,6 @@ interface TreasuryInterface extends ethers.utils.Interface {
   encodeFunctionData(
     functionFragment: "permissions",
     values: [BigNumberish, string]
-  ): string;
-  encodeFunctionData(
-    functionFragment: "proxiableUUID",
-    values?: undefined
   ): string;
   encodeFunctionData(
     functionFragment: "queueTimelock",
@@ -208,11 +200,6 @@ interface TreasuryInterface extends ethers.utils.Interface {
   encodeFunctionData(
     functionFragment: "transferOwnership",
     values: [string]
-  ): string;
-  encodeFunctionData(functionFragment: "upgradeTo", values: [string]): string;
-  encodeFunctionData(
-    functionFragment: "upgradeToAndCall",
-    values: [string, BytesLike]
   ): string;
   encodeFunctionData(
     functionFragment: "useExcessReserves",
@@ -280,10 +267,6 @@ interface TreasuryInterface extends ethers.utils.Interface {
     data: BytesLike
   ): Result;
   decodeFunctionResult(
-    functionFragment: "proxiableUUID",
-    data: BytesLike
-  ): Result;
-  decodeFunctionResult(
     functionFragment: "queueTimelock",
     data: BytesLike
   ): Result;
@@ -330,11 +313,6 @@ interface TreasuryInterface extends ethers.utils.Interface {
     functionFragment: "transferOwnership",
     data: BytesLike
   ): Result;
-  decodeFunctionResult(functionFragment: "upgradeTo", data: BytesLike): Result;
-  decodeFunctionResult(
-    functionFragment: "upgradeToAndCall",
-    data: BytesLike
-  ): Result;
   decodeFunctionResult(
     functionFragment: "useExcessReserves",
     data: BytesLike
@@ -342,12 +320,9 @@ interface TreasuryInterface extends ethers.utils.Interface {
   decodeFunctionResult(functionFragment: "withdraw", data: BytesLike): Result;
 
   events: {
-    "AdminChanged(address,address)": EventFragment;
     "AuthorityUpdated(address)": EventFragment;
-    "BeaconUpgraded(address)": EventFragment;
     "CreateDebt(address,address,uint256,uint256)": EventFragment;
     "Deposit(address,uint256,uint256)": EventFragment;
-    "Initialized(uint8)": EventFragment;
     "Managed(address,uint256)": EventFragment;
     "Minted(address,address,uint256)": EventFragment;
     "OwnershipTransferred(address,address)": EventFragment;
@@ -355,16 +330,12 @@ interface TreasuryInterface extends ethers.utils.Interface {
     "Permissioned(address,uint8,bool)": EventFragment;
     "RepayDebt(address,address,uint256,uint256)": EventFragment;
     "ReservesAudited(uint256)": EventFragment;
-    "Upgraded(address)": EventFragment;
     "Withdrawal(address,uint256,uint256)": EventFragment;
   };
 
-  getEvent(nameOrSignatureOrTopic: "AdminChanged"): EventFragment;
   getEvent(nameOrSignatureOrTopic: "AuthorityUpdated"): EventFragment;
-  getEvent(nameOrSignatureOrTopic: "BeaconUpgraded"): EventFragment;
   getEvent(nameOrSignatureOrTopic: "CreateDebt"): EventFragment;
   getEvent(nameOrSignatureOrTopic: "Deposit"): EventFragment;
-  getEvent(nameOrSignatureOrTopic: "Initialized"): EventFragment;
   getEvent(nameOrSignatureOrTopic: "Managed"): EventFragment;
   getEvent(nameOrSignatureOrTopic: "Minted"): EventFragment;
   getEvent(nameOrSignatureOrTopic: "OwnershipTransferred"): EventFragment;
@@ -372,19 +343,12 @@ interface TreasuryInterface extends ethers.utils.Interface {
   getEvent(nameOrSignatureOrTopic: "Permissioned"): EventFragment;
   getEvent(nameOrSignatureOrTopic: "RepayDebt"): EventFragment;
   getEvent(nameOrSignatureOrTopic: "ReservesAudited"): EventFragment;
-  getEvent(nameOrSignatureOrTopic: "Upgraded"): EventFragment;
   getEvent(nameOrSignatureOrTopic: "Withdrawal"): EventFragment;
 }
-
-export type AdminChangedEvent = TypedEvent<
-  [string, string] & { previousAdmin: string; newAdmin: string }
->;
 
 export type AuthorityUpdatedEvent = TypedEvent<
   [string] & { authority: string }
 >;
-
-export type BeaconUpgradedEvent = TypedEvent<[string] & { beacon: string }>;
 
 export type CreateDebtEvent = TypedEvent<
   [string, string, BigNumber, BigNumber] & {
@@ -402,8 +366,6 @@ export type DepositEvent = TypedEvent<
     value: BigNumber;
   }
 >;
-
-export type InitializedEvent = TypedEvent<[number] & { version: number }>;
 
 export type ManagedEvent = TypedEvent<
   [string, BigNumber] & { token: string; amount: BigNumber }
@@ -441,8 +403,6 @@ export type RepayDebtEvent = TypedEvent<
 export type ReservesAuditedEvent = TypedEvent<
   [BigNumber] & { totalReserves: BigNumber }
 >;
-
-export type UpgradedEvent = TypedEvent<[string] & { implementation: string }>;
 
 export type WithdrawalEvent = TypedEvent<
   [string, BigNumber, BigNumber] & {
@@ -563,13 +523,7 @@ export class Treasury extends BaseContract {
       overrides?: CallOverrides
     ): Promise<[boolean, BigNumber]>;
 
-    "initialize(address,address)"(
-      _req: string,
-      _authority: string,
-      overrides?: Overrides & { from?: string | Promise<string> }
-    ): Promise<ContractTransaction>;
-
-    "initialize()"(
+    initialize(
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
 
@@ -615,8 +569,6 @@ export class Treasury extends BaseContract {
       arg1: string,
       overrides?: CallOverrides
     ): Promise<[boolean]>;
-
-    proxiableUUID(overrides?: CallOverrides): Promise<[string]>;
 
     queueTimelock(
       _status: BigNumberish,
@@ -675,19 +627,8 @@ export class Treasury extends BaseContract {
     totalReserves(overrides?: CallOverrides): Promise<[BigNumber]>;
 
     transferOwnership(
-      newOwner: string,
+      newOwner_: string,
       overrides?: Overrides & { from?: string | Promise<string> }
-    ): Promise<ContractTransaction>;
-
-    upgradeTo(
-      newImplementation: string,
-      overrides?: Overrides & { from?: string | Promise<string> }
-    ): Promise<ContractTransaction>;
-
-    upgradeToAndCall(
-      newImplementation: string,
-      data: BytesLike,
-      overrides?: PayableOverrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
 
     useExcessReserves(overrides?: CallOverrides): Promise<[boolean]>;
@@ -766,13 +707,7 @@ export class Treasury extends BaseContract {
     overrides?: CallOverrides
   ): Promise<[boolean, BigNumber]>;
 
-  "initialize(address,address)"(
-    _req: string,
-    _authority: string,
-    overrides?: Overrides & { from?: string | Promise<string> }
-  ): Promise<ContractTransaction>;
-
-  "initialize()"(
+  initialize(
     overrides?: Overrides & { from?: string | Promise<string> }
   ): Promise<ContractTransaction>;
 
@@ -818,8 +753,6 @@ export class Treasury extends BaseContract {
     arg1: string,
     overrides?: CallOverrides
   ): Promise<boolean>;
-
-  proxiableUUID(overrides?: CallOverrides): Promise<string>;
 
   queueTimelock(
     _status: BigNumberish,
@@ -878,19 +811,8 @@ export class Treasury extends BaseContract {
   totalReserves(overrides?: CallOverrides): Promise<BigNumber>;
 
   transferOwnership(
-    newOwner: string,
+    newOwner_: string,
     overrides?: Overrides & { from?: string | Promise<string> }
-  ): Promise<ContractTransaction>;
-
-  upgradeTo(
-    newImplementation: string,
-    overrides?: Overrides & { from?: string | Promise<string> }
-  ): Promise<ContractTransaction>;
-
-  upgradeToAndCall(
-    newImplementation: string,
-    data: BytesLike,
-    overrides?: PayableOverrides & { from?: string | Promise<string> }
   ): Promise<ContractTransaction>;
 
   useExcessReserves(overrides?: CallOverrides): Promise<boolean>;
@@ -962,13 +884,7 @@ export class Treasury extends BaseContract {
       overrides?: CallOverrides
     ): Promise<[boolean, BigNumber]>;
 
-    "initialize(address,address)"(
-      _req: string,
-      _authority: string,
-      overrides?: CallOverrides
-    ): Promise<void>;
-
-    "initialize()"(overrides?: CallOverrides): Promise<void>;
+    initialize(overrides?: CallOverrides): Promise<void>;
 
     initialized(overrides?: CallOverrides): Promise<boolean>;
 
@@ -1009,8 +925,6 @@ export class Treasury extends BaseContract {
       arg1: string,
       overrides?: CallOverrides
     ): Promise<boolean>;
-
-    proxiableUUID(overrides?: CallOverrides): Promise<string>;
 
     queueTimelock(
       _status: BigNumberish,
@@ -1065,18 +979,7 @@ export class Treasury extends BaseContract {
     totalReserves(overrides?: CallOverrides): Promise<BigNumber>;
 
     transferOwnership(
-      newOwner: string,
-      overrides?: CallOverrides
-    ): Promise<void>;
-
-    upgradeTo(
-      newImplementation: string,
-      overrides?: CallOverrides
-    ): Promise<void>;
-
-    upgradeToAndCall(
-      newImplementation: string,
-      data: BytesLike,
+      newOwner_: string,
       overrides?: CallOverrides
     ): Promise<void>;
 
@@ -1090,22 +993,6 @@ export class Treasury extends BaseContract {
   };
 
   filters: {
-    "AdminChanged(address,address)"(
-      previousAdmin?: null,
-      newAdmin?: null
-    ): TypedEventFilter<
-      [string, string],
-      { previousAdmin: string; newAdmin: string }
-    >;
-
-    AdminChanged(
-      previousAdmin?: null,
-      newAdmin?: null
-    ): TypedEventFilter<
-      [string, string],
-      { previousAdmin: string; newAdmin: string }
-    >;
-
     "AuthorityUpdated(address)"(
       authority?: string | null
     ): TypedEventFilter<[string], { authority: string }>;
@@ -1113,14 +1000,6 @@ export class Treasury extends BaseContract {
     AuthorityUpdated(
       authority?: string | null
     ): TypedEventFilter<[string], { authority: string }>;
-
-    "BeaconUpgraded(address)"(
-      beacon?: string | null
-    ): TypedEventFilter<[string], { beacon: string }>;
-
-    BeaconUpgraded(
-      beacon?: string | null
-    ): TypedEventFilter<[string], { beacon: string }>;
 
     "CreateDebt(address,address,uint256,uint256)"(
       debtor?: string | null,
@@ -1159,14 +1038,6 @@ export class Treasury extends BaseContract {
       [string, BigNumber, BigNumber],
       { token: string; amount: BigNumber; value: BigNumber }
     >;
-
-    "Initialized(uint8)"(
-      version?: null
-    ): TypedEventFilter<[number], { version: number }>;
-
-    Initialized(
-      version?: null
-    ): TypedEventFilter<[number], { version: number }>;
 
     "Managed(address,uint256)"(
       token?: string | null,
@@ -1274,14 +1145,6 @@ export class Treasury extends BaseContract {
       totalReserves?: BigNumberish | null
     ): TypedEventFilter<[BigNumber], { totalReserves: BigNumber }>;
 
-    "Upgraded(address)"(
-      implementation?: string | null
-    ): TypedEventFilter<[string], { implementation: string }>;
-
-    Upgraded(
-      implementation?: string | null
-    ): TypedEventFilter<[string], { implementation: string }>;
-
     "Withdrawal(address,uint256,uint256)"(
       token?: string | null,
       amount?: null,
@@ -1369,13 +1232,7 @@ export class Treasury extends BaseContract {
       overrides?: CallOverrides
     ): Promise<BigNumber>;
 
-    "initialize(address,address)"(
-      _req: string,
-      _authority: string,
-      overrides?: Overrides & { from?: string | Promise<string> }
-    ): Promise<BigNumber>;
-
-    "initialize()"(
+    initialize(
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<BigNumber>;
 
@@ -1412,8 +1269,6 @@ export class Treasury extends BaseContract {
       arg1: string,
       overrides?: CallOverrides
     ): Promise<BigNumber>;
-
-    proxiableUUID(overrides?: CallOverrides): Promise<BigNumber>;
 
     queueTimelock(
       _status: BigNumberish,
@@ -1472,19 +1327,8 @@ export class Treasury extends BaseContract {
     totalReserves(overrides?: CallOverrides): Promise<BigNumber>;
 
     transferOwnership(
-      newOwner: string,
+      newOwner_: string,
       overrides?: Overrides & { from?: string | Promise<string> }
-    ): Promise<BigNumber>;
-
-    upgradeTo(
-      newImplementation: string,
-      overrides?: Overrides & { from?: string | Promise<string> }
-    ): Promise<BigNumber>;
-
-    upgradeToAndCall(
-      newImplementation: string,
-      data: BytesLike,
-      overrides?: PayableOverrides & { from?: string | Promise<string> }
     ): Promise<BigNumber>;
 
     useExcessReserves(overrides?: CallOverrides): Promise<BigNumber>;
@@ -1572,13 +1416,7 @@ export class Treasury extends BaseContract {
       overrides?: CallOverrides
     ): Promise<PopulatedTransaction>;
 
-    "initialize(address,address)"(
-      _req: string,
-      _authority: string,
-      overrides?: Overrides & { from?: string | Promise<string> }
-    ): Promise<PopulatedTransaction>;
-
-    "initialize()"(
+    initialize(
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<PopulatedTransaction>;
 
@@ -1617,8 +1455,6 @@ export class Treasury extends BaseContract {
       arg1: string,
       overrides?: CallOverrides
     ): Promise<PopulatedTransaction>;
-
-    proxiableUUID(overrides?: CallOverrides): Promise<PopulatedTransaction>;
 
     queueTimelock(
       _status: BigNumberish,
@@ -1677,19 +1513,8 @@ export class Treasury extends BaseContract {
     totalReserves(overrides?: CallOverrides): Promise<PopulatedTransaction>;
 
     transferOwnership(
-      newOwner: string,
+      newOwner_: string,
       overrides?: Overrides & { from?: string | Promise<string> }
-    ): Promise<PopulatedTransaction>;
-
-    upgradeTo(
-      newImplementation: string,
-      overrides?: Overrides & { from?: string | Promise<string> }
-    ): Promise<PopulatedTransaction>;
-
-    upgradeToAndCall(
-      newImplementation: string,
-      data: BytesLike,
-      overrides?: PayableOverrides & { from?: string | Promise<string> }
     ): Promise<PopulatedTransaction>;
 
     useExcessReserves(overrides?: CallOverrides): Promise<PopulatedTransaction>;

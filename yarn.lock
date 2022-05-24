@@ -669,11 +669,6 @@
     "@types/sinon-chai" "^3.2.3"
     "@types/web3" "1.0.19"
 
-"@nomiclabs/hardhat-web3-legacy@^2.0.0":
-  version "2.0.0"
-  resolved "https://registry.yarnpkg.com/@nomiclabs/hardhat-web3-legacy/-/hardhat-web3-legacy-2.0.0.tgz#8f06c9a4f6b1800c29da5a8c0e6a617d99a0ba64"
-  integrity sha512-14TAHAS7Qot4StOBcSkoZFJQ5+oaT22z1D0uUZtNf3ZXcHQaoX362TC79O8+3S5LKS9erCgN4VMrg223iYmf0g==
-
 "@npmcli/arborist@^2.3.0", "@npmcli/arborist@^2.5.0", "@npmcli/arborist@^2.9.0":
   version "2.10.0"
   resolved "https://registry.yarnpkg.com/@npmcli/arborist/-/arborist-2.10.0.tgz#424c2d73a7ae59c960b0cc7f74fed043e4316c2c"
@@ -835,11 +830,6 @@
   version "4.6.0"
   resolved "https://registry.yarnpkg.com/@openzeppelin/contracts/-/contracts-4.6.0.tgz#c91cf64bc27f573836dba4122758b4743418c1b3"
   integrity sha512-8vi4d50NNya/bQqCmaVzvHNmwHvS0OBKb7HNtuNwEE3scXWrP31fKQoGxNMT+KbzmrNZzatE3QK5p2gFONI/hg==
-
-"@pancakeswap/pancake-swap-lib@0.0.4":
-  version "0.0.4"
-  resolved "https://registry.yarnpkg.com/@pancakeswap/pancake-swap-lib/-/pancake-swap-lib-0.0.4.tgz#b00f78c3aa249e02146e366322f2d65154a893ef"
-  integrity sha512-efauTqrPQX0P2X159Z5YnAVNmD8jvFxei9iIbDU850MG7KuupfqNTfDoN2/dCMo2GomSFokG2MjW0GenZc4EFg==
 
 "@resolver-engine/core@^0.3.3":
   version "0.3.3"
@@ -1329,16 +1319,6 @@
   version "1.1.2"
   resolved "https://registry.yarnpkg.com/@ungap/promise-all-settled/-/promise-all-settled-1.1.2.tgz#aa58042711d6e3275dd37dc597e5d31e8c290a44"
   integrity sha512-sL/cEvJWAnClXw0wHk85/2L0G6Sj8UB0Ctc1TEMbKSsmpRosqhwj9gWgFRZSrBr2f9tiXISwNhCPmlfqUqyb9Q==
-
-"@uniswap/lib@^4.0.1-alpha":
-  version "4.0.1-alpha"
-  resolved "https://registry.yarnpkg.com/@uniswap/lib/-/lib-4.0.1-alpha.tgz#2881008e55f075344675b3bca93f020b028fbd02"
-  integrity sha512-f6UIliwBbRsgVLxIaBANF6w09tYqc6Y/qXdsrbEmXHyFA7ILiKrIwRFXe1yOg8M3cksgVsO9N7yuL2DdCGQKBA==
-
-"@uniswap/v2-core@^1.0.1":
-  version "1.0.1"
-  resolved "https://registry.yarnpkg.com/@uniswap/v2-core/-/v2-core-1.0.1.tgz#af8f508bf183204779938969e2e54043e147d425"
-  integrity sha512-MtybtkUPSyysqLY2U210NBDeCHX+ltHt3oADGdjqoThZaFRDKwM6k1Nb3F0A3hk5hwuQvytFWhrWHOEq6nVJ8Q==
 
 "@yarnpkg/lockfile@^1.1.0":
   version "1.1.0"
@@ -5453,9 +5433,9 @@ hardhat-deploy-ethers@^0.3.0-beta.10:
   integrity sha512-PdWVcKB9coqWV1L7JTpfXRCI91Cgwsm7KLmBcwZ8f0COSm1xtABHZTyz3fvF6p42cTnz1VM0QnfDvMFlIRkSNw==
 
 hardhat-deploy@^0.8.14:
-  version "0.11.5"
-  resolved "https://registry.yarnpkg.com/hardhat-deploy/-/hardhat-deploy-0.11.5.tgz#c73324ec16a6f330356de86297290f7a2eb69bf5"
-  integrity sha512-3AZqbwNzM/CKqdMI5FNWkCm8bFO2BdKrTAdYiu19bg6DL0TIUbjfqS8xRY691tu595wd0s+k3ZRHgCB4eopWTg==
+  version "0.11.9"
+  resolved "https://registry.yarnpkg.com/hardhat-deploy/-/hardhat-deploy-0.11.9.tgz#f40268489931e92fc31019cfa26e7fd33533b575"
+  integrity sha512-B3TLFPIfC3ATrKczan7ny3/gzbPmdbUjKBdAUeqER2bZR7UF51x3ix2XnSxcC18YNjNds1qrOEVluki9ZFANyw==
   dependencies:
     "@types/qs" "^6.9.7"
     axios "^0.21.1"

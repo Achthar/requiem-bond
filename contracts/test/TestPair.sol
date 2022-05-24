@@ -3,7 +3,7 @@
 pragma solidity ^0.8.14;
 
 import "../interfaces/IWeightedPair.sol";
-import "../libraries/ERC20.sol";
+import "./ERC20.sol";
 
 // solhint-disable func-name-mixedcase
 

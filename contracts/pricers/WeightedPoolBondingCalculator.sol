@@ -2,16 +2,16 @@
 
 pragma solidity 0.8.14;
 
-import "./interfaces/IBondingCalculator.sol";
-import "./interfaces/ERC20/IERC20.sol";
-import "./interfaces/ISwap.sol";
-import "./libraries/math/FixedPoint.sol";
-import "./interfaces/IStableLPToken.sol";
+import "../interfaces/IAssetPricer.sol";
+import "../interfaces/ERC20/IERC20.sol";
+import "../interfaces/ISwap.sol";
+import "../libraries/math/FixedPoint.sol";
+import "../interfaces/IStableLPToken.sol";
 
 /**
  * Bonding calculator for stable pool
  */
-contract StableBondingCalculator is IBondingCalculator {
+contract StableBondingCalculator is IAssetPricer {
   using FixedPoint for *;
 
   address public immutable QUOTE;

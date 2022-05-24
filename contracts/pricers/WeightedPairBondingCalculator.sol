@@ -2,18 +2,17 @@
 
 pragma solidity 0.8.14;
 
-import "./interfaces/IBondingCalculator.sol";
-import "./interfaces/ERC20/IERC20.sol";
-import "./interfaces/IRequiemWeightedPair.sol";
-import "./interfaces/IRequiemSwap.sol";
-import "./libraries/math/FixedPoint.sol";
-import "./libraries/math/SqrtMath.sol";
-import "./libraries/math/FullMath.sol";
+import "../interfaces/IAssetPricer.sol";
+import "../interfaces/ERC20/IERC20.sol";
+import "../interfaces/IWeightedPair.sol";
+import "../interfaces/IRequiemSwap.sol";
+import "../libraries/math/FixedPoint.sol";
+import "../libraries/math/SqrtMath.sol";
 
 /**
  * Bonding calculator for weighted pairs
  */
-contract RequiemPairBondingCalculator is IBondingCalculator {
+contract WeightedPairBondingCalculator is IAssetPricer {
   using FixedPoint for *;
 
   // address that is used for the quote of the provided pool
@@ -39,15 +38,9 @@ contract RequiemPairBondingCalculator is IBondingCalculator {
    *  - is consistent with the uniswapV2-type case
    */
   function getTotalValue(address _pair) public view returns (uint256 _value) {
-    (uint256 reserve0, uint256 reserve1, ) = IRequiemWeightedPair(_pair)
+    IWeightedPair.ReserveData memory pairData = IWeightedPair(_pair)
       .getReserves();
-    (uint32 weight0, uint32 weight1) = IRequiemWeightedPair(_pair)
-      .getTokenWeights();
-
-    (, uint256 reserveQuote, uint32 weightOther, uint32 weightQuote) = QUOTE ==
-      IRequiemWeightedPair(_pair).token0()
-      ? (reserve1, reserve0, weight1, weight0)
-      : (reserve0, reserve1, weight0, weight1);
+    (uint32 weight0, uint32 weight1, , ) = IWeightedPair(_pair).getParameters();
 
     // In case of both weights being 50, it is equivalent to
     // the UniswapV2 variant. If the weights are different, we define the valuation by
@@ -55,15 +48,23 @@ contract RequiemPairBondingCalculator is IBondingCalculator {
     // adjusted constant product. We will use the conservative estimation of the price - we upscale
     // such that the reflected equivalent pool is a uniswapV2 with the higher liquidity that pruduces
     // the same price of the Requiem token as the weighted pool.
-    _value =
-      reserveQuote +
-      FullMath.mulDivRoundingUp(reserveQuote, weightOther, weightQuote);
-
+    if (QUOTE == IWeightedPair(_pair).token0()) {
+      _value =
+        pairData.reserve0 +
+        (pairData.vReserve0 * weight1 * pairData.reserve1) /
+        (weight0 * pairData.vReserve1);
+    } else {
+      _value =
+        pairData.reserve1 +
+        (pairData.vReserve1 * weight0 * pairData.reserve0) /
+        (weight1 * pairData.vReserve0);
+    }
+    // standardize to 18 decimals
     _value *= 10**(18 - IERC20(QUOTE).decimals());
   }
 
   /**
-   * - calculates the value in QUOTE  that backs reqt 1:1 of the input LP amount provided
+   * - calculates the value in QUOTE that backs reqt 1:1 of the input LP amount provided
    * @param _pair general pair that has the RequiemSwap interface implemented
    * @param amount_ the amount of LP to price for the backing
    *  - is consistent with the uniswapV2-type case
@@ -75,12 +76,12 @@ contract RequiemPairBondingCalculator is IBondingCalculator {
     returns (uint256 _value)
   {
     uint256 totalValue = getTotalValue(_pair);
-    uint256 totalSupply = IRequiemWeightedPair(_pair).totalSupply();
+    uint256 totalSupply = IWeightedPair(_pair).totalSupply();
 
-    _value = FullMath.mulDivRoundingUp(totalValue, amount_, totalSupply);
+    _value = (totalValue * amount_) / totalSupply;
   }
 
-  // markdown function for bond valuation
+  // markdown function for bond valuation - no discounting fo regular pairs
   function markdown(address _pair) external view returns (uint256) {
     return getTotalValue(_pair);
   }

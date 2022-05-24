@@ -9,7 +9,7 @@ import "./interfaces/IBondDepository.sol";
 // solhint-disable  max-line-length
 
 /// @title Requiem Bond Depository
-/// @author Achthar, Zeus, Indigo
+/// @author Requiem: Achthar; Olympus DAO: Zeus, Indigo
 
 contract BondDepo is IBondDepository, UserTermsKeeper {
   /* ======== DEPENDENCIES ======== */

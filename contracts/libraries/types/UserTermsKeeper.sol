@@ -3,9 +3,6 @@
 pragma solidity ^0.8.10;
 
 import "./FrontEndRewarder.sol";
-
-import "../../interfaces/IgREQ.sol";
-import "../../interfaces/IStaking.sol";
 import "../../interfaces/ITreasury.sol";
 import "../../interfaces/IUserTermsKeeper.sol";
 

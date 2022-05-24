@@ -1,4 +1,4 @@
-import { expect } from "./chai-setup";
+import { expect } from "./ts/chai-setup";
 import { BigNumber, Contract } from 'ethers'
 import { ecsign } from 'ethereumjs-util'
 
@@ -13,8 +13,7 @@ import { ethers, network } from "hardhat";
 
 
 
-import { getApprovalDigest } from './shared/common'
-import { maxUint256, toWei } from './shared/utilities'
+
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import {
 	TestPair__factory,
@@ -25,7 +24,7 @@ import {
 	BondDepo__factory,
 	RequiemERC20Token__factory,
 	Authority__factory
-} from "../../types";
+} from "../types";
 
 
 const TOTAL_SUPPLY = BigNumber.from('1000000000000000000')

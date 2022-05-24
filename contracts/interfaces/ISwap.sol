@@ -2,16 +2,16 @@
 
 pragma solidity ^0.8.14;
 
-interface IRequiemSwap {
+import "./ERC20/IERC20.sol";
+
+interface ISwap {
   function calculateSwapGivenIn(
     address tokenIn,
     address tokenOut,
     uint256 amountIn
   ) external view returns (uint256);
 
-  function calculateSwapGivenOut(
-    address tokenIn,
-    address tokenOut,
-    uint256 amountOut
-  ) external view returns (uint256);
+  function getTokenBalances() external view returns (uint256[] memory);
+
+  function getPooledTokens() external view returns (IERC20[] memory);
 }

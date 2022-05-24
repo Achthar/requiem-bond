@@ -76,50 +76,6 @@ const _abi = [
     inputs: [
       {
         internalType: "address",
-        name: "",
-        type: "address",
-      },
-      {
-        internalType: "uint256",
-        name: "",
-        type: "uint256",
-      },
-    ],
-    name: "notes",
-    outputs: [
-      {
-        internalType: "uint256",
-        name: "payout",
-        type: "uint256",
-      },
-      {
-        internalType: "uint48",
-        name: "created",
-        type: "uint48",
-      },
-      {
-        internalType: "uint48",
-        name: "matured",
-        type: "uint48",
-      },
-      {
-        internalType: "uint48",
-        name: "redeemed",
-        type: "uint48",
-      },
-      {
-        internalType: "uint48",
-        name: "marketID",
-        type: "uint48",
-      },
-    ],
-    stateMutability: "view",
-    type: "function",
-  },
-  {
-    inputs: [
-      {
-        internalType: "address",
         name: "_user",
         type: "address",
       },
@@ -149,12 +105,12 @@ const _abi = [
     inputs: [
       {
         internalType: "address",
-        name: "_from",
+        name: "from",
         type: "address",
       },
       {
         internalType: "uint256",
-        name: "_index",
+        name: "index",
         type: "uint256",
       },
     ],
@@ -173,12 +129,12 @@ const _abi = [
     inputs: [
       {
         internalType: "address",
-        name: "_to",
+        name: "to",
         type: "address",
       },
       {
         internalType: "uint256",
-        name: "_index",
+        name: "index",
         type: "uint256",
       },
     ],
@@ -209,7 +165,7 @@ const _abi = [
     outputs: [
       {
         internalType: "uint256",
-        name: "payout_",
+        name: "",
         type: "uint256",
       },
     ],
@@ -299,13 +255,6 @@ const _abi = [
       },
     ],
     name: "setRewards",
-    outputs: [],
-    stateMutability: "nonpayable",
-    type: "function",
-  },
-  {
-    inputs: [],
-    name: "updateTreasury",
     outputs: [],
     stateMutability: "nonpayable",
     type: "function",

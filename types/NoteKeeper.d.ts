@@ -25,7 +25,6 @@ interface NoteKeeperInterface extends ethers.utils.Interface {
     "daoReward()": FunctionFragment;
     "getReward()": FunctionFragment;
     "indexesFor(address)": FunctionFragment;
-    "notes(address,uint256)": FunctionFragment;
     "pendingFor(address,uint256)": FunctionFragment;
     "pullNote(address,uint256)": FunctionFragment;
     "pushNote(address,uint256)": FunctionFragment;
@@ -35,7 +34,6 @@ interface NoteKeeperInterface extends ethers.utils.Interface {
     "rewards(address)": FunctionFragment;
     "setAuthority(address)": FunctionFragment;
     "setRewards(uint256,uint256)": FunctionFragment;
-    "updateTreasury()": FunctionFragment;
     "whitelist(address)": FunctionFragment;
     "whitelisted(address)": FunctionFragment;
   };
@@ -44,10 +42,6 @@ interface NoteKeeperInterface extends ethers.utils.Interface {
   encodeFunctionData(functionFragment: "daoReward", values?: undefined): string;
   encodeFunctionData(functionFragment: "getReward", values?: undefined): string;
   encodeFunctionData(functionFragment: "indexesFor", values: [string]): string;
-  encodeFunctionData(
-    functionFragment: "notes",
-    values: [string, BigNumberish]
-  ): string;
   encodeFunctionData(
     functionFragment: "pendingFor",
     values: [string, BigNumberish]
@@ -78,10 +72,6 @@ interface NoteKeeperInterface extends ethers.utils.Interface {
     functionFragment: "setRewards",
     values: [BigNumberish, BigNumberish]
   ): string;
-  encodeFunctionData(
-    functionFragment: "updateTreasury",
-    values?: undefined
-  ): string;
   encodeFunctionData(functionFragment: "whitelist", values: [string]): string;
   encodeFunctionData(functionFragment: "whitelisted", values: [string]): string;
 
@@ -89,7 +79,6 @@ interface NoteKeeperInterface extends ethers.utils.Interface {
   decodeFunctionResult(functionFragment: "daoReward", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "getReward", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "indexesFor", data: BytesLike): Result;
-  decodeFunctionResult(functionFragment: "notes", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "pendingFor", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "pullNote", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "pushNote", data: BytesLike): Result;
@@ -102,10 +91,6 @@ interface NoteKeeperInterface extends ethers.utils.Interface {
     data: BytesLike
   ): Result;
   decodeFunctionResult(functionFragment: "setRewards", data: BytesLike): Result;
-  decodeFunctionResult(
-    functionFragment: "updateTreasury",
-    data: BytesLike
-  ): Result;
   decodeFunctionResult(functionFragment: "whitelist", data: BytesLike): Result;
   decodeFunctionResult(
     functionFragment: "whitelisted",
@@ -180,20 +165,6 @@ export class NoteKeeper extends BaseContract {
       overrides?: CallOverrides
     ): Promise<[BigNumber[]]>;
 
-    notes(
-      arg0: string,
-      arg1: BigNumberish,
-      overrides?: CallOverrides
-    ): Promise<
-      [BigNumber, number, number, number, number] & {
-        payout: BigNumber;
-        created: number;
-        matured: number;
-        redeemed: number;
-        marketID: number;
-      }
-    >;
-
     pendingFor(
       _user: string,
       _index: BigNumberish,
@@ -203,14 +174,14 @@ export class NoteKeeper extends BaseContract {
     >;
 
     pullNote(
-      _from: string,
-      _index: BigNumberish,
+      from: string,
+      index: BigNumberish,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
 
     pushNote(
-      _to: string,
-      _index: BigNumberish,
+      to: string,
+      index: BigNumberish,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
 
@@ -242,10 +213,6 @@ export class NoteKeeper extends BaseContract {
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
 
-    updateTreasury(
-      overrides?: Overrides & { from?: string | Promise<string> }
-    ): Promise<ContractTransaction>;
-
     whitelist(
       _operator: string,
       overrides?: Overrides & { from?: string | Promise<string> }
@@ -264,20 +231,6 @@ export class NoteKeeper extends BaseContract {
 
   indexesFor(_user: string, overrides?: CallOverrides): Promise<BigNumber[]>;
 
-  notes(
-    arg0: string,
-    arg1: BigNumberish,
-    overrides?: CallOverrides
-  ): Promise<
-    [BigNumber, number, number, number, number] & {
-      payout: BigNumber;
-      created: number;
-      matured: number;
-      redeemed: number;
-      marketID: number;
-    }
-  >;
-
   pendingFor(
     _user: string,
     _index: BigNumberish,
@@ -285,14 +238,14 @@ export class NoteKeeper extends BaseContract {
   ): Promise<[BigNumber, boolean] & { payout_: BigNumber; matured_: boolean }>;
 
   pullNote(
-    _from: string,
-    _index: BigNumberish,
+    from: string,
+    index: BigNumberish,
     overrides?: Overrides & { from?: string | Promise<string> }
   ): Promise<ContractTransaction>;
 
   pushNote(
-    _to: string,
-    _index: BigNumberish,
+    to: string,
+    index: BigNumberish,
     overrides?: Overrides & { from?: string | Promise<string> }
   ): Promise<ContractTransaction>;
 
@@ -324,10 +277,6 @@ export class NoteKeeper extends BaseContract {
     overrides?: Overrides & { from?: string | Promise<string> }
   ): Promise<ContractTransaction>;
 
-  updateTreasury(
-    overrides?: Overrides & { from?: string | Promise<string> }
-  ): Promise<ContractTransaction>;
-
   whitelist(
     _operator: string,
     overrides?: Overrides & { from?: string | Promise<string> }
@@ -344,20 +293,6 @@ export class NoteKeeper extends BaseContract {
 
     indexesFor(_user: string, overrides?: CallOverrides): Promise<BigNumber[]>;
 
-    notes(
-      arg0: string,
-      arg1: BigNumberish,
-      overrides?: CallOverrides
-    ): Promise<
-      [BigNumber, number, number, number, number] & {
-        payout: BigNumber;
-        created: number;
-        matured: number;
-        redeemed: number;
-        marketID: number;
-      }
-    >;
-
     pendingFor(
       _user: string,
       _index: BigNumberish,
@@ -367,14 +302,14 @@ export class NoteKeeper extends BaseContract {
     >;
 
     pullNote(
-      _from: string,
-      _index: BigNumberish,
+      from: string,
+      index: BigNumberish,
       overrides?: CallOverrides
     ): Promise<BigNumber>;
 
     pushNote(
-      _to: string,
-      _index: BigNumberish,
+      to: string,
+      index: BigNumberish,
       overrides?: CallOverrides
     ): Promise<void>;
 
@@ -405,8 +340,6 @@ export class NoteKeeper extends BaseContract {
       _toDAO: BigNumberish,
       overrides?: CallOverrides
     ): Promise<void>;
-
-    updateTreasury(overrides?: CallOverrides): Promise<void>;
 
     whitelist(_operator: string, overrides?: CallOverrides): Promise<void>;
 
@@ -434,12 +367,6 @@ export class NoteKeeper extends BaseContract {
 
     indexesFor(_user: string, overrides?: CallOverrides): Promise<BigNumber>;
 
-    notes(
-      arg0: string,
-      arg1: BigNumberish,
-      overrides?: CallOverrides
-    ): Promise<BigNumber>;
-
     pendingFor(
       _user: string,
       _index: BigNumberish,
@@ -447,14 +374,14 @@ export class NoteKeeper extends BaseContract {
     ): Promise<BigNumber>;
 
     pullNote(
-      _from: string,
-      _index: BigNumberish,
+      from: string,
+      index: BigNumberish,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<BigNumber>;
 
     pushNote(
-      _to: string,
-      _index: BigNumberish,
+      to: string,
+      index: BigNumberish,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<BigNumber>;
 
@@ -486,10 +413,6 @@ export class NoteKeeper extends BaseContract {
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<BigNumber>;
 
-    updateTreasury(
-      overrides?: Overrides & { from?: string | Promise<string> }
-    ): Promise<BigNumber>;
-
     whitelist(
       _operator: string,
       overrides?: Overrides & { from?: string | Promise<string> }
@@ -512,12 +435,6 @@ export class NoteKeeper extends BaseContract {
       overrides?: CallOverrides
     ): Promise<PopulatedTransaction>;
 
-    notes(
-      arg0: string,
-      arg1: BigNumberish,
-      overrides?: CallOverrides
-    ): Promise<PopulatedTransaction>;
-
     pendingFor(
       _user: string,
       _index: BigNumberish,
@@ -525,14 +442,14 @@ export class NoteKeeper extends BaseContract {
     ): Promise<PopulatedTransaction>;
 
     pullNote(
-      _from: string,
-      _index: BigNumberish,
+      from: string,
+      index: BigNumberish,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<PopulatedTransaction>;
 
     pushNote(
-      _to: string,
-      _index: BigNumberish,
+      to: string,
+      index: BigNumberish,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<PopulatedTransaction>;
 
@@ -564,10 +481,6 @@ export class NoteKeeper extends BaseContract {
     setRewards(
       _toFrontEnd: BigNumberish,
       _toDAO: BigNumberish,
-      overrides?: Overrides & { from?: string | Promise<string> }
-    ): Promise<PopulatedTransaction>;
-
-    updateTreasury(
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<PopulatedTransaction>;
 

@@ -5,7 +5,7 @@ pragma solidity 0.8.14;
 import "../interfaces/IAssetPricer.sol";
 import "../interfaces/ERC20/IERC20.sol";
 import "../interfaces/IWeightedPair.sol";
-import "../interfaces/IRequiemSwap.sol";
+import "../interfaces/ISwap.sol";
 import "../libraries/math/FixedPoint.sol";
 import "../libraries/math/SqrtMath.sol";
 import "../libraries/math/FullMath.sol";

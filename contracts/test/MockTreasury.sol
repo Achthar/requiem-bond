@@ -9,17 +9,12 @@ import "../interfaces/IOwnable.sol";
 import "../interfaces/ERC20/IERC20.sol";
 import "../interfaces/ERC20/IERC20Metadata.sol";
 import "../interfaces/IREQ.sol";
-import "../interfaces/IREQDebt.sol";
+import "../interfaces/ICreditREQ.sol";
 import "../interfaces/IAssetPricer.sol";
 import "../interfaces/ITreasury.sol";
 import "../libraries/types/AccessControlled.sol";
 
-contract Treasury is
-  Initializable,
-  Ownable,
-  AccessControlled,
-  ITreasury
-{
+contract MockTreasury is Initializable, Ownable, AccessControlled, ITreasury {
   /* ========== DEPENDENCIES ========== */
 
   using SafeERC20 for IERC20;
@@ -47,28 +42,24 @@ contract Treasury is
     address indexed recipient,
     uint256 amount
   );
-  event PermissionQueued(STATUS indexed status, address queued);
-  event Permissioned(address addr, STATUS indexed status, bool result);
+  event PermissionQueued(uint256 indexed status, address queued);
+  event Permissioned(address addr, uint256 indexed status, bool result);
 
   /* ========== DATA STRUCTURES ========== */
 
-  enum STATUS {
-    RESERVEDEPOSITOR,
-    RESERVESPENDER,
-    RESERVETOKEN,
-    RESERVEMANAGER,
-    ASSETDEPOSITOR,
-    ASSET,
-    LIABILITY,
-    ASSETMANAGER,
-    RESERVEDEBTOR,
-    REWARDMANAGER,
-    SREQ,
-    DEBTOR
-  }
+  // enum STATUS {
+  //     ASSETDEPOSITOR, =0
+  //     ASSET, = 1
+  //     ASSETMANAGER, = 2
+  //     REWARDMANAGER, = 3
+  //     DEBTMANAGER, = 4
+  //     DEBTOR, = 5
+  //     COLLATERAL, = 6
+  //     CREQ = 7
+  // }
 
   struct Queue {
-    STATUS managing;
+    uint256 managing;
     address toPermit;
     address calculator;
     uint256 timelockEnd;
@@ -79,13 +70,16 @@ contract Treasury is
   /* ========== STATE VARIABLES ========== */
 
   IREQ public REQ;
-  IREQDebt public REQD;
+  ICreditREQ public CREQ;
 
-  mapping(STATUS => address[]) public registry;
-  mapping(STATUS => mapping(address => bool)) public permissions;
+  mapping(uint256 => address[]) public registry;
+  mapping(uint256 => mapping(address => bool)) public permissions;
   mapping(address => address) public assetPricer;
+  mapping(address => uint256) debtLimits;
 
-  mapping(address => uint256) public debtLimit;
+  // asset data
+  mapping(address => uint256) assetReserves;
+  mapping(address => uint256) assetDebt;
 
   uint256 public totalReserves;
   uint256 public totalDebt;
@@ -118,84 +112,75 @@ contract Treasury is
 
   /* ========== MUTATIVE FUNCTIONS ========== */
 
-  function setBlocksNeededForQueue(uint256 _timelock) public {
-    blocksNeededForQueue = _timelock;
-  }
-
   /**
    * @notice allow approved address to deposit an asset for REQ
    * @param _amount uint256
-   * @param _token address
+   * @param _asset address
    * @param _profit uint256
    * @return send_ uint256
    */
   function deposit(
     uint256 _amount,
-    address _token,
+    address _asset,
     uint256 _profit
   ) external override returns (uint256 send_) {
-    if (permissions[STATUS.RESERVETOKEN][_token]) {
-      require(permissions[STATUS.RESERVEDEPOSITOR][msg.sender], notApproved);
-    } else if (permissions[STATUS.ASSET][_token]) {
-      require(permissions[STATUS.ASSETDEPOSITOR][msg.sender], notApproved);
+    if (permissions[1][_asset]) {
+      require(permissions[0][msg.sender], "Treasury: not approved");
     } else {
-      revert(invalidAsset);
+      revert("Treasury: invalid asset");
     }
 
-    IERC20(_token).safeTransferFrom(msg.sender, address(this), _amount);
+    IERC20(_asset).safeTransferFrom(msg.sender, address(this), _amount);
 
-    uint256 value = assetValue(_token, _amount);
-    // mint REQ needed and store amount of rewards for distribution
+    uint256 value = assetValue(_asset, _amount);
+    // mint needed and store amount of rewards for distribution
     send_ = value - _profit;
     REQ.mint(msg.sender, send_);
 
     totalReserves += value;
 
-    emit Deposit(_token, _amount, value);
+    emit Deposit(_asset, _amount, value);
   }
 
   /**
    * @notice allow approved address to burn REQ for reserves
    * @param _amount uint256
-   * @param _token address
+   * @param _asset address
    */
-  function withdraw(uint256 _amount, address _token) external override {
-    require(permissions[STATUS.RESERVETOKEN][_token], notAccepted); // Only reserves can be used for redemptions
-    require(permissions[STATUS.RESERVESPENDER][msg.sender], notApproved);
+  function withdraw(uint256 _amount, address _asset) external override {
+    require(permissions[1][_asset], "Treasury: not accepted");
+    require(permissions[2][msg.sender], "Treasury: not approved");
 
-    uint256 value = assetValue(_token, _amount);
+    uint256 value = assetValue(_asset, _amount);
     REQ.burnFrom(msg.sender, value);
 
     totalReserves -= value;
 
-    IERC20(_token).safeTransfer(msg.sender, _amount);
+    IERC20(_asset).safeTransfer(msg.sender, _amount);
 
-    emit Withdrawal(_token, _amount, value);
+    emit Withdrawal(_asset, _amount, value);
   }
 
   /**
    * @notice allow approved address to withdraw assets
-   * @param _token address
+   * @param _asset address
    * @param _amount uint256
    */
-  function manage(address _token, uint256 _amount) external override {
-    if (permissions[STATUS.ASSET][_token]) {
-      require(permissions[STATUS.ASSETMANAGER][msg.sender], notApproved);
-    } else {
-      require(permissions[STATUS.RESERVEMANAGER][msg.sender], notApproved);
-    }
-    if (
-      permissions[STATUS.RESERVETOKEN][_token] ||
-      permissions[STATUS.ASSET][_token]
-    ) {
-      uint256 value = assetValue(_token, _amount);
+  function manage(address _asset, uint256 _amount) external override {
+    require(permissions[2][msg.sender], "Treasury: not approved");
+
+    if (permissions[1][_asset]) {
+      uint256 value = assetValue(_asset, _amount);
       if (useExcessReserves)
-        require(int256(value) <= excessReserves(), insufficientReserves);
+        require(
+          int256(value) <= excessReserves(),
+          "Treasury: insufficient reserves"
+        );
 
       totalReserves -= value;
     }
-    IERC20(_token).safeTransfer(msg.sender, _amount);
-    emit Managed(_token, _amount);
+    IERC20(_asset).safeTransfer(msg.sender, _amount);
+    emit Managed(_asset, _amount);
   }
 
   /**
@@ -204,9 +189,12 @@ contract Treasury is
    * @param _amount uint256
    */
   function mint(address _recipient, uint256 _amount) external override {
-    require(permissions[STATUS.REWARDMANAGER][msg.sender], notApproved);
+    require(permissions[3][msg.sender], "Treasury: not approved");
     if (useExcessReserves)
-      require(int256(_amount) <= excessReserves(), insufficientReserves);
+      require(
+        int256(_amount) <= excessReserves(),
+        "Treasury: insufficient reserves"
+      );
 
     REQ.mint(_recipient, _amount);
     emit Minted(msg.sender, _recipient, _amount);
@@ -214,8 +202,8 @@ contract Treasury is
 
   /**
    * DEBT: The debt functions allow approved addresses to borrow treasury assets
-   * or REQ from the treasury, using REQD as collateral. This might allow an
-   * REQD holder to provide REQ liquidity without taking on the opportunity cost
+   * or REQ from the treasury, using sREQ as collateral. This might allow an
+   * sREQ holder to provide REQ liquidity without taking on the opportunity cost
    * of unstaking, or alter their backing without imposing risk onto the treasury.
    * Many of these use cases are yet to be defined, but they appear promising.
    * However, we urge the community to think critically and move slowly upon
@@ -225,54 +213,53 @@ contract Treasury is
   /**
    * @notice allow approved address to borrow reserves
    * @param _amount uint256
-   * @param _token address
+   * @param _asset address
    */
-  function incurDebt(uint256 _amount, address _token) external override {
+  function incurDebt(uint256 _amount, address _asset) external override {
     uint256 value;
-    if (_token == address(REQ)) {
-      require(permissions[STATUS.DEBTOR][msg.sender], notApproved);
+    require(permissions[5][msg.sender], "Treasury: not approved");
+
+    if (_asset == address(REQ)) {
       value = _amount;
     } else {
-      require(permissions[STATUS.RESERVEDEBTOR][msg.sender], notApproved);
-      require(permissions[STATUS.RESERVETOKEN][_token], notAccepted);
-      value = assetValue(_token, _amount);
+      value = assetValue(_asset, _amount);
     }
-    require(value != 0, invalidAsset);
+    require(value != 0, "Treasury: invalid asset");
 
-    REQD.changeDebt(value, msg.sender, true);
+    CREQ.changeDebt(value, msg.sender, true);
     require(
-      REQD.debtBalances(msg.sender) <= debtLimit[msg.sender],
+      CREQ.debtBalances(msg.sender) <= debtLimits[msg.sender],
       "Treasury: exceeds limit"
     );
     totalDebt += value;
 
-    if (_token == address(REQ)) {
+    if (_asset == address(REQ)) {
       REQ.mint(msg.sender, value);
       reqDebt += value;
     } else {
       totalReserves -= value;
-      IERC20(_token).safeTransfer(msg.sender, _amount);
+      IERC20(_asset).safeTransfer(msg.sender, _amount);
     }
-    emit CreateDebt(msg.sender, _token, _amount, value);
+    emit CreateDebt(msg.sender, _asset, _amount, value);
   }
 
   /**
    * @notice allow approved address to repay borrowed reserves with reserves
    * @param _amount uint256
-   * @param _token address
+   * @param _asset address
    */
-  function repayDebtWithReserve(uint256 _amount, address _token)
+  function repayDebtWithReserve(uint256 _amount, address _asset)
     external
     override
   {
-    require(permissions[STATUS.RESERVEDEBTOR][msg.sender], notApproved);
-    require(permissions[STATUS.RESERVETOKEN][_token], notAccepted);
-    IERC20(_token).safeTransferFrom(msg.sender, address(this), _amount);
-    uint256 value = assetValue(_token, _amount);
-    REQD.changeDebt(value, msg.sender, false);
+    require(permissions[5][msg.sender], "Treasury: not approved");
+    require(permissions[1][_asset], "Treasury: not accepted");
+    IERC20(_asset).safeTransferFrom(msg.sender, address(this), _amount);
+    uint256 value = assetValue(_asset, _amount);
+    CREQ.changeDebt(value, msg.sender, false);
     totalDebt -= value;
     totalReserves += value;
-    emit RepayDebt(msg.sender, _token, _amount, value);
+    emit RepayDebt(msg.sender, _asset, _amount, value);
   }
 
   /**
@@ -280,13 +267,9 @@ contract Treasury is
    * @param _amount uint256
    */
   function repayDebtWithREQ(uint256 _amount) external {
-    require(
-      permissions[STATUS.RESERVEDEBTOR][msg.sender] ||
-        permissions[STATUS.DEBTOR][msg.sender],
-      notApproved
-    );
+    require(permissions[5][msg.sender], "Treasury: not approved");
     REQ.burnFrom(msg.sender, _amount);
-    REQD.changeDebt(_amount, msg.sender, false);
+    CREQ.changeDebt(_amount, msg.sender, false);
     totalDebt -= _amount;
     reqDebt -= _amount;
     emit RepayDebt(msg.sender, address(REQ), _amount, _amount);
@@ -300,18 +283,9 @@ contract Treasury is
    */
   function auditReserves() external onlyGovernor {
     uint256 reserves;
-    address[] memory reserveToken = registry[STATUS.RESERVETOKEN];
-    for (uint256 i = 0; i < reserveToken.length; i++) {
-      if (permissions[STATUS.RESERVETOKEN][reserveToken[i]]) {
-        reserves += assetValue(
-          reserveToken[i],
-          IERC20(reserveToken[i]).balanceOf(address(this))
-        );
-      }
-    }
-    address[] memory assets = registry[STATUS.ASSET];
+    address[] memory assets = registry[1];
     for (uint256 i = 0; i < assets.length; i++) {
-      if (permissions[STATUS.ASSET][assets[i]]) {
+      if (permissions[1][assets[i]]) {
         reserves += assetValue(
           assets[i],
           IERC20(assets[i]).balanceOf(address(this))
@@ -331,27 +305,27 @@ contract Treasury is
     external
     onlyGovernor
   {
-    debtLimit[_address] = _limit;
+    debtLimits[_address] = _limit;
   }
 
   /**
    * @notice enable permission from queue
-   * @param _status STATUS
+   * @param _status uint256
    * @param _address address
    * @param _calculator address
    */
   function enable(
-    STATUS _status,
+    uint256 _status,
     address _address,
     address _calculator
-  ) external onlyGovernor {
-    require(timelockEnabled == false, "Use queueTimelock");
-    if (_status == STATUS.SREQ) {
-      REQD = IREQDebt(_address);
+  ) external {
+    require(!timelockEnabled, "Use queueTimelock");
+    if (_status == 7) {
+      CREQ = ICreditREQ(_address);
     } else {
       permissions[_status][_address] = true;
 
-      if (_status == STATUS.ASSET) {
+      if (_status == 1) {
         assetPricer[_address] = _calculator;
       }
 
@@ -359,7 +333,7 @@ contract Treasury is
       if (!registered) {
         registry[_status].push(_address);
 
-        if (_status == STATUS.ASSET || _status == STATUS.RESERVETOKEN) {
+        if (_status == 1) {
           (bool reg, uint256 index) = indexInRegistry(_address, _status);
           if (reg) {
             delete registry[_status][index];
@@ -375,7 +349,7 @@ contract Treasury is
    *  @param _status STATUS
    *  @param _toDisable address
    */
-  function disable(STATUS _status, address _toDisable) external {
+  function disable(uint256 _status, address _toDisable) external {
     require(
       msg.sender == authority.governor() || msg.sender == authority.guardian(),
       "Only governor or guardian"
@@ -388,7 +362,7 @@ contract Treasury is
    * @notice check if registry contains address
    * @return (bool, uint256)
    */
-  function indexInRegistry(address _address, STATUS _status)
+  function indexInRegistry(address _address, uint256 _status)
     public
     view
     returns (bool, uint256)
@@ -405,7 +379,7 @@ contract Treasury is
   /**
    * @notice changes the use of excess reserves for minting
    */
-  function setUseExcessReserves() external onlyGovernor {
+  function setUseExcessReserves() external {
     useExcessReserves = !useExcessReserves;
   }
 
@@ -420,15 +394,14 @@ contract Treasury is
    * @param _calculator address
    */
   function queueTimelock(
-    STATUS _status,
+    uint256 _status,
     address _address,
     address _calculator
   ) external onlyGovernor {
     require(_address != address(0));
-    require(timelockEnabled == true, "Timelock is disabled, use enable");
-
+    require(timelockEnabled, "Timelock is disabled, use enable");
     uint256 timelock = block.number + blocksNeededForQueue;
-    if (_status == STATUS.RESERVEMANAGER || _status == STATUS.ASSETMANAGER) {
+    if (_status == 2) {
       timelock = block.number + blocksNeededForQueue * 2;
     }
     permissionQueue.push(
@@ -457,34 +430,22 @@ contract Treasury is
     require(!info.executed, "Action has already been executed");
     require(block.number >= info.timelockEnd, "Timelock not complete");
 
-    if (info.managing == STATUS.SREQ) {
-      // 9
-      REQD = IREQDebt(info.toPermit);
+    if (info.managing == 7) {
+      CREQ = ICreditREQ(info.toPermit);
     } else {
       permissions[info.managing][info.toPermit] = true;
 
-      if (info.managing == STATUS.ASSET) {
+      if (info.managing == 1) {
         assetPricer[info.toPermit] = info.calculator;
       }
       (bool registered, ) = indexInRegistry(info.toPermit, info.managing);
       if (!registered) {
         registry[info.managing].push(info.toPermit);
 
-        if (info.managing == STATUS.ASSET) {
-          (bool reg, uint256 index) = indexInRegistry(
-            info.toPermit,
-            STATUS.RESERVETOKEN
-          );
+        if (info.managing == 1) {
+          (bool reg, uint256 index) = indexInRegistry(info.toPermit, 1);
           if (reg) {
-            delete registry[STATUS.RESERVETOKEN][index];
-          }
-        } else if (info.managing == STATUS.RESERVETOKEN) {
-          (bool reg, uint256 index) = indexInRegistry(
-            info.toPermit,
-            STATUS.ASSET
-          );
-          if (reg) {
-            delete registry[STATUS.ASSET][index];
+            delete registry[1][index];
           }
         }
       }
@@ -505,7 +466,7 @@ contract Treasury is
    * @notice disables timelocked functions
    */
   function disableTimelock() external onlyGovernor {
-    require(timelockEnabled == true, "timelock already disabled");
+    require(timelockEnabled, "timelock already disabled");
     if (
       onChainGovernanceTimelock != 0 &&
       onChainGovernanceTimelock <= block.number
@@ -519,17 +480,17 @@ contract Treasury is
   /**
    * @notice enables timelocks after initilization
    */
-  function initialize() external onlyGovernor {
-    require(initialized == false, "Already initialized");
+  function enableTimelock(uint256 _blocksNeededForQueue) external onlyGovernor {
+    require(!timelockEnabled, "timelock already enabled");
     timelockEnabled = true;
-    initialized = true;
+    blocksNeededForQueue = _blocksNeededForQueue;
   }
 
   /* ========== VIEW FUNCTIONS ========== */
 
   /**
-   * @notice returns excess reserves not backing tokens
-   * @return uint
+   * @notice returns excess reserves not backing assets
+   * @return int
    */
   function excessReserves() public view returns (int256) {
     return int256(totalReserves) - int256(REQ.totalSupply() - totalDebt);
@@ -537,24 +498,20 @@ contract Treasury is
 
   /**
    * @notice returns REQ valuation of asset
-   * @param _token address
+   * @param _asset address
    * @param _amount uint256
    * @return value_ uint256
    */
-  function assetValue(address _token, uint256 _amount)
+  function assetValue(address _asset, uint256 _amount)
     public
     view
     override
     returns (uint256 value_)
   {
-    if (permissions[STATUS.ASSET][_token]) {
-      value_ = IAssetPricer(assetPricer[_token]).valuation(_token, _amount);
-    } else if (permissions[STATUS.RESERVETOKEN][_token]) {
-      value_ =
-        (_amount * (10**REQ.decimals())) /
-        (10**IERC20Metadata(_token).decimals());
+    if (permissions[1][_asset]) {
+      value_ = IAssetPricer(assetPricer[_asset]).valuation(_asset, _amount);
     } else {
-      revert(invalidAsset);
+      revert("Treasury: invalid asset");
     }
   }
 

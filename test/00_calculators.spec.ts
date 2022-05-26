@@ -18,8 +18,8 @@ import { maxUint256, toWei } from './ts/shared/utilities'
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import {
 	TestPair__factory,
-	WeightedPairBondingCalculator__factory,
-	WeightedRequiemCalculator__factory,
+	WeightedPairPricer__factory,
+	RequiemPricer__factory,
 	MockERC20__factory
 } from "../types";
 
@@ -109,8 +109,8 @@ describe('Calculator-Test', () => {
 		tokenDAI = await new MockERC20__factory(wallet).deploy("MockDAI", "MDAI", 18)
 		tokenTUSD = await new MockERC20__factory(wallet).deploy("MockTUSD", "MTUSD", 18)
 
-		calculatorRequiem = await new WeightedPairBondingCalculator__factory(wallet).deploy(tokenDAI.address)
-		calculatorRequiemNative = await new WeightedRequiemCalculator__factory(wallet).deploy(tokenA.address)
+		calculatorRequiem = await new WeightedPairPricer__factory(wallet).deploy(tokenDAI.address)
+		calculatorRequiemNative = await new RequiemPricer__factory(wallet).deploy(tokenA.address)
 
 		testPair = await new TestPair__factory(wallet).deploy(tokenA.address, tokenDAI.address, weight0, weight1)
 		await testPair.setReserves(reserve0, reserve1, vReserve0, vReserve1)

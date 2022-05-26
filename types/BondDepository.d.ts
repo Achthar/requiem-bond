@@ -40,19 +40,19 @@ interface BondDepositoryInterface extends ethers.utils.Interface {
     "markets(uint256)": FunctionFragment;
     "marketsForQuote(address,uint256)": FunctionFragment;
     "metadata(uint256)": FunctionFragment;
-    "notes(address,uint256)": FunctionFragment;
     "payoutFor(uint256,uint256)": FunctionFragment;
     "pendingFor(address,uint256)": FunctionFragment;
-    "pullNote(address,uint256)": FunctionFragment;
-    "pushNote(address,uint256)": FunctionFragment;
-    "redeem(address,uint256[],bool)": FunctionFragment;
-    "redeemAll(address,bool)": FunctionFragment;
+    "pullTerms(address,uint256)": FunctionFragment;
+    "pushTerms(address,uint256)": FunctionFragment;
+    "redeem(address,uint256[])": FunctionFragment;
+    "redeemAll(address)": FunctionFragment;
     "refReward()": FunctionFragment;
     "rewards(address)": FunctionFragment;
     "setAuthority(address)": FunctionFragment;
     "setRewards(uint256,uint256)": FunctionFragment;
     "terms(uint256)": FunctionFragment;
     "updateTreasury()": FunctionFragment;
+    "userTerms(address,uint256)": FunctionFragment;
     "whitelist(address)": FunctionFragment;
     "whitelisted(address)": FunctionFragment;
   };
@@ -125,10 +125,6 @@ interface BondDepositoryInterface extends ethers.utils.Interface {
     values: [BigNumberish]
   ): string;
   encodeFunctionData(
-    functionFragment: "notes",
-    values: [string, BigNumberish]
-  ): string;
-  encodeFunctionData(
     functionFragment: "payoutFor",
     values: [BigNumberish, BigNumberish]
   ): string;
@@ -137,21 +133,18 @@ interface BondDepositoryInterface extends ethers.utils.Interface {
     values: [string, BigNumberish]
   ): string;
   encodeFunctionData(
-    functionFragment: "pullNote",
+    functionFragment: "pullTerms",
     values: [string, BigNumberish]
   ): string;
   encodeFunctionData(
-    functionFragment: "pushNote",
+    functionFragment: "pushTerms",
     values: [string, BigNumberish]
   ): string;
   encodeFunctionData(
     functionFragment: "redeem",
-    values: [string, BigNumberish[], boolean]
+    values: [string, BigNumberish[]]
   ): string;
-  encodeFunctionData(
-    functionFragment: "redeemAll",
-    values: [string, boolean]
-  ): string;
+  encodeFunctionData(functionFragment: "redeemAll", values: [string]): string;
   encodeFunctionData(functionFragment: "refReward", values?: undefined): string;
   encodeFunctionData(functionFragment: "rewards", values: [string]): string;
   encodeFunctionData(
@@ -166,6 +159,10 @@ interface BondDepositoryInterface extends ethers.utils.Interface {
   encodeFunctionData(
     functionFragment: "updateTreasury",
     values?: undefined
+  ): string;
+  encodeFunctionData(
+    functionFragment: "userTerms",
+    values: [string, BigNumberish]
   ): string;
   encodeFunctionData(functionFragment: "whitelist", values: [string]): string;
   encodeFunctionData(functionFragment: "whitelisted", values: [string]): string;
@@ -210,11 +207,10 @@ interface BondDepositoryInterface extends ethers.utils.Interface {
     data: BytesLike
   ): Result;
   decodeFunctionResult(functionFragment: "metadata", data: BytesLike): Result;
-  decodeFunctionResult(functionFragment: "notes", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "payoutFor", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "pendingFor", data: BytesLike): Result;
-  decodeFunctionResult(functionFragment: "pullNote", data: BytesLike): Result;
-  decodeFunctionResult(functionFragment: "pushNote", data: BytesLike): Result;
+  decodeFunctionResult(functionFragment: "pullTerms", data: BytesLike): Result;
+  decodeFunctionResult(functionFragment: "pushTerms", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "redeem", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "redeemAll", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "refReward", data: BytesLike): Result;
@@ -229,6 +225,7 @@ interface BondDepositoryInterface extends ethers.utils.Interface {
     functionFragment: "updateTreasury",
     data: BytesLike
   ): Result;
+  decodeFunctionResult(functionFragment: "userTerms", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "whitelist", data: BytesLike): Result;
   decodeFunctionResult(
     functionFragment: "whitelisted",
@@ -450,20 +447,6 @@ export class BondDepository extends BaseContract {
       }
     >;
 
-    notes(
-      arg0: string,
-      arg1: BigNumberish,
-      overrides?: CallOverrides
-    ): Promise<
-      [BigNumber, number, number, number, number] & {
-        payout: BigNumber;
-        created: number;
-        matured: number;
-        redeemed: number;
-        marketID: number;
-      }
-    >;
-
     payoutFor(
       _amount: BigNumberish,
       _id: BigNumberish,
@@ -478,13 +461,13 @@ export class BondDepository extends BaseContract {
       [BigNumber, boolean] & { payout_: BigNumber; matured_: boolean }
     >;
 
-    pullNote(
+    pullTerms(
       _from: string,
       _index: BigNumberish,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
 
-    pushNote(
+    pushTerms(
       _to: string,
       _index: BigNumberish,
       overrides?: Overrides & { from?: string | Promise<string> }
@@ -493,13 +476,11 @@ export class BondDepository extends BaseContract {
     redeem(
       _user: string,
       _indexes: BigNumberish[],
-      _sendgREQ: boolean,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
 
     redeemAll(
       _user: string,
-      _sendgREQ: boolean,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
 
@@ -534,6 +515,20 @@ export class BondDepository extends BaseContract {
     updateTreasury(
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
+
+    userTerms(
+      arg0: string,
+      arg1: BigNumberish,
+      overrides?: CallOverrides
+    ): Promise<
+      [BigNumber, number, number, number, number] & {
+        payout: BigNumber;
+        created: number;
+        matured: number;
+        redeemed: number;
+        marketID: number;
+      }
+    >;
 
     whitelist(
       _operator: string,
@@ -645,20 +640,6 @@ export class BondDepository extends BaseContract {
     }
   >;
 
-  notes(
-    arg0: string,
-    arg1: BigNumberish,
-    overrides?: CallOverrides
-  ): Promise<
-    [BigNumber, number, number, number, number] & {
-      payout: BigNumber;
-      created: number;
-      matured: number;
-      redeemed: number;
-      marketID: number;
-    }
-  >;
-
   payoutFor(
     _amount: BigNumberish,
     _id: BigNumberish,
@@ -671,13 +652,13 @@ export class BondDepository extends BaseContract {
     overrides?: CallOverrides
   ): Promise<[BigNumber, boolean] & { payout_: BigNumber; matured_: boolean }>;
 
-  pullNote(
+  pullTerms(
     _from: string,
     _index: BigNumberish,
     overrides?: Overrides & { from?: string | Promise<string> }
   ): Promise<ContractTransaction>;
 
-  pushNote(
+  pushTerms(
     _to: string,
     _index: BigNumberish,
     overrides?: Overrides & { from?: string | Promise<string> }
@@ -686,13 +667,11 @@ export class BondDepository extends BaseContract {
   redeem(
     _user: string,
     _indexes: BigNumberish[],
-    _sendgREQ: boolean,
     overrides?: Overrides & { from?: string | Promise<string> }
   ): Promise<ContractTransaction>;
 
   redeemAll(
     _user: string,
-    _sendgREQ: boolean,
     overrides?: Overrides & { from?: string | Promise<string> }
   ): Promise<ContractTransaction>;
 
@@ -727,6 +706,20 @@ export class BondDepository extends BaseContract {
   updateTreasury(
     overrides?: Overrides & { from?: string | Promise<string> }
   ): Promise<ContractTransaction>;
+
+  userTerms(
+    arg0: string,
+    arg1: BigNumberish,
+    overrides?: CallOverrides
+  ): Promise<
+    [BigNumber, number, number, number, number] & {
+      payout: BigNumber;
+      created: number;
+      matured: number;
+      redeemed: number;
+      marketID: number;
+    }
+  >;
 
   whitelist(
     _operator: string,
@@ -853,20 +846,6 @@ export class BondDepository extends BaseContract {
       }
     >;
 
-    notes(
-      arg0: string,
-      arg1: BigNumberish,
-      overrides?: CallOverrides
-    ): Promise<
-      [BigNumber, number, number, number, number] & {
-        payout: BigNumber;
-        created: number;
-        matured: number;
-        redeemed: number;
-        marketID: number;
-      }
-    >;
-
     payoutFor(
       _amount: BigNumberish,
       _id: BigNumberish,
@@ -881,13 +860,13 @@ export class BondDepository extends BaseContract {
       [BigNumber, boolean] & { payout_: BigNumber; matured_: boolean }
     >;
 
-    pullNote(
+    pullTerms(
       _from: string,
       _index: BigNumberish,
       overrides?: CallOverrides
     ): Promise<BigNumber>;
 
-    pushNote(
+    pushTerms(
       _to: string,
       _index: BigNumberish,
       overrides?: CallOverrides
@@ -896,15 +875,10 @@ export class BondDepository extends BaseContract {
     redeem(
       _user: string,
       _indexes: BigNumberish[],
-      _sendgREQ: boolean,
       overrides?: CallOverrides
     ): Promise<BigNumber>;
 
-    redeemAll(
-      _user: string,
-      _sendgREQ: boolean,
-      overrides?: CallOverrides
-    ): Promise<BigNumber>;
+    redeemAll(_user: string, overrides?: CallOverrides): Promise<BigNumber>;
 
     refReward(overrides?: CallOverrides): Promise<BigNumber>;
 
@@ -935,6 +909,20 @@ export class BondDepository extends BaseContract {
     >;
 
     updateTreasury(overrides?: CallOverrides): Promise<void>;
+
+    userTerms(
+      arg0: string,
+      arg1: BigNumberish,
+      overrides?: CallOverrides
+    ): Promise<
+      [BigNumber, number, number, number, number] & {
+        payout: BigNumber;
+        created: number;
+        matured: number;
+        redeemed: number;
+        marketID: number;
+      }
+    >;
 
     whitelist(_operator: string, overrides?: CallOverrides): Promise<void>;
 
@@ -1110,12 +1098,6 @@ export class BondDepository extends BaseContract {
 
     metadata(arg0: BigNumberish, overrides?: CallOverrides): Promise<BigNumber>;
 
-    notes(
-      arg0: string,
-      arg1: BigNumberish,
-      overrides?: CallOverrides
-    ): Promise<BigNumber>;
-
     payoutFor(
       _amount: BigNumberish,
       _id: BigNumberish,
@@ -1128,13 +1110,13 @@ export class BondDepository extends BaseContract {
       overrides?: CallOverrides
     ): Promise<BigNumber>;
 
-    pullNote(
+    pullTerms(
       _from: string,
       _index: BigNumberish,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<BigNumber>;
 
-    pushNote(
+    pushTerms(
       _to: string,
       _index: BigNumberish,
       overrides?: Overrides & { from?: string | Promise<string> }
@@ -1143,13 +1125,11 @@ export class BondDepository extends BaseContract {
     redeem(
       _user: string,
       _indexes: BigNumberish[],
-      _sendgREQ: boolean,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<BigNumber>;
 
     redeemAll(
       _user: string,
-      _sendgREQ: boolean,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<BigNumber>;
 
@@ -1172,6 +1152,12 @@ export class BondDepository extends BaseContract {
 
     updateTreasury(
       overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<BigNumber>;
+
+    userTerms(
+      arg0: string,
+      arg1: BigNumberish,
+      overrides?: CallOverrides
     ): Promise<BigNumber>;
 
     whitelist(
@@ -1277,12 +1263,6 @@ export class BondDepository extends BaseContract {
       overrides?: CallOverrides
     ): Promise<PopulatedTransaction>;
 
-    notes(
-      arg0: string,
-      arg1: BigNumberish,
-      overrides?: CallOverrides
-    ): Promise<PopulatedTransaction>;
-
     payoutFor(
       _amount: BigNumberish,
       _id: BigNumberish,
@@ -1295,13 +1275,13 @@ export class BondDepository extends BaseContract {
       overrides?: CallOverrides
     ): Promise<PopulatedTransaction>;
 
-    pullNote(
+    pullTerms(
       _from: string,
       _index: BigNumberish,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<PopulatedTransaction>;
 
-    pushNote(
+    pushTerms(
       _to: string,
       _index: BigNumberish,
       overrides?: Overrides & { from?: string | Promise<string> }
@@ -1310,13 +1290,11 @@ export class BondDepository extends BaseContract {
     redeem(
       _user: string,
       _indexes: BigNumberish[],
-      _sendgREQ: boolean,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<PopulatedTransaction>;
 
     redeemAll(
       _user: string,
-      _sendgREQ: boolean,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<PopulatedTransaction>;
 
@@ -1345,6 +1323,12 @@ export class BondDepository extends BaseContract {
 
     updateTreasury(
       overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<PopulatedTransaction>;
+
+    userTerms(
+      arg0: string,
+      arg1: BigNumberish,
+      overrides?: CallOverrides
     ): Promise<PopulatedTransaction>;
 
     whitelist(

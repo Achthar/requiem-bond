@@ -11,6 +11,7 @@ import {
   PopulatedTransaction,
   BaseContract,
   ContractTransaction,
+  Overrides,
   CallOverrides,
 } from "ethers";
 import { BytesLike } from "@ethersproject/bytes";
@@ -22,6 +23,9 @@ interface IRequiemSwapInterface extends ethers.utils.Interface {
   functions: {
     "calculateSwapGivenIn(address,address,uint256)": FunctionFragment;
     "calculateSwapGivenOut(address,address,uint256)": FunctionFragment;
+    "onSwap(address,address,uint256,uint256,address)": FunctionFragment;
+    "onSwapGivenIn(address,address,uint256,uint256,address)": FunctionFragment;
+    "onSwapGivenOut(address,address,uint256,uint256,address)": FunctionFragment;
   };
 
   encodeFunctionData(
@@ -32,6 +36,18 @@ interface IRequiemSwapInterface extends ethers.utils.Interface {
     functionFragment: "calculateSwapGivenOut",
     values: [string, string, BigNumberish]
   ): string;
+  encodeFunctionData(
+    functionFragment: "onSwap",
+    values: [string, string, BigNumberish, BigNumberish, string]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "onSwapGivenIn",
+    values: [string, string, BigNumberish, BigNumberish, string]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "onSwapGivenOut",
+    values: [string, string, BigNumberish, BigNumberish, string]
+  ): string;
 
   decodeFunctionResult(
     functionFragment: "calculateSwapGivenIn",
@@ -39,6 +55,15 @@ interface IRequiemSwapInterface extends ethers.utils.Interface {
   ): Result;
   decodeFunctionResult(
     functionFragment: "calculateSwapGivenOut",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(functionFragment: "onSwap", data: BytesLike): Result;
+  decodeFunctionResult(
+    functionFragment: "onSwapGivenIn",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "onSwapGivenOut",
     data: BytesLike
   ): Result;
 
@@ -102,6 +127,33 @@ export class IRequiemSwap extends BaseContract {
       amountOut: BigNumberish,
       overrides?: CallOverrides
     ): Promise<[BigNumber]>;
+
+    onSwap(
+      tokenIn: string,
+      tokenOut: string,
+      amountIn: BigNumberish,
+      amountOut: BigNumberish,
+      to: string,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<ContractTransaction>;
+
+    onSwapGivenIn(
+      tokenIn: string,
+      tokenOut: string,
+      amountIn: BigNumberish,
+      amountOutMin: BigNumberish,
+      to: string,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<ContractTransaction>;
+
+    onSwapGivenOut(
+      tokenIn: string,
+      tokenOut: string,
+      amountOut: BigNumberish,
+      amountInMax: BigNumberish,
+      to: string,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<ContractTransaction>;
   };
 
   calculateSwapGivenIn(
@@ -118,6 +170,33 @@ export class IRequiemSwap extends BaseContract {
     overrides?: CallOverrides
   ): Promise<BigNumber>;
 
+  onSwap(
+    tokenIn: string,
+    tokenOut: string,
+    amountIn: BigNumberish,
+    amountOut: BigNumberish,
+    to: string,
+    overrides?: Overrides & { from?: string | Promise<string> }
+  ): Promise<ContractTransaction>;
+
+  onSwapGivenIn(
+    tokenIn: string,
+    tokenOut: string,
+    amountIn: BigNumberish,
+    amountOutMin: BigNumberish,
+    to: string,
+    overrides?: Overrides & { from?: string | Promise<string> }
+  ): Promise<ContractTransaction>;
+
+  onSwapGivenOut(
+    tokenIn: string,
+    tokenOut: string,
+    amountOut: BigNumberish,
+    amountInMax: BigNumberish,
+    to: string,
+    overrides?: Overrides & { from?: string | Promise<string> }
+  ): Promise<ContractTransaction>;
+
   callStatic: {
     calculateSwapGivenIn(
       tokenIn: string,
@@ -130,6 +209,33 @@ export class IRequiemSwap extends BaseContract {
       tokenIn: string,
       tokenOut: string,
       amountOut: BigNumberish,
+      overrides?: CallOverrides
+    ): Promise<BigNumber>;
+
+    onSwap(
+      tokenIn: string,
+      tokenOut: string,
+      amountIn: BigNumberish,
+      amountOut: BigNumberish,
+      to: string,
+      overrides?: CallOverrides
+    ): Promise<void>;
+
+    onSwapGivenIn(
+      tokenIn: string,
+      tokenOut: string,
+      amountIn: BigNumberish,
+      amountOutMin: BigNumberish,
+      to: string,
+      overrides?: CallOverrides
+    ): Promise<BigNumber>;
+
+    onSwapGivenOut(
+      tokenIn: string,
+      tokenOut: string,
+      amountOut: BigNumberish,
+      amountInMax: BigNumberish,
+      to: string,
       overrides?: CallOverrides
     ): Promise<BigNumber>;
   };
@@ -150,6 +256,33 @@ export class IRequiemSwap extends BaseContract {
       amountOut: BigNumberish,
       overrides?: CallOverrides
     ): Promise<BigNumber>;
+
+    onSwap(
+      tokenIn: string,
+      tokenOut: string,
+      amountIn: BigNumberish,
+      amountOut: BigNumberish,
+      to: string,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<BigNumber>;
+
+    onSwapGivenIn(
+      tokenIn: string,
+      tokenOut: string,
+      amountIn: BigNumberish,
+      amountOutMin: BigNumberish,
+      to: string,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<BigNumber>;
+
+    onSwapGivenOut(
+      tokenIn: string,
+      tokenOut: string,
+      amountOut: BigNumberish,
+      amountInMax: BigNumberish,
+      to: string,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<BigNumber>;
   };
 
   populateTransaction: {
@@ -165,6 +298,33 @@ export class IRequiemSwap extends BaseContract {
       tokenOut: string,
       amountOut: BigNumberish,
       overrides?: CallOverrides
+    ): Promise<PopulatedTransaction>;
+
+    onSwap(
+      tokenIn: string,
+      tokenOut: string,
+      amountIn: BigNumberish,
+      amountOut: BigNumberish,
+      to: string,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<PopulatedTransaction>;
+
+    onSwapGivenIn(
+      tokenIn: string,
+      tokenOut: string,
+      amountIn: BigNumberish,
+      amountOutMin: BigNumberish,
+      to: string,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<PopulatedTransaction>;
+
+    onSwapGivenOut(
+      tokenIn: string,
+      tokenOut: string,
+      amountOut: BigNumberish,
+      amountInMax: BigNumberish,
+      to: string,
+      overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<PopulatedTransaction>;
   };
 }

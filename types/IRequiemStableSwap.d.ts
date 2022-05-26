@@ -27,6 +27,7 @@ interface IRequiemStableSwapInterface extends ethers.utils.Interface {
     "calculateRemoveLiquidityOneToken(address,uint256,uint8)": FunctionFragment;
     "calculateSwap(uint8,uint8,uint256)": FunctionFragment;
     "calculateTokenAmount(uint256[],bool)": FunctionFragment;
+    "flashLoan(address,address[],uint256[],bytes)": FunctionFragment;
     "getA()": FunctionFragment;
     "getAPrecise()": FunctionFragment;
     "getAdminBalance(uint8)": FunctionFragment;
@@ -69,6 +70,10 @@ interface IRequiemStableSwapInterface extends ethers.utils.Interface {
   encodeFunctionData(
     functionFragment: "calculateTokenAmount",
     values: [BigNumberish[], boolean]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "flashLoan",
+    values: [string, string[], BigNumberish[], BytesLike]
   ): string;
   encodeFunctionData(functionFragment: "getA", values?: undefined): string;
   encodeFunctionData(
@@ -164,6 +169,7 @@ interface IRequiemStableSwapInterface extends ethers.utils.Interface {
     functionFragment: "calculateTokenAmount",
     data: BytesLike
   ): Result;
+  decodeFunctionResult(functionFragment: "flashLoan", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "getA", data: BytesLike): Result;
   decodeFunctionResult(
     functionFragment: "getAPrecise",
@@ -218,8 +224,114 @@ interface IRequiemStableSwapInterface extends ethers.utils.Interface {
     data: BytesLike
   ): Result;
 
-  events: {};
+  events: {
+    "AddLiquidity(address,uint256[],uint256[],uint256,uint256)": EventFragment;
+    "CollectProtocolFee(address,uint256)": EventFragment;
+    "FeeControllerChanged(address)": EventFragment;
+    "FeeDistributorChanged(address)": EventFragment;
+    "NewFee(uint256,uint256,uint256,uint256)": EventFragment;
+    "RampA(uint256,uint256,uint256,uint256)": EventFragment;
+    "RemoveLiquidity(address,uint256[],uint256[],uint256)": EventFragment;
+    "RemoveLiquidityImbalance(address,uint256[],uint256[],uint256,uint256)": EventFragment;
+    "RemoveLiquidityOne(address,uint256,uint256,uint256)": EventFragment;
+    "StopRampA(uint256,uint256)": EventFragment;
+    "TokenExchange(address,uint256,uint256,uint256,uint256)": EventFragment;
+  };
+
+  getEvent(nameOrSignatureOrTopic: "AddLiquidity"): EventFragment;
+  getEvent(nameOrSignatureOrTopic: "CollectProtocolFee"): EventFragment;
+  getEvent(nameOrSignatureOrTopic: "FeeControllerChanged"): EventFragment;
+  getEvent(nameOrSignatureOrTopic: "FeeDistributorChanged"): EventFragment;
+  getEvent(nameOrSignatureOrTopic: "NewFee"): EventFragment;
+  getEvent(nameOrSignatureOrTopic: "RampA"): EventFragment;
+  getEvent(nameOrSignatureOrTopic: "RemoveLiquidity"): EventFragment;
+  getEvent(nameOrSignatureOrTopic: "RemoveLiquidityImbalance"): EventFragment;
+  getEvent(nameOrSignatureOrTopic: "RemoveLiquidityOne"): EventFragment;
+  getEvent(nameOrSignatureOrTopic: "StopRampA"): EventFragment;
+  getEvent(nameOrSignatureOrTopic: "TokenExchange"): EventFragment;
 }
+
+export type AddLiquidityEvent = TypedEvent<
+  [string, BigNumber[], BigNumber[], BigNumber, BigNumber] & {
+    provider: string;
+    tokenAmounts: BigNumber[];
+    fees: BigNumber[];
+    invariant: BigNumber;
+    tokenSupply: BigNumber;
+  }
+>;
+
+export type CollectProtocolFeeEvent = TypedEvent<
+  [string, BigNumber] & { token: string; amount: BigNumber }
+>;
+
+export type FeeControllerChangedEvent = TypedEvent<
+  [string] & { newController: string }
+>;
+
+export type FeeDistributorChangedEvent = TypedEvent<
+  [string] & { newController: string }
+>;
+
+export type NewFeeEvent = TypedEvent<
+  [BigNumber, BigNumber, BigNumber, BigNumber] & {
+    fee: BigNumber;
+    flashFee: BigNumber;
+    adminFee: BigNumber;
+    withdrawFee: BigNumber;
+  }
+>;
+
+export type RampAEvent = TypedEvent<
+  [BigNumber, BigNumber, BigNumber, BigNumber] & {
+    oldA: BigNumber;
+    newA: BigNumber;
+    initialTime: BigNumber;
+    futureTime: BigNumber;
+  }
+>;
+
+export type RemoveLiquidityEvent = TypedEvent<
+  [string, BigNumber[], BigNumber[], BigNumber] & {
+    provider: string;
+    tokenAmounts: BigNumber[];
+    fees: BigNumber[];
+    tokenSupply: BigNumber;
+  }
+>;
+
+export type RemoveLiquidityImbalanceEvent = TypedEvent<
+  [string, BigNumber[], BigNumber[], BigNumber, BigNumber] & {
+    provider: string;
+    tokenAmounts: BigNumber[];
+    fees: BigNumber[];
+    invariant: BigNumber;
+    tokenSupply: BigNumber;
+  }
+>;
+
+export type RemoveLiquidityOneEvent = TypedEvent<
+  [string, BigNumber, BigNumber, BigNumber] & {
+    provider: string;
+    tokenIndex: BigNumber;
+    tokenAmount: BigNumber;
+    coinAmount: BigNumber;
+  }
+>;
+
+export type StopRampAEvent = TypedEvent<
+  [BigNumber, BigNumber] & { A: BigNumber; timestamp: BigNumber }
+>;
+
+export type TokenExchangeEvent = TypedEvent<
+  [string, BigNumber, BigNumber, BigNumber, BigNumber] & {
+    buyer: string;
+    soldId: BigNumber;
+    tokensSold: BigNumber;
+    boughtId: BigNumber;
+    tokensBought: BigNumber;
+  }
+>;
 
 export class IRequiemStableSwap extends BaseContract {
   connect(signerOrProvider: Signer | Provider | string): this;
@@ -302,6 +414,14 @@ export class IRequiemStableSwap extends BaseContract {
       deposit: boolean,
       overrides?: CallOverrides
     ): Promise<[BigNumber]>;
+
+    flashLoan(
+      recipient: string,
+      tokens: string[],
+      amounts: BigNumberish[],
+      userData: BytesLike,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<ContractTransaction>;
 
     getA(overrides?: CallOverrides): Promise<[BigNumber]>;
 
@@ -417,6 +537,14 @@ export class IRequiemStableSwap extends BaseContract {
     overrides?: CallOverrides
   ): Promise<BigNumber>;
 
+  flashLoan(
+    recipient: string,
+    tokens: string[],
+    amounts: BigNumberish[],
+    userData: BytesLike,
+    overrides?: Overrides & { from?: string | Promise<string> }
+  ): Promise<ContractTransaction>;
+
   getA(overrides?: CallOverrides): Promise<BigNumber>;
 
   getAPrecise(overrides?: CallOverrides): Promise<BigNumber>;
@@ -527,6 +655,14 @@ export class IRequiemStableSwap extends BaseContract {
       overrides?: CallOverrides
     ): Promise<BigNumber>;
 
+    flashLoan(
+      recipient: string,
+      tokens: string[],
+      amounts: BigNumberish[],
+      userData: BytesLike,
+      overrides?: CallOverrides
+    ): Promise<void>;
+
     getA(overrides?: CallOverrides): Promise<BigNumber>;
 
     getAPrecise(overrides?: CallOverrides): Promise<BigNumber>;
@@ -599,7 +735,277 @@ export class IRequiemStableSwap extends BaseContract {
     ): Promise<void>;
   };
 
-  filters: {};
+  filters: {
+    "AddLiquidity(address,uint256[],uint256[],uint256,uint256)"(
+      provider?: string | null,
+      tokenAmounts?: null,
+      fees?: null,
+      invariant?: null,
+      tokenSupply?: null
+    ): TypedEventFilter<
+      [string, BigNumber[], BigNumber[], BigNumber, BigNumber],
+      {
+        provider: string;
+        tokenAmounts: BigNumber[];
+        fees: BigNumber[];
+        invariant: BigNumber;
+        tokenSupply: BigNumber;
+      }
+    >;
+
+    AddLiquidity(
+      provider?: string | null,
+      tokenAmounts?: null,
+      fees?: null,
+      invariant?: null,
+      tokenSupply?: null
+    ): TypedEventFilter<
+      [string, BigNumber[], BigNumber[], BigNumber, BigNumber],
+      {
+        provider: string;
+        tokenAmounts: BigNumber[];
+        fees: BigNumber[];
+        invariant: BigNumber;
+        tokenSupply: BigNumber;
+      }
+    >;
+
+    "CollectProtocolFee(address,uint256)"(
+      token?: null,
+      amount?: null
+    ): TypedEventFilter<
+      [string, BigNumber],
+      { token: string; amount: BigNumber }
+    >;
+
+    CollectProtocolFee(
+      token?: null,
+      amount?: null
+    ): TypedEventFilter<
+      [string, BigNumber],
+      { token: string; amount: BigNumber }
+    >;
+
+    "FeeControllerChanged(address)"(
+      newController?: null
+    ): TypedEventFilter<[string], { newController: string }>;
+
+    FeeControllerChanged(
+      newController?: null
+    ): TypedEventFilter<[string], { newController: string }>;
+
+    "FeeDistributorChanged(address)"(
+      newController?: null
+    ): TypedEventFilter<[string], { newController: string }>;
+
+    FeeDistributorChanged(
+      newController?: null
+    ): TypedEventFilter<[string], { newController: string }>;
+
+    "NewFee(uint256,uint256,uint256,uint256)"(
+      fee?: null,
+      flashFee?: null,
+      adminFee?: null,
+      withdrawFee?: null
+    ): TypedEventFilter<
+      [BigNumber, BigNumber, BigNumber, BigNumber],
+      {
+        fee: BigNumber;
+        flashFee: BigNumber;
+        adminFee: BigNumber;
+        withdrawFee: BigNumber;
+      }
+    >;
+
+    NewFee(
+      fee?: null,
+      flashFee?: null,
+      adminFee?: null,
+      withdrawFee?: null
+    ): TypedEventFilter<
+      [BigNumber, BigNumber, BigNumber, BigNumber],
+      {
+        fee: BigNumber;
+        flashFee: BigNumber;
+        adminFee: BigNumber;
+        withdrawFee: BigNumber;
+      }
+    >;
+
+    "RampA(uint256,uint256,uint256,uint256)"(
+      oldA?: null,
+      newA?: null,
+      initialTime?: null,
+      futureTime?: null
+    ): TypedEventFilter<
+      [BigNumber, BigNumber, BigNumber, BigNumber],
+      {
+        oldA: BigNumber;
+        newA: BigNumber;
+        initialTime: BigNumber;
+        futureTime: BigNumber;
+      }
+    >;
+
+    RampA(
+      oldA?: null,
+      newA?: null,
+      initialTime?: null,
+      futureTime?: null
+    ): TypedEventFilter<
+      [BigNumber, BigNumber, BigNumber, BigNumber],
+      {
+        oldA: BigNumber;
+        newA: BigNumber;
+        initialTime: BigNumber;
+        futureTime: BigNumber;
+      }
+    >;
+
+    "RemoveLiquidity(address,uint256[],uint256[],uint256)"(
+      provider?: string | null,
+      tokenAmounts?: null,
+      fees?: null,
+      tokenSupply?: null
+    ): TypedEventFilter<
+      [string, BigNumber[], BigNumber[], BigNumber],
+      {
+        provider: string;
+        tokenAmounts: BigNumber[];
+        fees: BigNumber[];
+        tokenSupply: BigNumber;
+      }
+    >;
+
+    RemoveLiquidity(
+      provider?: string | null,
+      tokenAmounts?: null,
+      fees?: null,
+      tokenSupply?: null
+    ): TypedEventFilter<
+      [string, BigNumber[], BigNumber[], BigNumber],
+      {
+        provider: string;
+        tokenAmounts: BigNumber[];
+        fees: BigNumber[];
+        tokenSupply: BigNumber;
+      }
+    >;
+
+    "RemoveLiquidityImbalance(address,uint256[],uint256[],uint256,uint256)"(
+      provider?: string | null,
+      tokenAmounts?: null,
+      fees?: null,
+      invariant?: null,
+      tokenSupply?: null
+    ): TypedEventFilter<
+      [string, BigNumber[], BigNumber[], BigNumber, BigNumber],
+      {
+        provider: string;
+        tokenAmounts: BigNumber[];
+        fees: BigNumber[];
+        invariant: BigNumber;
+        tokenSupply: BigNumber;
+      }
+    >;
+
+    RemoveLiquidityImbalance(
+      provider?: string | null,
+      tokenAmounts?: null,
+      fees?: null,
+      invariant?: null,
+      tokenSupply?: null
+    ): TypedEventFilter<
+      [string, BigNumber[], BigNumber[], BigNumber, BigNumber],
+      {
+        provider: string;
+        tokenAmounts: BigNumber[];
+        fees: BigNumber[];
+        invariant: BigNumber;
+        tokenSupply: BigNumber;
+      }
+    >;
+
+    "RemoveLiquidityOne(address,uint256,uint256,uint256)"(
+      provider?: string | null,
+      tokenIndex?: null,
+      tokenAmount?: null,
+      coinAmount?: null
+    ): TypedEventFilter<
+      [string, BigNumber, BigNumber, BigNumber],
+      {
+        provider: string;
+        tokenIndex: BigNumber;
+        tokenAmount: BigNumber;
+        coinAmount: BigNumber;
+      }
+    >;
+
+    RemoveLiquidityOne(
+      provider?: string | null,
+      tokenIndex?: null,
+      tokenAmount?: null,
+      coinAmount?: null
+    ): TypedEventFilter<
+      [string, BigNumber, BigNumber, BigNumber],
+      {
+        provider: string;
+        tokenIndex: BigNumber;
+        tokenAmount: BigNumber;
+        coinAmount: BigNumber;
+      }
+    >;
+
+    "StopRampA(uint256,uint256)"(
+      A?: null,
+      timestamp?: null
+    ): TypedEventFilter<
+      [BigNumber, BigNumber],
+      { A: BigNumber; timestamp: BigNumber }
+    >;
+
+    StopRampA(
+      A?: null,
+      timestamp?: null
+    ): TypedEventFilter<
+      [BigNumber, BigNumber],
+      { A: BigNumber; timestamp: BigNumber }
+    >;
+
+    "TokenExchange(address,uint256,uint256,uint256,uint256)"(
+      buyer?: string | null,
+      soldId?: null,
+      tokensSold?: null,
+      boughtId?: null,
+      tokensBought?: null
+    ): TypedEventFilter<
+      [string, BigNumber, BigNumber, BigNumber, BigNumber],
+      {
+        buyer: string;
+        soldId: BigNumber;
+        tokensSold: BigNumber;
+        boughtId: BigNumber;
+        tokensBought: BigNumber;
+      }
+    >;
+
+    TokenExchange(
+      buyer?: string | null,
+      soldId?: null,
+      tokensSold?: null,
+      boughtId?: null,
+      tokensBought?: null
+    ): TypedEventFilter<
+      [string, BigNumber, BigNumber, BigNumber, BigNumber],
+      {
+        buyer: string;
+        soldId: BigNumber;
+        tokensSold: BigNumber;
+        boughtId: BigNumber;
+        tokensBought: BigNumber;
+      }
+    >;
+  };
 
   estimateGas: {
     addLiquidity(
@@ -638,6 +1044,14 @@ export class IRequiemStableSwap extends BaseContract {
       amounts: BigNumberish[],
       deposit: boolean,
       overrides?: CallOverrides
+    ): Promise<BigNumber>;
+
+    flashLoan(
+      recipient: string,
+      tokens: string[],
+      amounts: BigNumberish[],
+      userData: BytesLike,
+      overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<BigNumber>;
 
     getA(overrides?: CallOverrides): Promise<BigNumber>;
@@ -752,6 +1166,14 @@ export class IRequiemStableSwap extends BaseContract {
       amounts: BigNumberish[],
       deposit: boolean,
       overrides?: CallOverrides
+    ): Promise<PopulatedTransaction>;
+
+    flashLoan(
+      recipient: string,
+      tokens: string[],
+      amounts: BigNumberish[],
+      userData: BytesLike,
+      overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<PopulatedTransaction>;
 
     getA(overrides?: CallOverrides): Promise<PopulatedTransaction>;

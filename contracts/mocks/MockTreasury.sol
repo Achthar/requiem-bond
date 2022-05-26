@@ -12,7 +12,7 @@ import "../interfaces/IAssetPricer.sol";
 import "../interfaces/ITreasury.sol";
 import "../libraries/types/AccessControlled.sol";
 
-contract Treasury is Initializable, Ownable, ITreasury {
+contract MockTreasury is Initializable, Ownable, ITreasury {
   /* ========== DEPENDENCIES ========== */
 
   using SafeERC20 for IERC20;
@@ -95,11 +95,11 @@ contract Treasury is Initializable, Ownable, ITreasury {
   string internal insufficientReserves = "Treasury: insufficient reserves";
 
   ///@dev no constructor in upgradable contracts. Instead we have initializers
-  function initialize(address _req) public initializer {
+  function initialize(address _req) public initializer onlyOwner {
     require(_req != address(0), "Zero address: REQ");
     REQ = IREQ(_req);
-    timelockEnabled = false;
-    initialized = false;
+    timelockEnabled = true;
+    initialized = true;
     blocksNeededForQueue = 0;
     useExcessReserves = false;
   }
@@ -385,46 +385,25 @@ contract Treasury is Initializable, Ownable, ITreasury {
    * @param _address address
    * @param _calculator address
    */
-  function queueTimelock(
+  function addPermission(
     STATUS _status,
     address _address,
     address _calculator
   ) external onlyOwner {
     require(_address != address(0));
-    require(timelockEnabled == true, "Timelock is disabled, use enable");
 
-    uint256 timelock = block.number + blocksNeededForQueue;
-    if (_status == STATUS.ASSETMANAGER) {
-      timelock = block.number + blocksNeededForQueue * 2;
-    }
-    permissionQueue.push(
-      Queue({
-        managing: _status,
-        toPermit: _address,
-        calculator: _calculator,
-        timelockEnd: timelock,
-        nullify: false,
-        executed: false
-      })
-    );
+    Queue memory info = Queue({
+      managing: _status,
+      toPermit: _address,
+      calculator: _calculator,
+      timelockEnd: 0,
+      nullify: false,
+      executed: false
+    });
+
     emit PermissionQueued(_status, _address);
-  }
-
-  /**
-   *  @notice enable queued permission
-   *  @param _index uint256
-   */
-  function execute(uint256 _index) external {
-    require(timelockEnabled == true, "Timelock is disabled, use enable");
-
-    Queue memory info = permissionQueue[_index];
-
-    require(!info.nullify, "Action has been nullified");
-    require(!info.executed, "Action has already been executed");
-    require(block.number >= info.timelockEnd, "Timelock not complete");
 
     if (info.managing == STATUS.CREQ) {
-      // 9
       CREQ = ICreditREQ(info.toPermit);
     } else {
       permissions[info.managing][info.toPermit] = true;
@@ -447,40 +426,7 @@ contract Treasury is Initializable, Ownable, ITreasury {
         }
       }
     }
-    permissionQueue[_index].executed = true;
     emit Permissioned(info.toPermit, info.managing, true);
-  }
-
-  /**
-   * @notice cancel timelocked action
-   * @param _index uint256
-   */
-  function nullify(uint256 _index) external onlyOwner {
-    permissionQueue[_index].nullify = true;
-  }
-
-  /**
-   * @notice disables timelocked functions
-   */
-  function disableTimelock() external onlyOwner {
-    require(timelockEnabled == true, "timelock already disabled");
-    if (
-      onChainGovernanceTimelock != 0 &&
-      onChainGovernanceTimelock <= block.number
-    ) {
-      timelockEnabled = false;
-    } else {
-      onChainGovernanceTimelock = block.number + blocksNeededForQueue * 7; // 7-day timelock
-    }
-  }
-
-  /**
-   * @notice enables timelocks after initilization
-   */
-  function initialize() external onlyOwner {
-    require(initialized == false, "Already initialized");
-    timelockEnabled = true;
-    initialized = true;
   }
 
   /* ========== VIEW FUNCTIONS ========== */

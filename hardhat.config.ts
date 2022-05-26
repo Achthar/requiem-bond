@@ -409,6 +409,10 @@ const config: HardhatUserConfig = {
       verbose: true,
     },
   },
+  contractSizer: {
+    runOnCompile: true,
+    disambiguatePaths: false,
+  },
 };
 
 export default config;

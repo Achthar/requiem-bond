@@ -23,36 +23,33 @@ interface MockTreasuryInterface extends ethers.utils.Interface {
   functions: {
     "CREQ()": FunctionFragment;
     "REQ()": FunctionFragment;
+    "addPermission(uint8,address,address)": FunctionFragment;
     "assetPricer(address)": FunctionFragment;
     "assetValue(address,uint256)": FunctionFragment;
     "auditReserves()": FunctionFragment;
-    "authority()": FunctionFragment;
     "baseSupply()": FunctionFragment;
     "blocksNeededForQueue()": FunctionFragment;
+    "debtLimit(address)": FunctionFragment;
     "deposit(uint256,address,uint256)": FunctionFragment;
-    "disable(uint256,address)": FunctionFragment;
-    "disableTimelock()": FunctionFragment;
-    "enable(uint256,address,address)": FunctionFragment;
-    "enableTimelock(uint256)": FunctionFragment;
+    "disable(uint8,address)": FunctionFragment;
+    "enable(uint8,address,address)": FunctionFragment;
     "excessReserves()": FunctionFragment;
-    "execute(uint256)": FunctionFragment;
     "incurDebt(uint256,address)": FunctionFragment;
-    "indexInRegistry(address,uint256)": FunctionFragment;
+    "indexInRegistry(address,uint8)": FunctionFragment;
+    "initialize(address)": FunctionFragment;
     "initialized()": FunctionFragment;
     "manage(address,uint256)": FunctionFragment;
     "mint(address,uint256)": FunctionFragment;
-    "nullify(uint256)": FunctionFragment;
     "onChainGovernanceTimelock()": FunctionFragment;
     "owner()": FunctionFragment;
     "permissionQueue(uint256)": FunctionFragment;
-    "permissions(uint256,address)": FunctionFragment;
-    "queueTimelock(uint256,address,address)": FunctionFragment;
-    "registry(uint256,uint256)": FunctionFragment;
+    "permissions(uint8,address)": FunctionFragment;
+    "registry(uint8,uint256)": FunctionFragment;
     "renounceOwnership()": FunctionFragment;
     "repayDebtWithREQ(uint256)": FunctionFragment;
     "repayDebtWithReserve(uint256,address)": FunctionFragment;
     "reqDebt()": FunctionFragment;
-    "setAuthority(address)": FunctionFragment;
+    "setBlocksNeededForQueue(uint256)": FunctionFragment;
     "setDebtLimit(address,uint256)": FunctionFragment;
     "setUseExcessReserves()": FunctionFragment;
     "timelockEnabled()": FunctionFragment;
@@ -65,6 +62,10 @@ interface MockTreasuryInterface extends ethers.utils.Interface {
 
   encodeFunctionData(functionFragment: "CREQ", values?: undefined): string;
   encodeFunctionData(functionFragment: "REQ", values?: undefined): string;
+  encodeFunctionData(
+    functionFragment: "addPermission",
+    values: [BigNumberish, string, string]
+  ): string;
   encodeFunctionData(functionFragment: "assetPricer", values: [string]): string;
   encodeFunctionData(
     functionFragment: "assetValue",
@@ -74,7 +75,6 @@ interface MockTreasuryInterface extends ethers.utils.Interface {
     functionFragment: "auditReserves",
     values?: undefined
   ): string;
-  encodeFunctionData(functionFragment: "authority", values?: undefined): string;
   encodeFunctionData(
     functionFragment: "baseSupply",
     values?: undefined
@@ -83,6 +83,7 @@ interface MockTreasuryInterface extends ethers.utils.Interface {
     functionFragment: "blocksNeededForQueue",
     values?: undefined
   ): string;
+  encodeFunctionData(functionFragment: "debtLimit", values: [string]): string;
   encodeFunctionData(
     functionFragment: "deposit",
     values: [BigNumberish, string, BigNumberish]
@@ -92,24 +93,12 @@ interface MockTreasuryInterface extends ethers.utils.Interface {
     values: [BigNumberish, string]
   ): string;
   encodeFunctionData(
-    functionFragment: "disableTimelock",
-    values?: undefined
-  ): string;
-  encodeFunctionData(
     functionFragment: "enable",
     values: [BigNumberish, string, string]
   ): string;
   encodeFunctionData(
-    functionFragment: "enableTimelock",
-    values: [BigNumberish]
-  ): string;
-  encodeFunctionData(
     functionFragment: "excessReserves",
     values?: undefined
-  ): string;
-  encodeFunctionData(
-    functionFragment: "execute",
-    values: [BigNumberish]
   ): string;
   encodeFunctionData(
     functionFragment: "incurDebt",
@@ -119,6 +108,7 @@ interface MockTreasuryInterface extends ethers.utils.Interface {
     functionFragment: "indexInRegistry",
     values: [string, BigNumberish]
   ): string;
+  encodeFunctionData(functionFragment: "initialize", values: [string]): string;
   encodeFunctionData(
     functionFragment: "initialized",
     values?: undefined
@@ -132,10 +122,6 @@ interface MockTreasuryInterface extends ethers.utils.Interface {
     values: [string, BigNumberish]
   ): string;
   encodeFunctionData(
-    functionFragment: "nullify",
-    values: [BigNumberish]
-  ): string;
-  encodeFunctionData(
     functionFragment: "onChainGovernanceTimelock",
     values?: undefined
   ): string;
@@ -147,10 +133,6 @@ interface MockTreasuryInterface extends ethers.utils.Interface {
   encodeFunctionData(
     functionFragment: "permissions",
     values: [BigNumberish, string]
-  ): string;
-  encodeFunctionData(
-    functionFragment: "queueTimelock",
-    values: [BigNumberish, string, string]
   ): string;
   encodeFunctionData(
     functionFragment: "registry",
@@ -170,8 +152,8 @@ interface MockTreasuryInterface extends ethers.utils.Interface {
   ): string;
   encodeFunctionData(functionFragment: "reqDebt", values?: undefined): string;
   encodeFunctionData(
-    functionFragment: "setAuthority",
-    values: [string]
+    functionFragment: "setBlocksNeededForQueue",
+    values: [BigNumberish]
   ): string;
   encodeFunctionData(
     functionFragment: "setDebtLimit",
@@ -206,6 +188,10 @@ interface MockTreasuryInterface extends ethers.utils.Interface {
   decodeFunctionResult(functionFragment: "CREQ", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "REQ", data: BytesLike): Result;
   decodeFunctionResult(
+    functionFragment: "addPermission",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
     functionFragment: "assetPricer",
     data: BytesLike
   ): Result;
@@ -214,40 +200,31 @@ interface MockTreasuryInterface extends ethers.utils.Interface {
     functionFragment: "auditReserves",
     data: BytesLike
   ): Result;
-  decodeFunctionResult(functionFragment: "authority", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "baseSupply", data: BytesLike): Result;
   decodeFunctionResult(
     functionFragment: "blocksNeededForQueue",
     data: BytesLike
   ): Result;
+  decodeFunctionResult(functionFragment: "debtLimit", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "deposit", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "disable", data: BytesLike): Result;
-  decodeFunctionResult(
-    functionFragment: "disableTimelock",
-    data: BytesLike
-  ): Result;
   decodeFunctionResult(functionFragment: "enable", data: BytesLike): Result;
-  decodeFunctionResult(
-    functionFragment: "enableTimelock",
-    data: BytesLike
-  ): Result;
   decodeFunctionResult(
     functionFragment: "excessReserves",
     data: BytesLike
   ): Result;
-  decodeFunctionResult(functionFragment: "execute", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "incurDebt", data: BytesLike): Result;
   decodeFunctionResult(
     functionFragment: "indexInRegistry",
     data: BytesLike
   ): Result;
+  decodeFunctionResult(functionFragment: "initialize", data: BytesLike): Result;
   decodeFunctionResult(
     functionFragment: "initialized",
     data: BytesLike
   ): Result;
   decodeFunctionResult(functionFragment: "manage", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "mint", data: BytesLike): Result;
-  decodeFunctionResult(functionFragment: "nullify", data: BytesLike): Result;
   decodeFunctionResult(
     functionFragment: "onChainGovernanceTimelock",
     data: BytesLike
@@ -259,10 +236,6 @@ interface MockTreasuryInterface extends ethers.utils.Interface {
   ): Result;
   decodeFunctionResult(
     functionFragment: "permissions",
-    data: BytesLike
-  ): Result;
-  decodeFunctionResult(
-    functionFragment: "queueTimelock",
     data: BytesLike
   ): Result;
   decodeFunctionResult(functionFragment: "registry", data: BytesLike): Result;
@@ -280,7 +253,7 @@ interface MockTreasuryInterface extends ethers.utils.Interface {
   ): Result;
   decodeFunctionResult(functionFragment: "reqDebt", data: BytesLike): Result;
   decodeFunctionResult(
-    functionFragment: "setAuthority",
+    functionFragment: "setBlocksNeededForQueue",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
@@ -311,20 +284,18 @@ interface MockTreasuryInterface extends ethers.utils.Interface {
   decodeFunctionResult(functionFragment: "withdraw", data: BytesLike): Result;
 
   events: {
-    "AuthorityUpdated(address)": EventFragment;
     "CreateDebt(address,address,uint256,uint256)": EventFragment;
     "Deposit(address,uint256,uint256)": EventFragment;
     "Managed(address,uint256)": EventFragment;
     "Minted(address,address,uint256)": EventFragment;
     "OwnershipTransferred(address,address)": EventFragment;
-    "PermissionQueued(uint256,address)": EventFragment;
-    "Permissioned(address,uint256,bool)": EventFragment;
+    "PermissionQueued(uint8,address)": EventFragment;
+    "Permissioned(address,uint8,bool)": EventFragment;
     "RepayDebt(address,address,uint256,uint256)": EventFragment;
     "ReservesAudited(uint256)": EventFragment;
     "Withdrawal(address,uint256,uint256)": EventFragment;
   };
 
-  getEvent(nameOrSignatureOrTopic: "AuthorityUpdated"): EventFragment;
   getEvent(nameOrSignatureOrTopic: "CreateDebt"): EventFragment;
   getEvent(nameOrSignatureOrTopic: "Deposit"): EventFragment;
   getEvent(nameOrSignatureOrTopic: "Managed"): EventFragment;
@@ -336,10 +307,6 @@ interface MockTreasuryInterface extends ethers.utils.Interface {
   getEvent(nameOrSignatureOrTopic: "ReservesAudited"): EventFragment;
   getEvent(nameOrSignatureOrTopic: "Withdrawal"): EventFragment;
 }
-
-export type AuthorityUpdatedEvent = TypedEvent<
-  [string] & { authority: string }
->;
 
 export type CreateDebtEvent = TypedEvent<
   [string, string, BigNumber, BigNumber] & {
@@ -375,15 +342,11 @@ export type OwnershipTransferredEvent = TypedEvent<
 >;
 
 export type PermissionQueuedEvent = TypedEvent<
-  [BigNumber, string] & { status: BigNumber; queued: string }
+  [number, string] & { status: number; queued: string }
 >;
 
 export type PermissionedEvent = TypedEvent<
-  [string, BigNumber, boolean] & {
-    addr: string;
-    status: BigNumber;
-    result: boolean;
-  }
+  [string, number, boolean] & { addr: string; status: number; result: boolean }
 >;
 
 export type RepayDebtEvent = TypedEvent<
@@ -455,10 +418,17 @@ export class MockTreasury extends BaseContract {
 
     REQ(overrides?: CallOverrides): Promise<[string]>;
 
+    addPermission(
+      _status: BigNumberish,
+      _address: string,
+      _calculator: string,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<ContractTransaction>;
+
     assetPricer(arg0: string, overrides?: CallOverrides): Promise<[string]>;
 
     assetValue(
-      _asset: string,
+      _token: string,
       _amount: BigNumberish,
       overrides?: CallOverrides
     ): Promise<[BigNumber] & { value_: BigNumber }>;
@@ -467,15 +437,15 @@ export class MockTreasury extends BaseContract {
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
 
-    authority(overrides?: CallOverrides): Promise<[string]>;
-
     baseSupply(overrides?: CallOverrides): Promise<[BigNumber]>;
 
     blocksNeededForQueue(overrides?: CallOverrides): Promise<[BigNumber]>;
 
+    debtLimit(arg0: string, overrides?: CallOverrides): Promise<[BigNumber]>;
+
     deposit(
       _amount: BigNumberish,
-      _asset: string,
+      _token: string,
       _profit: BigNumberish,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
@@ -486,10 +456,6 @@ export class MockTreasury extends BaseContract {
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
 
-    disableTimelock(
-      overrides?: Overrides & { from?: string | Promise<string> }
-    ): Promise<ContractTransaction>;
-
     enable(
       _status: BigNumberish,
       _address: string,
@@ -497,21 +463,11 @@ export class MockTreasury extends BaseContract {
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
 
-    enableTimelock(
-      _blocksNeededForQueue: BigNumberish,
-      overrides?: Overrides & { from?: string | Promise<string> }
-    ): Promise<ContractTransaction>;
-
     excessReserves(overrides?: CallOverrides): Promise<[BigNumber]>;
-
-    execute(
-      _index: BigNumberish,
-      overrides?: Overrides & { from?: string | Promise<string> }
-    ): Promise<ContractTransaction>;
 
     incurDebt(
       _amount: BigNumberish,
-      _asset: string,
+      _token: string,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
 
@@ -521,10 +477,15 @@ export class MockTreasury extends BaseContract {
       overrides?: CallOverrides
     ): Promise<[boolean, BigNumber]>;
 
+    initialize(
+      _req: string,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<ContractTransaction>;
+
     initialized(overrides?: CallOverrides): Promise<[boolean]>;
 
     manage(
-      _asset: string,
+      _token: string,
       _amount: BigNumberish,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
@@ -532,11 +493,6 @@ export class MockTreasury extends BaseContract {
     mint(
       _recipient: string,
       _amount: BigNumberish,
-      overrides?: Overrides & { from?: string | Promise<string> }
-    ): Promise<ContractTransaction>;
-
-    nullify(
-      _index: BigNumberish,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
 
@@ -548,8 +504,8 @@ export class MockTreasury extends BaseContract {
       arg0: BigNumberish,
       overrides?: CallOverrides
     ): Promise<
-      [BigNumber, string, string, BigNumber, boolean, boolean] & {
-        managing: BigNumber;
+      [number, string, string, BigNumber, boolean, boolean] & {
+        managing: number;
         toPermit: string;
         calculator: string;
         timelockEnd: BigNumber;
@@ -563,13 +519,6 @@ export class MockTreasury extends BaseContract {
       arg1: string,
       overrides?: CallOverrides
     ): Promise<[boolean]>;
-
-    queueTimelock(
-      _status: BigNumberish,
-      _address: string,
-      _calculator: string,
-      overrides?: Overrides & { from?: string | Promise<string> }
-    ): Promise<ContractTransaction>;
 
     registry(
       arg0: BigNumberish,
@@ -588,14 +537,14 @@ export class MockTreasury extends BaseContract {
 
     repayDebtWithReserve(
       _amount: BigNumberish,
-      _asset: string,
+      _token: string,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
 
     reqDebt(overrides?: CallOverrides): Promise<[BigNumber]>;
 
-    setAuthority(
-      _newAuthority: string,
+    setBlocksNeededForQueue(
+      _timelock: BigNumberish,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
 
@@ -624,7 +573,7 @@ export class MockTreasury extends BaseContract {
 
     withdraw(
       _amount: BigNumberish,
-      _asset: string,
+      _token: string,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
   };
@@ -633,10 +582,17 @@ export class MockTreasury extends BaseContract {
 
   REQ(overrides?: CallOverrides): Promise<string>;
 
+  addPermission(
+    _status: BigNumberish,
+    _address: string,
+    _calculator: string,
+    overrides?: Overrides & { from?: string | Promise<string> }
+  ): Promise<ContractTransaction>;
+
   assetPricer(arg0: string, overrides?: CallOverrides): Promise<string>;
 
   assetValue(
-    _asset: string,
+    _token: string,
     _amount: BigNumberish,
     overrides?: CallOverrides
   ): Promise<BigNumber>;
@@ -645,15 +601,15 @@ export class MockTreasury extends BaseContract {
     overrides?: Overrides & { from?: string | Promise<string> }
   ): Promise<ContractTransaction>;
 
-  authority(overrides?: CallOverrides): Promise<string>;
-
   baseSupply(overrides?: CallOverrides): Promise<BigNumber>;
 
   blocksNeededForQueue(overrides?: CallOverrides): Promise<BigNumber>;
 
+  debtLimit(arg0: string, overrides?: CallOverrides): Promise<BigNumber>;
+
   deposit(
     _amount: BigNumberish,
-    _asset: string,
+    _token: string,
     _profit: BigNumberish,
     overrides?: Overrides & { from?: string | Promise<string> }
   ): Promise<ContractTransaction>;
@@ -664,10 +620,6 @@ export class MockTreasury extends BaseContract {
     overrides?: Overrides & { from?: string | Promise<string> }
   ): Promise<ContractTransaction>;
 
-  disableTimelock(
-    overrides?: Overrides & { from?: string | Promise<string> }
-  ): Promise<ContractTransaction>;
-
   enable(
     _status: BigNumberish,
     _address: string,
@@ -675,21 +627,11 @@ export class MockTreasury extends BaseContract {
     overrides?: Overrides & { from?: string | Promise<string> }
   ): Promise<ContractTransaction>;
 
-  enableTimelock(
-    _blocksNeededForQueue: BigNumberish,
-    overrides?: Overrides & { from?: string | Promise<string> }
-  ): Promise<ContractTransaction>;
-
   excessReserves(overrides?: CallOverrides): Promise<BigNumber>;
-
-  execute(
-    _index: BigNumberish,
-    overrides?: Overrides & { from?: string | Promise<string> }
-  ): Promise<ContractTransaction>;
 
   incurDebt(
     _amount: BigNumberish,
-    _asset: string,
+    _token: string,
     overrides?: Overrides & { from?: string | Promise<string> }
   ): Promise<ContractTransaction>;
 
@@ -699,10 +641,15 @@ export class MockTreasury extends BaseContract {
     overrides?: CallOverrides
   ): Promise<[boolean, BigNumber]>;
 
+  initialize(
+    _req: string,
+    overrides?: Overrides & { from?: string | Promise<string> }
+  ): Promise<ContractTransaction>;
+
   initialized(overrides?: CallOverrides): Promise<boolean>;
 
   manage(
-    _asset: string,
+    _token: string,
     _amount: BigNumberish,
     overrides?: Overrides & { from?: string | Promise<string> }
   ): Promise<ContractTransaction>;
@@ -710,11 +657,6 @@ export class MockTreasury extends BaseContract {
   mint(
     _recipient: string,
     _amount: BigNumberish,
-    overrides?: Overrides & { from?: string | Promise<string> }
-  ): Promise<ContractTransaction>;
-
-  nullify(
-    _index: BigNumberish,
     overrides?: Overrides & { from?: string | Promise<string> }
   ): Promise<ContractTransaction>;
 
@@ -726,8 +668,8 @@ export class MockTreasury extends BaseContract {
     arg0: BigNumberish,
     overrides?: CallOverrides
   ): Promise<
-    [BigNumber, string, string, BigNumber, boolean, boolean] & {
-      managing: BigNumber;
+    [number, string, string, BigNumber, boolean, boolean] & {
+      managing: number;
       toPermit: string;
       calculator: string;
       timelockEnd: BigNumber;
@@ -741,13 +683,6 @@ export class MockTreasury extends BaseContract {
     arg1: string,
     overrides?: CallOverrides
   ): Promise<boolean>;
-
-  queueTimelock(
-    _status: BigNumberish,
-    _address: string,
-    _calculator: string,
-    overrides?: Overrides & { from?: string | Promise<string> }
-  ): Promise<ContractTransaction>;
 
   registry(
     arg0: BigNumberish,
@@ -766,14 +701,14 @@ export class MockTreasury extends BaseContract {
 
   repayDebtWithReserve(
     _amount: BigNumberish,
-    _asset: string,
+    _token: string,
     overrides?: Overrides & { from?: string | Promise<string> }
   ): Promise<ContractTransaction>;
 
   reqDebt(overrides?: CallOverrides): Promise<BigNumber>;
 
-  setAuthority(
-    _newAuthority: string,
+  setBlocksNeededForQueue(
+    _timelock: BigNumberish,
     overrides?: Overrides & { from?: string | Promise<string> }
   ): Promise<ContractTransaction>;
 
@@ -802,7 +737,7 @@ export class MockTreasury extends BaseContract {
 
   withdraw(
     _amount: BigNumberish,
-    _asset: string,
+    _token: string,
     overrides?: Overrides & { from?: string | Promise<string> }
   ): Promise<ContractTransaction>;
 
@@ -811,25 +746,32 @@ export class MockTreasury extends BaseContract {
 
     REQ(overrides?: CallOverrides): Promise<string>;
 
+    addPermission(
+      _status: BigNumberish,
+      _address: string,
+      _calculator: string,
+      overrides?: CallOverrides
+    ): Promise<void>;
+
     assetPricer(arg0: string, overrides?: CallOverrides): Promise<string>;
 
     assetValue(
-      _asset: string,
+      _token: string,
       _amount: BigNumberish,
       overrides?: CallOverrides
     ): Promise<BigNumber>;
 
     auditReserves(overrides?: CallOverrides): Promise<void>;
 
-    authority(overrides?: CallOverrides): Promise<string>;
-
     baseSupply(overrides?: CallOverrides): Promise<BigNumber>;
 
     blocksNeededForQueue(overrides?: CallOverrides): Promise<BigNumber>;
 
+    debtLimit(arg0: string, overrides?: CallOverrides): Promise<BigNumber>;
+
     deposit(
       _amount: BigNumberish,
-      _asset: string,
+      _token: string,
       _profit: BigNumberish,
       overrides?: CallOverrides
     ): Promise<BigNumber>;
@@ -840,8 +782,6 @@ export class MockTreasury extends BaseContract {
       overrides?: CallOverrides
     ): Promise<void>;
 
-    disableTimelock(overrides?: CallOverrides): Promise<void>;
-
     enable(
       _status: BigNumberish,
       _address: string,
@@ -849,18 +789,11 @@ export class MockTreasury extends BaseContract {
       overrides?: CallOverrides
     ): Promise<void>;
 
-    enableTimelock(
-      _blocksNeededForQueue: BigNumberish,
-      overrides?: CallOverrides
-    ): Promise<void>;
-
     excessReserves(overrides?: CallOverrides): Promise<BigNumber>;
-
-    execute(_index: BigNumberish, overrides?: CallOverrides): Promise<void>;
 
     incurDebt(
       _amount: BigNumberish,
-      _asset: string,
+      _token: string,
       overrides?: CallOverrides
     ): Promise<void>;
 
@@ -870,10 +803,12 @@ export class MockTreasury extends BaseContract {
       overrides?: CallOverrides
     ): Promise<[boolean, BigNumber]>;
 
+    initialize(_req: string, overrides?: CallOverrides): Promise<void>;
+
     initialized(overrides?: CallOverrides): Promise<boolean>;
 
     manage(
-      _asset: string,
+      _token: string,
       _amount: BigNumberish,
       overrides?: CallOverrides
     ): Promise<void>;
@@ -884,8 +819,6 @@ export class MockTreasury extends BaseContract {
       overrides?: CallOverrides
     ): Promise<void>;
 
-    nullify(_index: BigNumberish, overrides?: CallOverrides): Promise<void>;
-
     onChainGovernanceTimelock(overrides?: CallOverrides): Promise<BigNumber>;
 
     owner(overrides?: CallOverrides): Promise<string>;
@@ -894,8 +827,8 @@ export class MockTreasury extends BaseContract {
       arg0: BigNumberish,
       overrides?: CallOverrides
     ): Promise<
-      [BigNumber, string, string, BigNumber, boolean, boolean] & {
-        managing: BigNumber;
+      [number, string, string, BigNumber, boolean, boolean] & {
+        managing: number;
         toPermit: string;
         calculator: string;
         timelockEnd: BigNumber;
@@ -909,13 +842,6 @@ export class MockTreasury extends BaseContract {
       arg1: string,
       overrides?: CallOverrides
     ): Promise<boolean>;
-
-    queueTimelock(
-      _status: BigNumberish,
-      _address: string,
-      _calculator: string,
-      overrides?: CallOverrides
-    ): Promise<void>;
 
     registry(
       arg0: BigNumberish,
@@ -932,14 +858,14 @@ export class MockTreasury extends BaseContract {
 
     repayDebtWithReserve(
       _amount: BigNumberish,
-      _asset: string,
+      _token: string,
       overrides?: CallOverrides
     ): Promise<void>;
 
     reqDebt(overrides?: CallOverrides): Promise<BigNumber>;
 
-    setAuthority(
-      _newAuthority: string,
+    setBlocksNeededForQueue(
+      _timelock: BigNumberish,
       overrides?: CallOverrides
     ): Promise<void>;
 
@@ -966,20 +892,12 @@ export class MockTreasury extends BaseContract {
 
     withdraw(
       _amount: BigNumberish,
-      _asset: string,
+      _token: string,
       overrides?: CallOverrides
     ): Promise<void>;
   };
 
   filters: {
-    "AuthorityUpdated(address)"(
-      authority?: string | null
-    ): TypedEventFilter<[string], { authority: string }>;
-
-    AuthorityUpdated(
-      authority?: string | null
-    ): TypedEventFilter<[string], { authority: string }>;
-
     "CreateDebt(address,address,uint256,uint256)"(
       debtor?: string | null,
       token?: string | null,
@@ -1068,29 +986,23 @@ export class MockTreasury extends BaseContract {
       { previousOwner: string; newOwner: string }
     >;
 
-    "PermissionQueued(uint256,address)"(
+    "PermissionQueued(uint8,address)"(
       status?: BigNumberish | null,
       queued?: null
-    ): TypedEventFilter<
-      [BigNumber, string],
-      { status: BigNumber; queued: string }
-    >;
+    ): TypedEventFilter<[number, string], { status: number; queued: string }>;
 
     PermissionQueued(
       status?: BigNumberish | null,
       queued?: null
-    ): TypedEventFilter<
-      [BigNumber, string],
-      { status: BigNumber; queued: string }
-    >;
+    ): TypedEventFilter<[number, string], { status: number; queued: string }>;
 
-    "Permissioned(address,uint256,bool)"(
+    "Permissioned(address,uint8,bool)"(
       addr?: null,
       status?: BigNumberish | null,
       result?: null
     ): TypedEventFilter<
-      [string, BigNumber, boolean],
-      { addr: string; status: BigNumber; result: boolean }
+      [string, number, boolean],
+      { addr: string; status: number; result: boolean }
     >;
 
     Permissioned(
@@ -1098,8 +1010,8 @@ export class MockTreasury extends BaseContract {
       status?: BigNumberish | null,
       result?: null
     ): TypedEventFilter<
-      [string, BigNumber, boolean],
-      { addr: string; status: BigNumber; result: boolean }
+      [string, number, boolean],
+      { addr: string; status: number; result: boolean }
     >;
 
     "RepayDebt(address,address,uint256,uint256)"(
@@ -1154,10 +1066,17 @@ export class MockTreasury extends BaseContract {
 
     REQ(overrides?: CallOverrides): Promise<BigNumber>;
 
+    addPermission(
+      _status: BigNumberish,
+      _address: string,
+      _calculator: string,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<BigNumber>;
+
     assetPricer(arg0: string, overrides?: CallOverrides): Promise<BigNumber>;
 
     assetValue(
-      _asset: string,
+      _token: string,
       _amount: BigNumberish,
       overrides?: CallOverrides
     ): Promise<BigNumber>;
@@ -1166,15 +1085,15 @@ export class MockTreasury extends BaseContract {
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<BigNumber>;
 
-    authority(overrides?: CallOverrides): Promise<BigNumber>;
-
     baseSupply(overrides?: CallOverrides): Promise<BigNumber>;
 
     blocksNeededForQueue(overrides?: CallOverrides): Promise<BigNumber>;
 
+    debtLimit(arg0: string, overrides?: CallOverrides): Promise<BigNumber>;
+
     deposit(
       _amount: BigNumberish,
-      _asset: string,
+      _token: string,
       _profit: BigNumberish,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<BigNumber>;
@@ -1185,10 +1104,6 @@ export class MockTreasury extends BaseContract {
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<BigNumber>;
 
-    disableTimelock(
-      overrides?: Overrides & { from?: string | Promise<string> }
-    ): Promise<BigNumber>;
-
     enable(
       _status: BigNumberish,
       _address: string,
@@ -1196,21 +1111,11 @@ export class MockTreasury extends BaseContract {
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<BigNumber>;
 
-    enableTimelock(
-      _blocksNeededForQueue: BigNumberish,
-      overrides?: Overrides & { from?: string | Promise<string> }
-    ): Promise<BigNumber>;
-
     excessReserves(overrides?: CallOverrides): Promise<BigNumber>;
-
-    execute(
-      _index: BigNumberish,
-      overrides?: Overrides & { from?: string | Promise<string> }
-    ): Promise<BigNumber>;
 
     incurDebt(
       _amount: BigNumberish,
-      _asset: string,
+      _token: string,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<BigNumber>;
 
@@ -1220,10 +1125,15 @@ export class MockTreasury extends BaseContract {
       overrides?: CallOverrides
     ): Promise<BigNumber>;
 
+    initialize(
+      _req: string,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<BigNumber>;
+
     initialized(overrides?: CallOverrides): Promise<BigNumber>;
 
     manage(
-      _asset: string,
+      _token: string,
       _amount: BigNumberish,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<BigNumber>;
@@ -1231,11 +1141,6 @@ export class MockTreasury extends BaseContract {
     mint(
       _recipient: string,
       _amount: BigNumberish,
-      overrides?: Overrides & { from?: string | Promise<string> }
-    ): Promise<BigNumber>;
-
-    nullify(
-      _index: BigNumberish,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<BigNumber>;
 
@@ -1252,13 +1157,6 @@ export class MockTreasury extends BaseContract {
       arg0: BigNumberish,
       arg1: string,
       overrides?: CallOverrides
-    ): Promise<BigNumber>;
-
-    queueTimelock(
-      _status: BigNumberish,
-      _address: string,
-      _calculator: string,
-      overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<BigNumber>;
 
     registry(
@@ -1278,14 +1176,14 @@ export class MockTreasury extends BaseContract {
 
     repayDebtWithReserve(
       _amount: BigNumberish,
-      _asset: string,
+      _token: string,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<BigNumber>;
 
     reqDebt(overrides?: CallOverrides): Promise<BigNumber>;
 
-    setAuthority(
-      _newAuthority: string,
+    setBlocksNeededForQueue(
+      _timelock: BigNumberish,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<BigNumber>;
 
@@ -1314,7 +1212,7 @@ export class MockTreasury extends BaseContract {
 
     withdraw(
       _amount: BigNumberish,
-      _asset: string,
+      _token: string,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<BigNumber>;
   };
@@ -1324,13 +1222,20 @@ export class MockTreasury extends BaseContract {
 
     REQ(overrides?: CallOverrides): Promise<PopulatedTransaction>;
 
+    addPermission(
+      _status: BigNumberish,
+      _address: string,
+      _calculator: string,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<PopulatedTransaction>;
+
     assetPricer(
       arg0: string,
       overrides?: CallOverrides
     ): Promise<PopulatedTransaction>;
 
     assetValue(
-      _asset: string,
+      _token: string,
       _amount: BigNumberish,
       overrides?: CallOverrides
     ): Promise<PopulatedTransaction>;
@@ -1339,17 +1244,20 @@ export class MockTreasury extends BaseContract {
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<PopulatedTransaction>;
 
-    authority(overrides?: CallOverrides): Promise<PopulatedTransaction>;
-
     baseSupply(overrides?: CallOverrides): Promise<PopulatedTransaction>;
 
     blocksNeededForQueue(
       overrides?: CallOverrides
     ): Promise<PopulatedTransaction>;
 
+    debtLimit(
+      arg0: string,
+      overrides?: CallOverrides
+    ): Promise<PopulatedTransaction>;
+
     deposit(
       _amount: BigNumberish,
-      _asset: string,
+      _token: string,
       _profit: BigNumberish,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<PopulatedTransaction>;
@@ -1360,10 +1268,6 @@ export class MockTreasury extends BaseContract {
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<PopulatedTransaction>;
 
-    disableTimelock(
-      overrides?: Overrides & { from?: string | Promise<string> }
-    ): Promise<PopulatedTransaction>;
-
     enable(
       _status: BigNumberish,
       _address: string,
@@ -1371,21 +1275,11 @@ export class MockTreasury extends BaseContract {
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<PopulatedTransaction>;
 
-    enableTimelock(
-      _blocksNeededForQueue: BigNumberish,
-      overrides?: Overrides & { from?: string | Promise<string> }
-    ): Promise<PopulatedTransaction>;
-
     excessReserves(overrides?: CallOverrides): Promise<PopulatedTransaction>;
-
-    execute(
-      _index: BigNumberish,
-      overrides?: Overrides & { from?: string | Promise<string> }
-    ): Promise<PopulatedTransaction>;
 
     incurDebt(
       _amount: BigNumberish,
-      _asset: string,
+      _token: string,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<PopulatedTransaction>;
 
@@ -1395,10 +1289,15 @@ export class MockTreasury extends BaseContract {
       overrides?: CallOverrides
     ): Promise<PopulatedTransaction>;
 
+    initialize(
+      _req: string,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<PopulatedTransaction>;
+
     initialized(overrides?: CallOverrides): Promise<PopulatedTransaction>;
 
     manage(
-      _asset: string,
+      _token: string,
       _amount: BigNumberish,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<PopulatedTransaction>;
@@ -1406,11 +1305,6 @@ export class MockTreasury extends BaseContract {
     mint(
       _recipient: string,
       _amount: BigNumberish,
-      overrides?: Overrides & { from?: string | Promise<string> }
-    ): Promise<PopulatedTransaction>;
-
-    nullify(
-      _index: BigNumberish,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<PopulatedTransaction>;
 
@@ -1431,13 +1325,6 @@ export class MockTreasury extends BaseContract {
       overrides?: CallOverrides
     ): Promise<PopulatedTransaction>;
 
-    queueTimelock(
-      _status: BigNumberish,
-      _address: string,
-      _calculator: string,
-      overrides?: Overrides & { from?: string | Promise<string> }
-    ): Promise<PopulatedTransaction>;
-
     registry(
       arg0: BigNumberish,
       arg1: BigNumberish,
@@ -1455,14 +1342,14 @@ export class MockTreasury extends BaseContract {
 
     repayDebtWithReserve(
       _amount: BigNumberish,
-      _asset: string,
+      _token: string,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<PopulatedTransaction>;
 
     reqDebt(overrides?: CallOverrides): Promise<PopulatedTransaction>;
 
-    setAuthority(
-      _newAuthority: string,
+    setBlocksNeededForQueue(
+      _timelock: BigNumberish,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<PopulatedTransaction>;
 
@@ -1491,7 +1378,7 @@ export class MockTreasury extends BaseContract {
 
     withdraw(
       _amount: BigNumberish,
-      _asset: string,
+      _token: string,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<PopulatedTransaction>;
   };

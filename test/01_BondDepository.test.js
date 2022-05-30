@@ -73,10 +73,10 @@ describe("Bond Depository", async () => {
             deployer.address
         );
         req = await mockReqFactory.deploy(maxSupply);
-        treasury = await smock.fake("ITreasury");
+        treasury = await smock.fake("ITreasuryAuth");
 
         depository = await depositoryFactory.deploy(
-            auth.address,
+            // auth.address,
             req.address,
             treasury.address
         );
@@ -98,6 +98,11 @@ describe("Bond Depository", async () => {
         await req.mint(depository.address, one18.mul(10000));
 
         await treasury.baseSupply.returns(await req.totalSupply());
+
+        await treasury.governor.returns(deployer.address);
+        await treasury.vault.returns(deployer.address);
+        await treasury.guardian.returns(deployer.address);
+        await treasury.policy.returns(deployer.address);
 
 
         await req.connect(alice).approve(depository.address, LARGE_APPROVAL);

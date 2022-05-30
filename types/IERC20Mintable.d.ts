@@ -78,37 +78,22 @@ export class IERC20Mintable extends BaseContract {
   interface: IERC20MintableInterface;
 
   functions: {
-    "mint(address,uint256)"(
+    mint(
       account_: string,
-      ammount_: BigNumberish,
-      overrides?: Overrides & { from?: string | Promise<string> }
-    ): Promise<ContractTransaction>;
-
-    "mint(uint256)"(
       amount_: BigNumberish,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
   };
 
-  "mint(address,uint256)"(
+  mint(
     account_: string,
-    ammount_: BigNumberish,
-    overrides?: Overrides & { from?: string | Promise<string> }
-  ): Promise<ContractTransaction>;
-
-  "mint(uint256)"(
     amount_: BigNumberish,
     overrides?: Overrides & { from?: string | Promise<string> }
   ): Promise<ContractTransaction>;
 
   callStatic: {
-    "mint(address,uint256)"(
+    mint(
       account_: string,
-      ammount_: BigNumberish,
-      overrides?: CallOverrides
-    ): Promise<void>;
-
-    "mint(uint256)"(
       amount_: BigNumberish,
       overrides?: CallOverrides
     ): Promise<void>;
@@ -117,26 +102,16 @@ export class IERC20Mintable extends BaseContract {
   filters: {};
 
   estimateGas: {
-    "mint(address,uint256)"(
+    mint(
       account_: string,
-      ammount_: BigNumberish,
-      overrides?: Overrides & { from?: string | Promise<string> }
-    ): Promise<BigNumber>;
-
-    "mint(uint256)"(
       amount_: BigNumberish,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<BigNumber>;
   };
 
   populateTransaction: {
-    "mint(address,uint256)"(
+    mint(
       account_: string,
-      ammount_: BigNumberish,
-      overrides?: Overrides & { from?: string | Promise<string> }
-    ): Promise<PopulatedTransaction>;
-
-    "mint(uint256)"(
       amount_: BigNumberish,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<PopulatedTransaction>;

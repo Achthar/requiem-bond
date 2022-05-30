@@ -16,11 +16,10 @@ abstract contract UserTermsKeeper is IUserTermsKeeper, FrontEndRewarder {
     ITreasury internal treasury;
 
     constructor(
-        IAuthority _authority,
         IERC20 _req,
-        ITreasury _treasury
-    ) FrontEndRewarder(_authority, _req) {
-        treasury = _treasury;
+        address _treasury
+    ) FrontEndRewarder(IAuthority(_treasury), _req) {
+        treasury = ITreasury(_treasury);
     }
 
     // if treasury address changes on authority, update it

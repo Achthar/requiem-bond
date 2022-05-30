@@ -19,19 +19,6 @@ const _abi = [
       },
       {
         internalType: "uint256",
-        name: "ammount_",
-        type: "uint256",
-      },
-    ],
-    name: "mint",
-    outputs: [],
-    stateMutability: "nonpayable",
-    type: "function",
-  },
-  {
-    inputs: [
-      {
-        internalType: "uint256",
         name: "amount_",
         type: "uint256",
       },

@@ -29,12 +29,12 @@ async function main() {
     const weightedPairPricer_dai = await WeightedPairPricer.deploy(daiAddress)
     const weightedPoolPricer = await WeightedPoolPricer.deploy(usdtAddress)
 
-    console.log('requiemPricer', requiemPricer.address)
-    console.log('stablePoolPricer', stablePoolPricer.address)
-    console.log('trivialPricer', trivialPricer.address)
-    console.log('weightedPairPricer_usdc', weightedPairPricer_usdc.address)
-    console.log('weightedPairPricer_dai', weightedPairPricer_dai.address)
-    console.log('weightedPoolPricer', weightedPoolPricer.address)
+    console.log('requiemPricer:', requiemPricer.address)
+    console.log('stablePoolPricer:', stablePoolPricer.address)
+    console.log('trivialPricer:', trivialPricer.address)
+    console.log('weightedPairPricer_usdc:', weightedPairPricer_usdc.address)
+    console.log('weightedPairPricer_dai:', weightedPairPricer_dai.address)
+    console.log('weightedPoolPricer:', weightedPoolPricer.address)
 }
 
 main()

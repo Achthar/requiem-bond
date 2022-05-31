@@ -22,7 +22,7 @@ interface TrivialPricerInterface extends ethers.utils.Interface {
   functions: {
     "getTotalValue(address)": FunctionFragment;
     "markdown(address)": FunctionFragment;
-    "valuation(address,uint256)": FunctionFragment;
+    "valuation(address,address,uint256)": FunctionFragment;
   };
 
   encodeFunctionData(
@@ -32,7 +32,7 @@ interface TrivialPricerInterface extends ethers.utils.Interface {
   encodeFunctionData(functionFragment: "markdown", values: [string]): string;
   encodeFunctionData(
     functionFragment: "valuation",
-    values: [string, BigNumberish]
+    values: [string, string, BigNumberish]
   ): string;
 
   decodeFunctionResult(
@@ -98,6 +98,7 @@ export class TrivialPricer extends BaseContract {
 
     valuation(
       _asset: string,
+      arg1: string,
       _amount: BigNumberish,
       overrides?: CallOverrides
     ): Promise<[BigNumber] & { _value: BigNumber }>;
@@ -109,6 +110,7 @@ export class TrivialPricer extends BaseContract {
 
   valuation(
     _asset: string,
+    arg1: string,
     _amount: BigNumberish,
     overrides?: CallOverrides
   ): Promise<BigNumber>;
@@ -123,6 +125,7 @@ export class TrivialPricer extends BaseContract {
 
     valuation(
       _asset: string,
+      arg1: string,
       _amount: BigNumberish,
       overrides?: CallOverrides
     ): Promise<BigNumber>;
@@ -140,6 +143,7 @@ export class TrivialPricer extends BaseContract {
 
     valuation(
       _asset: string,
+      arg1: string,
       _amount: BigNumberish,
       overrides?: CallOverrides
     ): Promise<BigNumber>;
@@ -158,6 +162,7 @@ export class TrivialPricer extends BaseContract {
 
     valuation(
       _asset: string,
+      arg1: string,
       _amount: BigNumberish,
       overrides?: CallOverrides
     ): Promise<PopulatedTransaction>;

@@ -14,4 +14,6 @@ interface ISwap {
   function getTokenBalances() external view returns (uint256[] memory);
 
   function getPooledTokens() external view returns (IERC20[] memory);
+
+  function getTokenMultipliers() external view returns (uint256[] memory);
 }

@@ -21,20 +21,23 @@ import type { TypedEventFilter, TypedEvent, TypedListener } from "./common";
 interface RequiemPricerInterface extends ethers.utils.Interface {
   functions: {
     "REQ()": FunctionFragment;
-    "getTotalValue(address)": FunctionFragment;
-    "markdown(address)": FunctionFragment;
-    "valuation(address,uint256)": FunctionFragment;
+    "getTotalValue(address,address)": FunctionFragment;
+    "markdown(address,address)": FunctionFragment;
+    "valuation(address,address,uint256)": FunctionFragment;
   };
 
   encodeFunctionData(functionFragment: "REQ", values?: undefined): string;
   encodeFunctionData(
     functionFragment: "getTotalValue",
-    values: [string]
+    values: [string, string]
   ): string;
-  encodeFunctionData(functionFragment: "markdown", values: [string]): string;
+  encodeFunctionData(
+    functionFragment: "markdown",
+    values: [string, string]
+  ): string;
   encodeFunctionData(
     functionFragment: "valuation",
-    values: [string, BigNumberish]
+    values: [string, string, BigNumberish]
   ): string;
 
   decodeFunctionResult(functionFragment: "REQ", data: BytesLike): Result;
@@ -96,13 +99,19 @@ export class RequiemPricer extends BaseContract {
 
     getTotalValue(
       _pair: string,
+      arg1: string,
       overrides?: CallOverrides
     ): Promise<[BigNumber] & { _value: BigNumber }>;
 
-    markdown(_pair: string, overrides?: CallOverrides): Promise<[BigNumber]>;
+    markdown(
+      _pair: string,
+      _quote: string,
+      overrides?: CallOverrides
+    ): Promise<[BigNumber]>;
 
     valuation(
       _pair: string,
+      _quote: string,
       amount_: BigNumberish,
       overrides?: CallOverrides
     ): Promise<[BigNumber] & { _value: BigNumber }>;
@@ -110,12 +119,21 @@ export class RequiemPricer extends BaseContract {
 
   REQ(overrides?: CallOverrides): Promise<string>;
 
-  getTotalValue(_pair: string, overrides?: CallOverrides): Promise<BigNumber>;
+  getTotalValue(
+    _pair: string,
+    arg1: string,
+    overrides?: CallOverrides
+  ): Promise<BigNumber>;
 
-  markdown(_pair: string, overrides?: CallOverrides): Promise<BigNumber>;
+  markdown(
+    _pair: string,
+    _quote: string,
+    overrides?: CallOverrides
+  ): Promise<BigNumber>;
 
   valuation(
     _pair: string,
+    _quote: string,
     amount_: BigNumberish,
     overrides?: CallOverrides
   ): Promise<BigNumber>;
@@ -123,12 +141,21 @@ export class RequiemPricer extends BaseContract {
   callStatic: {
     REQ(overrides?: CallOverrides): Promise<string>;
 
-    getTotalValue(_pair: string, overrides?: CallOverrides): Promise<BigNumber>;
+    getTotalValue(
+      _pair: string,
+      arg1: string,
+      overrides?: CallOverrides
+    ): Promise<BigNumber>;
 
-    markdown(_pair: string, overrides?: CallOverrides): Promise<BigNumber>;
+    markdown(
+      _pair: string,
+      _quote: string,
+      overrides?: CallOverrides
+    ): Promise<BigNumber>;
 
     valuation(
       _pair: string,
+      _quote: string,
       amount_: BigNumberish,
       overrides?: CallOverrides
     ): Promise<BigNumber>;
@@ -139,12 +166,21 @@ export class RequiemPricer extends BaseContract {
   estimateGas: {
     REQ(overrides?: CallOverrides): Promise<BigNumber>;
 
-    getTotalValue(_pair: string, overrides?: CallOverrides): Promise<BigNumber>;
+    getTotalValue(
+      _pair: string,
+      arg1: string,
+      overrides?: CallOverrides
+    ): Promise<BigNumber>;
 
-    markdown(_pair: string, overrides?: CallOverrides): Promise<BigNumber>;
+    markdown(
+      _pair: string,
+      _quote: string,
+      overrides?: CallOverrides
+    ): Promise<BigNumber>;
 
     valuation(
       _pair: string,
+      _quote: string,
       amount_: BigNumberish,
       overrides?: CallOverrides
     ): Promise<BigNumber>;
@@ -155,16 +191,19 @@ export class RequiemPricer extends BaseContract {
 
     getTotalValue(
       _pair: string,
+      arg1: string,
       overrides?: CallOverrides
     ): Promise<PopulatedTransaction>;
 
     markdown(
       _pair: string,
+      _quote: string,
       overrides?: CallOverrides
     ): Promise<PopulatedTransaction>;
 
     valuation(
       _pair: string,
+      _quote: string,
       amount_: BigNumberish,
       overrides?: CallOverrides
     ): Promise<PopulatedTransaction>;

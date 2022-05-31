@@ -20,12 +20,12 @@ import type { TypedEventFilter, TypedEvent, TypedListener } from "./common";
 
 interface IAssetPricerInterface extends ethers.utils.Interface {
   functions: {
-    "valuation(address,uint256)": FunctionFragment;
+    "valuation(address,address,uint256)": FunctionFragment;
   };
 
   encodeFunctionData(
     functionFragment: "valuation",
-    values: [string, BigNumberish]
+    values: [string, string, BigNumberish]
   ): string;
 
   decodeFunctionResult(functionFragment: "valuation", data: BytesLike): Result;
@@ -79,6 +79,7 @@ export class IAssetPricer extends BaseContract {
   functions: {
     valuation(
       _asset: string,
+      _quote: string,
       _amount: BigNumberish,
       overrides?: CallOverrides
     ): Promise<[BigNumber]>;
@@ -86,6 +87,7 @@ export class IAssetPricer extends BaseContract {
 
   valuation(
     _asset: string,
+    _quote: string,
     _amount: BigNumberish,
     overrides?: CallOverrides
   ): Promise<BigNumber>;
@@ -93,6 +95,7 @@ export class IAssetPricer extends BaseContract {
   callStatic: {
     valuation(
       _asset: string,
+      _quote: string,
       _amount: BigNumberish,
       overrides?: CallOverrides
     ): Promise<BigNumber>;
@@ -103,6 +106,7 @@ export class IAssetPricer extends BaseContract {
   estimateGas: {
     valuation(
       _asset: string,
+      _quote: string,
       _amount: BigNumberish,
       overrides?: CallOverrides
     ): Promise<BigNumber>;
@@ -111,6 +115,7 @@ export class IAssetPricer extends BaseContract {
   populateTransaction: {
     valuation(
       _asset: string,
+      _quote: string,
       _amount: BigNumberish,
       overrides?: CallOverrides
     ): Promise<PopulatedTransaction>;

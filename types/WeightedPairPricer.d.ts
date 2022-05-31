@@ -20,24 +20,24 @@ import type { TypedEventFilter, TypedEvent, TypedListener } from "./common";
 
 interface WeightedPairPricerInterface extends ethers.utils.Interface {
   functions: {
-    "QUOTE()": FunctionFragment;
-    "getTotalValue(address)": FunctionFragment;
-    "markdown(address)": FunctionFragment;
-    "valuation(address,uint256)": FunctionFragment;
+    "getTotalValue(address,address)": FunctionFragment;
+    "markdown(address,address)": FunctionFragment;
+    "valuation(address,address,uint256)": FunctionFragment;
   };
 
-  encodeFunctionData(functionFragment: "QUOTE", values?: undefined): string;
   encodeFunctionData(
     functionFragment: "getTotalValue",
-    values: [string]
+    values: [string, string]
   ): string;
-  encodeFunctionData(functionFragment: "markdown", values: [string]): string;
+  encodeFunctionData(
+    functionFragment: "markdown",
+    values: [string, string]
+  ): string;
   encodeFunctionData(
     functionFragment: "valuation",
-    values: [string, BigNumberish]
+    values: [string, string, BigNumberish]
   ): string;
 
-  decodeFunctionResult(functionFragment: "QUOTE", data: BytesLike): Result;
   decodeFunctionResult(
     functionFragment: "getTotalValue",
     data: BytesLike
@@ -92,44 +92,62 @@ export class WeightedPairPricer extends BaseContract {
   interface: WeightedPairPricerInterface;
 
   functions: {
-    QUOTE(overrides?: CallOverrides): Promise<[string]>;
-
     getTotalValue(
       _pair: string,
+      _quote: string,
       overrides?: CallOverrides
     ): Promise<[BigNumber] & { _value: BigNumber }>;
 
-    markdown(_pair: string, overrides?: CallOverrides): Promise<[BigNumber]>;
+    markdown(
+      _pair: string,
+      _quote: string,
+      overrides?: CallOverrides
+    ): Promise<[BigNumber]>;
 
     valuation(
       _pair: string,
-      amount_: BigNumberish,
+      _quote: string,
+      _amount: BigNumberish,
       overrides?: CallOverrides
     ): Promise<[BigNumber] & { _value: BigNumber }>;
   };
 
-  QUOTE(overrides?: CallOverrides): Promise<string>;
+  getTotalValue(
+    _pair: string,
+    _quote: string,
+    overrides?: CallOverrides
+  ): Promise<BigNumber>;
 
-  getTotalValue(_pair: string, overrides?: CallOverrides): Promise<BigNumber>;
-
-  markdown(_pair: string, overrides?: CallOverrides): Promise<BigNumber>;
+  markdown(
+    _pair: string,
+    _quote: string,
+    overrides?: CallOverrides
+  ): Promise<BigNumber>;
 
   valuation(
     _pair: string,
-    amount_: BigNumberish,
+    _quote: string,
+    _amount: BigNumberish,
     overrides?: CallOverrides
   ): Promise<BigNumber>;
 
   callStatic: {
-    QUOTE(overrides?: CallOverrides): Promise<string>;
+    getTotalValue(
+      _pair: string,
+      _quote: string,
+      overrides?: CallOverrides
+    ): Promise<BigNumber>;
 
-    getTotalValue(_pair: string, overrides?: CallOverrides): Promise<BigNumber>;
-
-    markdown(_pair: string, overrides?: CallOverrides): Promise<BigNumber>;
+    markdown(
+      _pair: string,
+      _quote: string,
+      overrides?: CallOverrides
+    ): Promise<BigNumber>;
 
     valuation(
       _pair: string,
-      amount_: BigNumberish,
+      _quote: string,
+      _amount: BigNumberish,
       overrides?: CallOverrides
     ): Promise<BigNumber>;
   };
@@ -137,35 +155,43 @@ export class WeightedPairPricer extends BaseContract {
   filters: {};
 
   estimateGas: {
-    QUOTE(overrides?: CallOverrides): Promise<BigNumber>;
+    getTotalValue(
+      _pair: string,
+      _quote: string,
+      overrides?: CallOverrides
+    ): Promise<BigNumber>;
 
-    getTotalValue(_pair: string, overrides?: CallOverrides): Promise<BigNumber>;
-
-    markdown(_pair: string, overrides?: CallOverrides): Promise<BigNumber>;
+    markdown(
+      _pair: string,
+      _quote: string,
+      overrides?: CallOverrides
+    ): Promise<BigNumber>;
 
     valuation(
       _pair: string,
-      amount_: BigNumberish,
+      _quote: string,
+      _amount: BigNumberish,
       overrides?: CallOverrides
     ): Promise<BigNumber>;
   };
 
   populateTransaction: {
-    QUOTE(overrides?: CallOverrides): Promise<PopulatedTransaction>;
-
     getTotalValue(
       _pair: string,
+      _quote: string,
       overrides?: CallOverrides
     ): Promise<PopulatedTransaction>;
 
     markdown(
       _pair: string,
+      _quote: string,
       overrides?: CallOverrides
     ): Promise<PopulatedTransaction>;
 
     valuation(
       _pair: string,
-      amount_: BigNumberish,
+      _quote: string,
+      _amount: BigNumberish,
       overrides?: CallOverrides
     ): Promise<PopulatedTransaction>;
   };

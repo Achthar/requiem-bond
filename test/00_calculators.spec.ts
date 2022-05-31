@@ -109,12 +109,12 @@ describe('Calculator-Test', () => {
 		tokenDAI = await new MockERC20__factory(wallet).deploy("MockDAI", "MDAI", 18)
 		tokenTUSD = await new MockERC20__factory(wallet).deploy("MockTUSD", "MTUSD", 18)
 
-		calculatorRequiem = await new WeightedPairPricer__factory(wallet).deploy(tokenDAI.address)
+		calculatorRequiem = await new WeightedPairPricer__factory(wallet).deploy()
 		calculatorRequiemNative = await new RequiemPricer__factory(wallet).deploy(tokenA.address)
 
 		testPair = await new TestPair__factory(wallet).deploy(tokenA.address, tokenDAI.address, weight0, weight1)
 		await testPair.setReserves(reserve0, reserve1, vReserve0, vReserve1)
-		await testPair.mint(supply, wallet.address)
+		await testPair.mint(wallet.address, supply)
 
 
 	})
@@ -123,7 +123,7 @@ describe('Calculator-Test', () => {
 		it('test calculator', async () => {
 
 
-			const val = await calculatorRequiem.getTotalValue(testPair.address)
+			const val = await calculatorRequiem.getTotalValue(testPair.address, tokenDAI.address)
 			expect(val.toString()).to.equal('208484848484848484848') // 208.484848485
 			console.log("VAL", val.toString())
 		})
@@ -132,12 +132,12 @@ describe('Calculator-Test', () => {
 		it('test requiem calculator', async () => {
 
 
-			const val = await calculatorRequiemNative.getTotalValue(testPair.address)
+			const val = await calculatorRequiemNative.getTotalValue(testPair.address, tokenDAI.address)
 			console.log("VAL", val.toString())
 			expect(val.toString()).to.equal('110000000000000000000') // 110.00
 
 
-			const markdown = await calculatorRequiemNative.markdown(testPair.address)
+			const markdown = await calculatorRequiemNative.markdown(testPair.address, tokenDAI.address)
 			console.log("Markdown", markdown.toString())
 			expect(markdown.toString()).to.equal('1090909090909090909') // 110.00
 

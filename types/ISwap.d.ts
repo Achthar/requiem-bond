@@ -23,6 +23,7 @@ interface ISwapInterface extends ethers.utils.Interface {
     "calculateSwapGivenIn(address,address,uint256)": FunctionFragment;
     "getPooledTokens()": FunctionFragment;
     "getTokenBalances()": FunctionFragment;
+    "getTokenMultipliers()": FunctionFragment;
   };
 
   encodeFunctionData(
@@ -37,6 +38,10 @@ interface ISwapInterface extends ethers.utils.Interface {
     functionFragment: "getTokenBalances",
     values?: undefined
   ): string;
+  encodeFunctionData(
+    functionFragment: "getTokenMultipliers",
+    values?: undefined
+  ): string;
 
   decodeFunctionResult(
     functionFragment: "calculateSwapGivenIn",
@@ -48,6 +53,10 @@ interface ISwapInterface extends ethers.utils.Interface {
   ): Result;
   decodeFunctionResult(
     functionFragment: "getTokenBalances",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "getTokenMultipliers",
     data: BytesLike
   ): Result;
 
@@ -108,6 +117,8 @@ export class ISwap extends BaseContract {
     getPooledTokens(overrides?: CallOverrides): Promise<[string[]]>;
 
     getTokenBalances(overrides?: CallOverrides): Promise<[BigNumber[]]>;
+
+    getTokenMultipliers(overrides?: CallOverrides): Promise<[BigNumber[]]>;
   };
 
   calculateSwapGivenIn(
@@ -121,6 +132,8 @@ export class ISwap extends BaseContract {
 
   getTokenBalances(overrides?: CallOverrides): Promise<BigNumber[]>;
 
+  getTokenMultipliers(overrides?: CallOverrides): Promise<BigNumber[]>;
+
   callStatic: {
     calculateSwapGivenIn(
       tokenIn: string,
@@ -132,6 +145,8 @@ export class ISwap extends BaseContract {
     getPooledTokens(overrides?: CallOverrides): Promise<string[]>;
 
     getTokenBalances(overrides?: CallOverrides): Promise<BigNumber[]>;
+
+    getTokenMultipliers(overrides?: CallOverrides): Promise<BigNumber[]>;
   };
 
   filters: {};
@@ -147,6 +162,8 @@ export class ISwap extends BaseContract {
     getPooledTokens(overrides?: CallOverrides): Promise<BigNumber>;
 
     getTokenBalances(overrides?: CallOverrides): Promise<BigNumber>;
+
+    getTokenMultipliers(overrides?: CallOverrides): Promise<BigNumber>;
   };
 
   populateTransaction: {
@@ -160,5 +177,9 @@ export class ISwap extends BaseContract {
     getPooledTokens(overrides?: CallOverrides): Promise<PopulatedTransaction>;
 
     getTokenBalances(overrides?: CallOverrides): Promise<PopulatedTransaction>;
+
+    getTokenMultipliers(
+      overrides?: CallOverrides
+    ): Promise<PopulatedTransaction>;
   };
 }

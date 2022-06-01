@@ -55,6 +55,7 @@ const config: HardhatUserConfig = {
     timeout: 20000,
   },
   namedAccounts: {
+    operator: '0x10E38dFfFCfdBaaf590D5A9958B01C9cfcF6A63B',
     deployer: {
       default: '0x10E38dFfFCfdBaaf590D5A9958B01C9cfcF6A63B',//'0x10E38dFfFCfdBaaf590D5A9958B01C9cfcF6A63B', //'0x333132d4FCbe1B7F34198AD545672BbA95c5882b',
       localhost: '0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266',
@@ -62,6 +63,7 @@ const config: HardhatUserConfig = {
       'bsc-testnet': '0x10E38dFfFCfdBaaf590D5A9958B01C9cfcF6A63B', //'0x333132d4FCbe1B7F34198AD545672BbA95c5882b',
       kovan: '0x10E38dFfFCfdBaaf590D5A9958B01C9cfcF6A63B', //'0x333132d4FCbe1B7F34198AD545672BbA95c5882b',
       mumbai: '0x10E38dFfFCfdBaaf590D5A9958B01C9cfcF6A63B', //'0x333132d4FCbe1B7F34198AD545672BbA95c5882b',
+      fuji: '0x10E38dFfFCfdBaaf590D5A9958B01C9cfcF6A63B', //'0x333132d4FCbe1B7F34198AD545672BbA95c5882b',
     },
     localhost: {
       default: '0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266',//'0x10E38dFfFCfdBaaf590D5A9958B01C9cfcF6A63B', //'0x333132d4FCbe1B7F34198AD545672BbA95c5882b',

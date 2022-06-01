@@ -227,6 +227,8 @@ interface ISwap {
   function getTokenBalances() external view returns (uint256[] memory);
 
   function getPooledTokens() external view returns (IERC20[] memory);
+
+  function getTokenMultipliers() external view returns (uint256[] memory);
 }
 
 // File: contracts/interfaces/IStableLPToken.sol
@@ -245,13 +247,14 @@ interface IStableLPToken {
 // File: contracts/interfaces/IAssetPricer.sol
 
 
-pragma solidity 0.8.14;
+pragma solidity ^0.8.14;
 
 interface IAssetPricer {
-  function valuation(address _asset, uint256 _amount)
-    external
-    view
-    returns (uint256);
+    function valuation(
+        address _asset,
+        address _quote,
+        uint256 _amount
+    ) external view returns (uint256);
 }
 
 // File: contracts/pricers/StablePoolPricer.sol
@@ -269,55 +272,40 @@ pragma solidity 0.8.14;
  * Bonding calculator for stable pool
  */
 contract StablePoolPricer is IAssetPricer {
-  using FixedPoint for *;
+    using FixedPoint for *;
 
-  address public immutable QUOTE;
+    constructor() {}
 
-  constructor(address _QUOTE) {
-    require(_QUOTE != address(0));
-    QUOTE = _QUOTE;
-  }
-
-  // calculates the liquidity value denominated in the provided token
-  // uses the 0.01% inputAmount for that calculation
-  // note that we never use the actual LP as input as the swap contains the LP address
-  // and is also used to extract the balances
-  function getTotalValue(address _lpAddress)
-    public
-    view
-    returns (uint256 _value)
-  {
-    ISwap swap = IStableLPToken(_lpAddress).swap();
-    IERC20[] memory tokens = swap.getPooledTokens();
-    uint256[] memory reserves = swap.getTokenBalances();
-    for (uint8 i = 0; i < reserves.length; i++) {
-      address tokenAddr = address(tokens[i]);
-      if (tokenAddr != QUOTE) {
-        _value +=
-          swap.calculateSwapGivenIn(tokenAddr, QUOTE, reserves[i] / 10000) *
-          10000;
-      } else {
-        _value += reserves[i];
-      }
+    // calculates the liquidity value denominated in the provided token
+    // uses the 0.01% inputAmount for that calculation
+    // note that we never use the actual LP as input as the swap contains the LP address
+    // and is also used to extract the balances
+    function getTotalValue(address _lpAddress, address _quote) public view returns (uint256 _value) {
+        ISwap swap = IStableLPToken(_lpAddress).swap();
+        IERC20[] memory tokens = swap.getPooledTokens();
+        uint256[] memory reserves = swap.getTokenBalances();
+        for (uint8 i = 0; i < reserves.length; i++) {
+            address tokenAddr = address(tokens[i]);
+            if (tokenAddr != _quote) {
+                _value += swap.calculateSwapGivenIn(tokenAddr, _quote, reserves[i] / 10000) * 10000;
+            } else {
+                _value += reserves[i];
+            }
+        }
     }
-  }
 
-  function valuation(address _lpAddress, uint256 amount_)
-    external
-    view
-    override
-    returns (uint256 _value)
-  {
-    uint256 totalValue = getTotalValue(_lpAddress);
-    uint256 totalSupply = IStableLPToken(_lpAddress).totalSupply();
+    function valuation(
+        address _lpAddress,
+        address _quote,
+        uint256 _mount
+    ) external view override returns (uint256 _value) {
+        uint256 totalValue = getTotalValue(_lpAddress, _quote);
+        uint256 totalSupply = IStableLPToken(_lpAddress).totalSupply();
 
-    _value =
-      (totalValue *
-        FixedPoint.fraction(amount_, totalSupply).decode112with18()) /
-      1e18;
-  }
+        _value = (totalValue * FixedPoint.fraction(_mount, totalSupply).decode112with18()) / 1e18;
+    }
 
-  function markdown(address _lpAddress) external view returns (uint256) {
-    return getTotalValue(_lpAddress);
-  }
+    function markdown(address _lpAddress, address _quote) external view returns (uint256) {
+        return getTotalValue(_lpAddress, _quote);
+    }
 }

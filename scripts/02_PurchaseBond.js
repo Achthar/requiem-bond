@@ -35,7 +35,7 @@ async function main() {
         await assetContract.approve(bondDepositoryContract.address, ethers.constants.MaxUint256)
     }
 
-    setTimeout(() => { console.log("Waiting done"); }, 5000);
+    setTimeout(() => { console.log("Waiting done"); }, 10000);
 
     // create Bond
     const tx = await bondDepositoryContract.deposit(
@@ -50,9 +50,9 @@ async function main() {
 
     // throw error in case of a failure
     if (!receipt.status) {
-        throw Error(`Creation of bond failed: ${tx.hash}`)
+        throw Error(`Deposit of bond failed: ${tx.hash}`)
     } else {
-        console.log("Creation succeeded")
+        console.log("Deposit succeeded")
     }
 }
 

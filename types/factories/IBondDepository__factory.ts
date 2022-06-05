@@ -27,7 +27,7 @@ const _abi = [
     inputs: [
       {
         internalType: "contract IERC20",
-        name: "_quoteToken",
+        name: "_asset",
         type: "address",
       },
       {
@@ -204,7 +204,7 @@ const _abi = [
     inputs: [
       {
         internalType: "address",
-        name: "_quoteToken",
+        name: "_asset",
         type: "address",
       },
     ],

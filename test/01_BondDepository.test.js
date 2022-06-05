@@ -98,7 +98,7 @@ describe("Bond Depository", async () => {
         await req.mint(depository.address, one18.mul(10000));
 
         await treasury.baseSupply.returns(await req.totalSupply());
-
+        // await treasury.assetValue.whenCalledWith([dai.address, "10000000000000000000000"]).returns("10000000000000000000000")
         await treasury.governor.returns(deployer.address);
         await treasury.vault.returns(deployer.address);
         await treasury.guardian.returns(deployer.address);
@@ -206,6 +206,7 @@ describe("Bond Depository", async () => {
 
     it("should not start adjustment if ahead of schedule", async () => {
         let amount = "650000000000000000000000"; // 10,000
+        await treasury.assetValue.whenCalledWith([dai.address, amount]).returns(amount)
         await depository
             .connect(bob)
             .deposit(bid, amount, initialPrice.mul(2), bob.address, carol.address);
@@ -224,6 +225,7 @@ describe("Bond Depository", async () => {
     it("should start adjustment if behind schedule", async () => {
         await network.provider.send("evm_increaseTime", [tuneInterval]);
         let amount = "10000000000000000000000"; // 10,000
+        await treasury.assetValue.whenCalledWith([dai.address, amount]).returns(amount)
         await depository
             .connect(bob)
             .deposit(bid, amount, initialPrice, bob.address, carol.address);
@@ -235,6 +237,7 @@ describe("Bond Depository", async () => {
         await network.provider.send("evm_increaseTime", [tuneInterval]);
         let [, controlVariable, , ,] = await depository.terms(bid);
         let amount = "10000000000000000000000"; // 10,000
+        await treasury.assetValue.whenCalledWith([dai.address, amount]).returns(amount)
         await depository
             .connect(bob)
             .deposit(bid, amount, initialPrice, bob.address, carol.address);
@@ -251,6 +254,7 @@ describe("Bond Depository", async () => {
         await network.provider.send("evm_increaseTime", [tuneInterval]);
         let [, controlVariable, , ,] = await depository.terms(bid);
         let amount = "10000000000000000000000"; // 10,000
+        await treasury.assetValue.whenCalledWith([dai.address, amount]).returns(amount)
         await depository
             .connect(bob)
             .deposit(bid, amount, initialPrice, bob.address, carol.address);
@@ -271,6 +275,7 @@ describe("Bond Depository", async () => {
         await network.provider.send("evm_increaseTime", [tuneInterval]);
         [, controlVariable, , ,] = await depository.terms(bid);
         let amount = "10000000000000000000000"; // 10,000
+        await treasury.assetValue.whenCalledWith([dai.address, amount]).returns(amount)
         await depository
             .connect(bob)
             .deposit(bid, amount, initialPrice, bob.address, carol.address);
@@ -291,6 +296,7 @@ describe("Bond Depository", async () => {
 
     it("should allow a deposit", async () => {
         let amount = "10000000000000000000000"; // 10,000
+        await treasury.assetValue.whenCalledWith([dai.address, amount]).returns(amount)
         await depository
             .connect(bob)
             .deposit(bid, amount, initialPrice, bob.address, carol.address);
@@ -300,6 +306,7 @@ describe("Bond Depository", async () => {
 
     it("should not allow a deposit greater than max payout", async () => {
         let amount = "6700000000000000000000000"; // 6.7m (400 * 10000 / 6 + 0.5%)
+        await treasury.assetValue.whenCalledWith([dai.address, amount]).returns(amount)
         await expect(
             depository.connect(bob).deposit(bid, amount, initialPrice, bob.address, carol.address)
         ).to.be.revertedWith("Depository: max size exceeded");
@@ -308,6 +315,7 @@ describe("Bond Depository", async () => {
     it("should not redeem before vested", async () => {
         let balance = await req.balanceOf(bob.address);
         let amount = "10000000000000000000000"; // 10,000
+        await treasury.assetValue.whenCalledWith([dai.address, amount]).returns(amount)
         await depository
             .connect(bob)
             .deposit(bid, amount, initialPrice, bob.address, carol.address);
@@ -317,6 +325,7 @@ describe("Bond Depository", async () => {
 
     it("should redeem after vested", async () => {
         let amount = "10000000000000000000000"; // 10,000
+        await treasury.assetValue.whenCalledWith([dai.address, amount]).returns(amount)
         let [expectedPayout, expiry, index] = await depository
             .connect(bob)
             .callStatic.deposit(bid, amount, initialPrice, bob.address, carol.address);
@@ -337,6 +346,7 @@ describe("Bond Depository", async () => {
         let daoBalance = await req.balanceOf(deployer.address);
         let refBalance = await req.balanceOf(carol.address);
         let amount = "10000000000000000000000"; // 10,000
+        await treasury.assetValue.whenCalledWith([dai.address, amount]).returns(amount)
         let [payout, expiry, index] = await depository
             .connect(bob)
             .callStatic.deposit(bid, amount, initialPrice, bob.address, carol.address);

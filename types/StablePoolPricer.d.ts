@@ -107,7 +107,7 @@ export class StablePoolPricer extends BaseContract {
     valuation(
       _lpAddress: string,
       _quote: string,
-      _mount: BigNumberish,
+      _amount: BigNumberish,
       overrides?: CallOverrides
     ): Promise<[BigNumber] & { _value: BigNumber }>;
   };
@@ -127,7 +127,7 @@ export class StablePoolPricer extends BaseContract {
   valuation(
     _lpAddress: string,
     _quote: string,
-    _mount: BigNumberish,
+    _amount: BigNumberish,
     overrides?: CallOverrides
   ): Promise<BigNumber>;
 
@@ -147,7 +147,7 @@ export class StablePoolPricer extends BaseContract {
     valuation(
       _lpAddress: string,
       _quote: string,
-      _mount: BigNumberish,
+      _amount: BigNumberish,
       overrides?: CallOverrides
     ): Promise<BigNumber>;
   };
@@ -170,7 +170,7 @@ export class StablePoolPricer extends BaseContract {
     valuation(
       _lpAddress: string,
       _quote: string,
-      _mount: BigNumberish,
+      _amount: BigNumberish,
       overrides?: CallOverrides
     ): Promise<BigNumber>;
   };
@@ -191,7 +191,7 @@ export class StablePoolPricer extends BaseContract {
     valuation(
       _lpAddress: string,
       _quote: string,
-      _mount: BigNumberish,
+      _amount: BigNumberish,
       overrides?: CallOverrides
     ): Promise<PopulatedTransaction>;
   };

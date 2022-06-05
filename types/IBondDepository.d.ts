@@ -159,7 +159,7 @@ export class IBondDepository extends BaseContract {
     ): Promise<ContractTransaction>;
 
     create(
-      _quoteToken: string,
+      _asset: string,
       _market: [BigNumberish, BigNumberish, BigNumberish],
       _booleans: [boolean, boolean],
       _terms: [BigNumberish, BigNumberish],
@@ -196,7 +196,7 @@ export class IBondDepository extends BaseContract {
     liveMarkets(overrides?: CallOverrides): Promise<[BigNumber[]]>;
 
     liveMarketsFor(
-      _quoteToken: string,
+      _asset: string,
       overrides?: CallOverrides
     ): Promise<[BigNumber[]]>;
 
@@ -218,7 +218,7 @@ export class IBondDepository extends BaseContract {
   ): Promise<ContractTransaction>;
 
   create(
-    _quoteToken: string,
+    _asset: string,
     _market: [BigNumberish, BigNumberish, BigNumberish],
     _booleans: [boolean, boolean],
     _terms: [BigNumberish, BigNumberish],
@@ -249,7 +249,7 @@ export class IBondDepository extends BaseContract {
   liveMarkets(overrides?: CallOverrides): Promise<BigNumber[]>;
 
   liveMarketsFor(
-    _quoteToken: string,
+    _asset: string,
     overrides?: CallOverrides
   ): Promise<BigNumber[]>;
 
@@ -268,7 +268,7 @@ export class IBondDepository extends BaseContract {
     close(_id: BigNumberish, overrides?: CallOverrides): Promise<void>;
 
     create(
-      _quoteToken: string,
+      _asset: string,
       _market: [BigNumberish, BigNumberish, BigNumberish],
       _booleans: [boolean, boolean],
       _terms: [BigNumberish, BigNumberish],
@@ -311,7 +311,7 @@ export class IBondDepository extends BaseContract {
     liveMarkets(overrides?: CallOverrides): Promise<BigNumber[]>;
 
     liveMarketsFor(
-      _quoteToken: string,
+      _asset: string,
       overrides?: CallOverrides
     ): Promise<BigNumber[]>;
 
@@ -336,7 +336,7 @@ export class IBondDepository extends BaseContract {
     ): Promise<BigNumber>;
 
     create(
-      _quoteToken: string,
+      _asset: string,
       _market: [BigNumberish, BigNumberish, BigNumberish],
       _booleans: [boolean, boolean],
       _terms: [BigNumberish, BigNumberish],
@@ -373,7 +373,7 @@ export class IBondDepository extends BaseContract {
     liveMarkets(overrides?: CallOverrides): Promise<BigNumber>;
 
     liveMarketsFor(
-      _quoteToken: string,
+      _asset: string,
       overrides?: CallOverrides
     ): Promise<BigNumber>;
 
@@ -396,7 +396,7 @@ export class IBondDepository extends BaseContract {
     ): Promise<PopulatedTransaction>;
 
     create(
-      _quoteToken: string,
+      _asset: string,
       _market: [BigNumberish, BigNumberish, BigNumberish],
       _booleans: [boolean, boolean],
       _terms: [BigNumberish, BigNumberish],
@@ -436,7 +436,7 @@ export class IBondDepository extends BaseContract {
     liveMarkets(overrides?: CallOverrides): Promise<PopulatedTransaction>;
 
     liveMarketsFor(
-      _quoteToken: string,
+      _asset: string,
       overrides?: CallOverrides
     ): Promise<PopulatedTransaction>;
 

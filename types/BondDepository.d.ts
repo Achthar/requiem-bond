@@ -268,7 +268,7 @@ export type CreateMarketEvent = TypedEvent<
   [BigNumber, string, string, BigNumber] & {
     id: BigNumber;
     baseToken: string;
-    quoteToken: string;
+    asset: string;
     initialPrice: BigNumber;
   }
 >;
@@ -345,7 +345,7 @@ export class BondDepository extends BaseContract {
     ): Promise<ContractTransaction>;
 
     create(
-      _quoteToken: string,
+      _asset: string,
       _market: [BigNumberish, BigNumberish, BigNumberish],
       _booleans: [boolean, boolean],
       _terms: [BigNumberish, BigNumberish],
@@ -421,7 +421,7 @@ export class BondDepository extends BaseContract {
         BigNumber
       ] & {
         capacity: BigNumber;
-        quoteToken: string;
+        asset: string;
         capacityInQuote: boolean;
         totalDebt: BigNumber;
         maxPayout: BigNumber;
@@ -446,7 +446,7 @@ export class BondDepository extends BaseContract {
         length: number;
         depositInterval: number;
         tuneInterval: number;
-        quoteDecimals: number;
+        assetDecimals: number;
       }
     >;
 
@@ -563,7 +563,7 @@ export class BondDepository extends BaseContract {
   ): Promise<ContractTransaction>;
 
   create(
-    _quoteToken: string,
+    _asset: string,
     _market: [BigNumberish, BigNumberish, BigNumberish],
     _booleans: [boolean, boolean],
     _terms: [BigNumberish, BigNumberish],
@@ -616,7 +616,7 @@ export class BondDepository extends BaseContract {
   ): Promise<
     [BigNumber, string, boolean, BigNumber, BigNumber, BigNumber, BigNumber] & {
       capacity: BigNumber;
-      quoteToken: string;
+      asset: string;
       capacityInQuote: boolean;
       totalDebt: BigNumber;
       maxPayout: BigNumber;
@@ -641,7 +641,7 @@ export class BondDepository extends BaseContract {
       length: number;
       depositInterval: number;
       tuneInterval: number;
-      quoteDecimals: number;
+      assetDecimals: number;
     }
   >;
 
@@ -753,7 +753,7 @@ export class BondDepository extends BaseContract {
     close(_id: BigNumberish, overrides?: CallOverrides): Promise<void>;
 
     create(
-      _quoteToken: string,
+      _asset: string,
       _market: [BigNumberish, BigNumberish, BigNumberish],
       _booleans: [boolean, boolean],
       _terms: [BigNumberish, BigNumberish],
@@ -824,7 +824,7 @@ export class BondDepository extends BaseContract {
         BigNumber
       ] & {
         capacity: BigNumber;
-        quoteToken: string;
+        asset: string;
         capacityInQuote: boolean;
         totalDebt: BigNumber;
         maxPayout: BigNumber;
@@ -849,7 +849,7 @@ export class BondDepository extends BaseContract {
         length: number;
         depositInterval: number;
         tuneInterval: number;
-        quoteDecimals: number;
+        assetDecimals: number;
       }
     >;
 
@@ -976,14 +976,14 @@ export class BondDepository extends BaseContract {
     "CreateMarket(uint256,address,address,uint256)"(
       id?: BigNumberish | null,
       baseToken?: string | null,
-      quoteToken?: string | null,
+      asset?: string | null,
       initialPrice?: null
     ): TypedEventFilter<
       [BigNumber, string, string, BigNumber],
       {
         id: BigNumber;
         baseToken: string;
-        quoteToken: string;
+        asset: string;
         initialPrice: BigNumber;
       }
     >;
@@ -991,14 +991,14 @@ export class BondDepository extends BaseContract {
     CreateMarket(
       id?: BigNumberish | null,
       baseToken?: string | null,
-      quoteToken?: string | null,
+      asset?: string | null,
       initialPrice?: null
     ): TypedEventFilter<
       [BigNumber, string, string, BigNumber],
       {
         id: BigNumber;
         baseToken: string;
-        quoteToken: string;
+        asset: string;
         initialPrice: BigNumber;
       }
     >;
@@ -1044,7 +1044,7 @@ export class BondDepository extends BaseContract {
     ): Promise<BigNumber>;
 
     create(
-      _quoteToken: string,
+      _asset: string,
       _market: [BigNumberish, BigNumberish, BigNumberish],
       _booleans: [boolean, boolean],
       _terms: [BigNumberish, BigNumberish],
@@ -1193,7 +1193,7 @@ export class BondDepository extends BaseContract {
     ): Promise<PopulatedTransaction>;
 
     create(
-      _quoteToken: string,
+      _asset: string,
       _market: [BigNumberish, BigNumberish, BigNumberish],
       _booleans: [boolean, boolean],
       _terms: [BigNumberish, BigNumberish],

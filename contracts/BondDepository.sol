@@ -18,7 +18,7 @@ contract BondDepository is IBondDepository, UserTermsKeeper {
 
     /* ======== EVENTS ======== */
 
-    event CreateMarket(uint256 indexed id, address indexed baseToken, address indexed quoteToken, uint256 initialPrice);
+    event CreateMarket(uint256 indexed id, address indexed baseToken, address indexed asset, uint256 initialPrice);
     event CloseMarket(uint256 indexed id);
     event Bond(uint256 indexed id, uint256 amount, uint256 price);
     event Tuned(uint256 indexed id, uint256 oldControlVariable, uint256 newControlVariable);
@@ -36,10 +36,7 @@ contract BondDepository is IBondDepository, UserTermsKeeper {
 
     /* ======== CONSTRUCTOR ======== */
 
-    constructor(
-        IERC20 _req,
-        address _treasury
-    ) UserTermsKeeper(_req, _treasury) {}
+    constructor(IERC20 _req, address _treasury) UserTermsKeeper(_req, _treasury) {}
 
     /* ======== DEPOSIT ======== */
 
@@ -86,16 +83,16 @@ contract BondDepository is IBondDepository, UserTermsKeeper {
         require(price <= _maxPrice, "Depository: more than max price");
 
         /**
-         * payout for the deposit = amount / price
+         * payout for the deposit = value / price
          *
          * where
          * payout = REQ out
-         * amount = quote tokens in
+         * value = value of deposited asset amount in quote provided by treasury (always 18 dec)
          * price = quote tokens : req (i.e. 42069 DAI : REQ)
          *
          * REQ decimals is supposed to match price decimals
          */
-        payout_ = ((_amount * 10**(2 * req.decimals())) / price) / (10**metadata[_id].quoteDecimals);
+        payout_ = (treasury.assetValue(address(market.asset), _amount) * 1e18) / price;
 
         // markets have a max payout amount, capping size because deposits
         // do not experience slippage. max payout is recalculated upon tuning
@@ -148,7 +145,7 @@ contract BondDepository is IBondDepository, UserTermsKeeper {
         index_ = addTerms(_user, payout_, uint48(expiry_), uint48(_id), _referral);
 
         // transfer payment to treasury
-        market.quoteToken.safeTransferFrom(msg.sender, address(treasury), _amount);
+        market.asset.safeTransferFrom(msg.sender, address(treasury), _amount);
 
         // if max debt is breached, the market is closed
         // this a circuit breaker
@@ -224,7 +221,7 @@ contract BondDepository is IBondDepository, UserTermsKeeper {
             // standardize capacity into an base token amount
             // req decimals + price decimals
             uint256 capacity = market.capacityInQuote
-                ? ((market.capacity * (10**(2 * req.decimals()))) / price) / (10**meta.quoteDecimals)
+                ? ((market.capacity * (10**(2 * req.decimals()))) / price) / (10**meta.assetDecimals)
                 : market.capacity;
 
             /**
@@ -261,7 +258,7 @@ contract BondDepository is IBondDepository, UserTermsKeeper {
     /**
      * @notice             creates a new market type
      * @dev                current price should be in 9 decimals.
-     * @param _quoteToken  token used to deposit
+     * @param _asset  token used to deposit
      * @param _market      [capacity (in REQ or quote), initial price / REQ (18 decimals), debt buffer (3 decimals)]
      * @param _booleans    [capacity in quote, fixed term]
      * @param _terms       [vesting length (if fixed term) or vested timestamp, conclusion timestamp]
@@ -269,7 +266,7 @@ contract BondDepository is IBondDepository, UserTermsKeeper {
      * @return id_         ID of new bond market
      */
     function create(
-        IERC20 _quoteToken,
+        IERC20 _asset,
         uint256[3] memory _market,
         bool[2] memory _booleans,
         uint256[2] memory _terms,
@@ -279,7 +276,7 @@ contract BondDepository is IBondDepository, UserTermsKeeper {
         uint256 secondsToConclusion = _terms[1] - block.timestamp;
 
         // the decimal count of the quote token
-        uint256 decimals = IERC20Metadata(address(_quoteToken)).decimals();
+        uint256 decimals = IERC20Metadata(address(_asset)).decimals();
 
         /*
          * initial target debt is equal to capacity (this is the amount of debt
@@ -323,7 +320,7 @@ contract BondDepository is IBondDepository, UserTermsKeeper {
 
         markets.push(
             Market({
-                quoteToken: _quoteToken,
+                asset: _asset,
                 capacityInQuote: _booleans[0],
                 capacity: _market[0],
                 totalDebt: targetDebt,
@@ -350,13 +347,13 @@ contract BondDepository is IBondDepository, UserTermsKeeper {
                 length: uint48(secondsToConclusion),
                 depositInterval: _intervals[0],
                 tuneInterval: _intervals[1],
-                quoteDecimals: uint8(decimals)
+                assetDecimals: uint8(decimals)
             })
         );
 
-        marketsForQuote[address(_quoteToken)].push(id_);
+        marketsForQuote[address(_asset)].push(id_);
 
-        emit CreateMarket(id_, address(req), address(_quoteToken), _market[1]);
+        emit CreateMarket(id_, address(req), address(_asset), _market[1]);
     }
 
     /**
@@ -399,7 +396,7 @@ contract BondDepository is IBondDepository, UserTermsKeeper {
      * l = length of program
      */
     function marketPrice(uint256 _id) public view override returns (uint256) {
-        return (currentControlVariable(_id) * debtRatio(_id)) / (10**metadata[_id].quoteDecimals);
+        return (currentControlVariable(_id) * debtRatio(_id)) / (10**metadata[_id].assetDecimals);
     }
 
     /**
@@ -413,7 +410,7 @@ contract BondDepository is IBondDepository, UserTermsKeeper {
      */
     function payoutFor(uint256 _amount, uint256 _id) external view override returns (uint256) {
         Metadata memory meta = metadata[_id];
-        return (_amount * 10**(2 * req.decimals())) / marketPrice(_id) / 10**meta.quoteDecimals;
+        return (_amount * 10**(2 * req.decimals())) / marketPrice(_id) / 10**meta.assetDecimals;
     }
 
     /**
@@ -423,7 +420,7 @@ contract BondDepository is IBondDepository, UserTermsKeeper {
      * @return             debt ratio for market in quote decimals
      */
     function debtRatio(uint256 _id) public view override returns (uint256) {
-        return (currentDebt(_id) * (10**metadata[_id].quoteDecimals)) / treasury.baseSupply();
+        return (currentDebt(_id) * (10**metadata[_id].assetDecimals)) / treasury.baseSupply();
     }
 
     /**
@@ -522,7 +519,7 @@ contract BondDepository is IBondDepository, UserTermsKeeper {
      * @return                  price for market in REQ decimals
      */
     function _marketPrice(uint256 _id) internal view returns (uint256) {
-        return (terms[_id].controlVariable * _debtRatio(_id)) / (10**metadata[_id].quoteDecimals);
+        return (terms[_id].controlVariable * _debtRatio(_id)) / (10**metadata[_id].assetDecimals);
     }
 
     /**
@@ -532,7 +529,7 @@ contract BondDepository is IBondDepository, UserTermsKeeper {
      * @return                  current debt for market in quote decimals
      */
     function _debtRatio(uint256 _id) internal view returns (uint256) {
-        return (markets[_id].totalDebt * (10**metadata[_id].quoteDecimals)) / treasury.baseSupply();
+        return (markets[_id].totalDebt * (10**metadata[_id].assetDecimals)) / treasury.baseSupply();
     }
 
     /**

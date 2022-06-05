@@ -7,7 +7,7 @@ interface IBondDepository {
   // Info about each type of market
   struct Market {
     uint256 capacity; // capacity remaining
-    IERC20 quoteToken; // token to accept as payment
+    IERC20 asset; // token to accept as payment
     bool capacityInQuote; // capacity limit is in payment token (true) or in REQ (false, default)
     uint256 totalDebt; // total debt from market
     uint256 maxPayout; // max tokens in/out (determined by capacityInQuote false/true, respectively)
@@ -31,7 +31,7 @@ interface IBondDepository {
     uint48 length; // time from creation to conclusion. used as speed to decay debt.
     uint48 depositInterval; // target frequency of deposits
     uint48 tuneInterval; // frequency of tuning
-    uint8 quoteDecimals; // decimals of quote token
+    uint8 assetDecimals; // decimals of quote token
   }
 
   // Control variable adjustment data
@@ -68,7 +68,7 @@ interface IBondDepository {
     );
 
   function create(
-    IERC20 _quoteToken, // token used to deposit
+    IERC20 _asset, // token used to deposit
     uint256[3] memory _market, // [capacity, initial price]
     bool[2] memory _booleans, // [capacity in quote, fixed term]
     uint256[2] memory _terms, // [vesting, conclusion]
@@ -81,7 +81,7 @@ interface IBondDepository {
 
   function liveMarkets() external view returns (uint256[] memory);
 
-  function liveMarketsFor(address _quoteToken)
+  function liveMarketsFor(address _asset)
     external
     view
     returns (uint256[] memory);

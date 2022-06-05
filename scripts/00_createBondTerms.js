@@ -15,17 +15,17 @@ async function main() {
     const [operator] = await ethers.getSigners();
     const chainId = await operator.getChainId()
 
-    const assetAddress = addresses.assets.PAIR_ABREQ_DAI[chainId]
+    const assetAddress = addresses.assets.PAIR_AVAX_USDC[chainId]
 
     const bondDepositoryContract = new ethers.Contract(addresses.bondDepo[chainId], new ethers.utils.Interface(BondDepositoryABI.abi), operator)
 
 
     // parameters
-    const capacity = ethers.BigNumber.from(1000).mul(one18);
-    const initialPrice = ethers.BigNumber.from(95).mul(one18).div(10);
+    const capacity = ethers.BigNumber.from(1000000).mul(one18);
+    const initialPrice = ethers.BigNumber.from(975).mul(one18).div(100);
     const buffer = 2e5;
 
-    const vesting = 60 * 60 * 24 * 1;
+    const vesting = 60 * 60 * 24 * 7;
     const timeToConclusion = 60 * 60 * 24 * 60;
     const block = await ethers.provider.getBlock("latest");
     const conclusion = block.timestamp + timeToConclusion;

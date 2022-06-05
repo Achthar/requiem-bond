@@ -3,7 +3,6 @@ pragma solidity ^0.8.14;
 
 import "./libraries/types/UserTermsKeeper.sol";
 import "./libraries/SafeERC20.sol";
-import "./interfaces/ERC20/IERC20Metadata.sol";
 import "./interfaces/IBondDepository.sol";
 
 // solhint-disable  max-line-length
@@ -276,7 +275,7 @@ contract BondDepository is IBondDepository, UserTermsKeeper {
         uint256 secondsToConclusion = _terms[1] - block.timestamp;
 
         // the decimal count of the quote token
-        uint256 decimals = IERC20Metadata(address(_asset)).decimals();
+        uint256 decimals = _asset.decimals();
 
         /*
          * initial target debt is equal to capacity (this is the amount of debt

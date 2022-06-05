@@ -17,16 +17,16 @@ async function main() {
     const chainId = await operator.getChainId()
 
     // deposit parameters
-    const amount = one18.mul(1e3)
-    const market = 7
+    const amount = one18.mul(1).div(10000)
+    const market = 4
 
     const bondDepositoryContract = new ethers.Contract(addresses.bondDepo[chainId], new ethers.utils.Interface(BondDepositoryArtifact.abi), operator)
 
 
     const selectedMarket = await bondDepositoryContract.markets(market)
 
-    const asset = selectedMarket.quoteToken
-    console.log("Depositing asset", ethers.utils.formatEther(amount), "of", asset)
+    const asset = selectedMarket.asset
+    console.log("Depositing amount", ethers.utils.formatEther(amount), "of asset", asset)
 
     const assetContract = new ethers.Contract(asset, new ethers.utils.Interface(ERC20Artifact.abi), operator)
 

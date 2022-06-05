@@ -18,7 +18,7 @@ async function main() {
     const depoAddress = addresses.bondDepo[chainId]
 
     const bondDepositoryContract = new ethers.Contract(depoAddress, new ethers.utils.Interface(BondDepositoryABI.abi), operator)
-    const market = 6
+    const market = 2
     // create Bond
     const tx = await bondDepositoryContract.close(market)
 

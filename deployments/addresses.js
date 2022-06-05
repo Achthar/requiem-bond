@@ -3,7 +3,7 @@ const addresses = {
         43113: "0x95034449E6cD17330E62D8e33a75a39927Fb02cb"
     },
     "bondDepo": {
-        43113: "0x8Bdf69d7581a730038a30B45B685814a8724CE04"
+        43113: "0xd57697959027073D3f5276Bb2b1124fCe3fd2540"
     },
     "diamondInitAddress": {
         43113: "0xdb409149AA3C2f2Bb3580994e1637f3e918D5413"

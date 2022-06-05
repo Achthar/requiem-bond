@@ -610,7 +610,7 @@ abstract contract FrontEndRewarder is AccessControlled {
   mapping(address => uint256) public rewards; // front end operator rewards
   mapping(address => bool) public whitelisted; // whitelisted status for operators
 
-  IERC20 internal immutable req; // reward token
+  IERC20 public immutable req; // reward token
 
   constructor(IAuthority _authority, IERC20 _req) {
     intitalizeAuthority(IAuthority(_authority));
@@ -740,8 +740,9 @@ abstract contract UserTermsKeeper is IUserTermsKeeper, FrontEndRewarder {
         // front end operators can earn rewards by referring users
         uint256 rewards = _giveRewards(_payout, _referral);
 
-        // mint and send to user
-        treasury.mint(_user, _payout + rewards);
+        // mint payout and rewards
+        treasury.mint(address(this), _payout + rewards);
+
     }
 
     /* ========== REDEEM ========== */

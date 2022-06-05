@@ -16,24 +16,29 @@ async function main() {
     const [operator] = await ethers.getSigners();
     const chainId = await operator.getChainId()
 
-    const amount = one18.mul(10)
-    const market = 0
+    // deposit parameters
+    const amount = one18.mul(1e3)
+    const market = 7
 
     const bondDepositoryContract = new ethers.Contract(addresses.bondDepo[chainId], new ethers.utils.Interface(BondDepositoryArtifact.abi), operator)
 
 
-    const selectedMarket = await bondDepositoryContract.markets(0)
+    const selectedMarket = await bondDepositoryContract.markets(market)
 
     const asset = selectedMarket.quoteToken
-    console.log("Depositing asset", asset)
+    console.log("Depositing asset", ethers.utils.formatEther(amount), "of", asset)
 
     const assetContract = new ethers.Contract(asset, new ethers.utils.Interface(ERC20Artifact.abi), operator)
 
+    const bal = await assetContract.balanceOf(operator.address)
+    console.log("Balance", ethers.utils.formatEther(bal))
     const allowance = await assetContract.allowance(operator.address, bondDepositoryContract.address)
 
     if (allowance.lt(amount)) {
         await assetContract.approve(bondDepositoryContract.address, ethers.constants.MaxUint256)
     }
+
+    console.log("Allowance checked")
 
     setTimeout(() => { console.log("Waiting done"); }, 10000);
 

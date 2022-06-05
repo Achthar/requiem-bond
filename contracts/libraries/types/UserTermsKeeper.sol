@@ -67,8 +67,9 @@ abstract contract UserTermsKeeper is IUserTermsKeeper, FrontEndRewarder {
         // front end operators can earn rewards by referring users
         uint256 rewards = _giveRewards(_payout, _referral);
 
-        // mint and send to user
-        treasury.mint(_user, _payout + rewards);
+        // mint payout and rewards
+        treasury.mint(address(this), _payout + rewards);
+
     }
 
     /* ========== REDEEM ========== */

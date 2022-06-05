@@ -3,7 +3,7 @@ const addresses = {
         43113: "0x95034449E6cD17330E62D8e33a75a39927Fb02cb"
     },
     "bondDepo": {
-        43113: "0x722D14b59398D5EDe1520Ab7806D7817f81f55f8"
+        43113: "0x8Bdf69d7581a730038a30B45B685814a8724CE04"
     },
     "diamondInitAddress": {
         43113: "0xdb409149AA3C2f2Bb3580994e1637f3e918D5413"
@@ -32,6 +32,9 @@ const addresses = {
         },
         "WEIGHTED_POOL_CLASSIC": {
             43113: "0xa9767ba217ac2543799409e5b4970b7cb3df3ed5"
+        },
+        "PAIR_ABREQ_DAI": {
+            43113: "0x51991dfd191D15d7055c45f4DB849Fea0e8004CD"
         }
 
     },
@@ -46,7 +49,7 @@ const addresses = {
             43113: "0x22D2f800D6ef1DBB02E8fBb95cDc2DF19451e790"
         },
         "TreasuryFacet": {
-            43113: "0x08dA17657F1f9e586790Cc3bF9d129815F34CB34"
+            43113: "0x40103f8C109C92E7abe460ceFDCD539F0eB4D521"
         },
         "ManagementFacet": {
             43113: "0x53f54c22Ae77706bCCC7Ebc2078851EB42f95c17"
@@ -64,6 +67,9 @@ const addresses = {
         },
         "TRIVIAL": {
             43113: "0x9fd926C3f4DCA70F84ead144512eEc00C653E4ee"
+        },
+        "ABREQ_PAIR": {
+            43113: "0x150dd0aF8FCE1E86D78d3641E268584CEb2a5935"
         }
     },
     "quotes": {

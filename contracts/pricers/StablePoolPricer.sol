@@ -37,12 +37,12 @@ contract StablePoolPricer is IAssetPricer {
     function valuation(
         address _lpAddress,
         address _quote,
-        uint256 _mount
+        uint256 _amount
     ) external view override returns (uint256 _value) {
         uint256 totalValue = getTotalValue(_lpAddress, _quote);
         uint256 totalSupply = IStableLPToken(_lpAddress).totalSupply();
 
-        _value = (totalValue * FixedPoint.fraction(_mount, totalSupply).decode112with18()) / 1e18;
+        _value = (totalValue * FixedPoint.fraction(_amount, totalSupply).decode112with18()) / 1e18;
     }
 
     function markdown(address _lpAddress, address _quote) external view returns (uint256) {

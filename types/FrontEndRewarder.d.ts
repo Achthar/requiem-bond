@@ -25,6 +25,7 @@ interface FrontEndRewarderInterface extends ethers.utils.Interface {
     "daoReward()": FunctionFragment;
     "getReward()": FunctionFragment;
     "refReward()": FunctionFragment;
+    "req()": FunctionFragment;
     "rewards(address)": FunctionFragment;
     "setAuthority(address)": FunctionFragment;
     "setRewards(uint256,uint256)": FunctionFragment;
@@ -36,6 +37,7 @@ interface FrontEndRewarderInterface extends ethers.utils.Interface {
   encodeFunctionData(functionFragment: "daoReward", values?: undefined): string;
   encodeFunctionData(functionFragment: "getReward", values?: undefined): string;
   encodeFunctionData(functionFragment: "refReward", values?: undefined): string;
+  encodeFunctionData(functionFragment: "req", values?: undefined): string;
   encodeFunctionData(functionFragment: "rewards", values: [string]): string;
   encodeFunctionData(
     functionFragment: "setAuthority",
@@ -52,6 +54,7 @@ interface FrontEndRewarderInterface extends ethers.utils.Interface {
   decodeFunctionResult(functionFragment: "daoReward", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "getReward", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "refReward", data: BytesLike): Result;
+  decodeFunctionResult(functionFragment: "req", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "rewards", data: BytesLike): Result;
   decodeFunctionResult(
     functionFragment: "setAuthority",
@@ -129,6 +132,8 @@ export class FrontEndRewarder extends BaseContract {
 
     refReward(overrides?: CallOverrides): Promise<[BigNumber]>;
 
+    req(overrides?: CallOverrides): Promise<[string]>;
+
     rewards(arg0: string, overrides?: CallOverrides): Promise<[BigNumber]>;
 
     setAuthority(
@@ -160,6 +165,8 @@ export class FrontEndRewarder extends BaseContract {
 
   refReward(overrides?: CallOverrides): Promise<BigNumber>;
 
+  req(overrides?: CallOverrides): Promise<string>;
+
   rewards(arg0: string, overrides?: CallOverrides): Promise<BigNumber>;
 
   setAuthority(
@@ -188,6 +195,8 @@ export class FrontEndRewarder extends BaseContract {
     getReward(overrides?: CallOverrides): Promise<void>;
 
     refReward(overrides?: CallOverrides): Promise<BigNumber>;
+
+    req(overrides?: CallOverrides): Promise<string>;
 
     rewards(arg0: string, overrides?: CallOverrides): Promise<BigNumber>;
 
@@ -228,6 +237,8 @@ export class FrontEndRewarder extends BaseContract {
 
     refReward(overrides?: CallOverrides): Promise<BigNumber>;
 
+    req(overrides?: CallOverrides): Promise<BigNumber>;
+
     rewards(arg0: string, overrides?: CallOverrides): Promise<BigNumber>;
 
     setAuthority(
@@ -259,6 +270,8 @@ export class FrontEndRewarder extends BaseContract {
     ): Promise<PopulatedTransaction>;
 
     refReward(overrides?: CallOverrides): Promise<PopulatedTransaction>;
+
+    req(overrides?: CallOverrides): Promise<PopulatedTransaction>;
 
     rewards(
       arg0: string,

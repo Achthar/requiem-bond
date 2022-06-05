@@ -31,6 +31,7 @@ interface NoteKeeperInterface extends ethers.utils.Interface {
     "redeem(address,uint256[],bool)": FunctionFragment;
     "redeemAll(address,bool)": FunctionFragment;
     "refReward()": FunctionFragment;
+    "req()": FunctionFragment;
     "rewards(address)": FunctionFragment;
     "setAuthority(address)": FunctionFragment;
     "setRewards(uint256,uint256)": FunctionFragment;
@@ -63,6 +64,7 @@ interface NoteKeeperInterface extends ethers.utils.Interface {
     values: [string, boolean]
   ): string;
   encodeFunctionData(functionFragment: "refReward", values?: undefined): string;
+  encodeFunctionData(functionFragment: "req", values?: undefined): string;
   encodeFunctionData(functionFragment: "rewards", values: [string]): string;
   encodeFunctionData(
     functionFragment: "setAuthority",
@@ -85,6 +87,7 @@ interface NoteKeeperInterface extends ethers.utils.Interface {
   decodeFunctionResult(functionFragment: "redeem", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "redeemAll", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "refReward", data: BytesLike): Result;
+  decodeFunctionResult(functionFragment: "req", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "rewards", data: BytesLike): Result;
   decodeFunctionResult(
     functionFragment: "setAuthority",
@@ -200,6 +203,8 @@ export class NoteKeeper extends BaseContract {
 
     refReward(overrides?: CallOverrides): Promise<[BigNumber]>;
 
+    req(overrides?: CallOverrides): Promise<[string]>;
+
     rewards(arg0: string, overrides?: CallOverrides): Promise<[BigNumber]>;
 
     setAuthority(
@@ -264,6 +269,8 @@ export class NoteKeeper extends BaseContract {
 
   refReward(overrides?: CallOverrides): Promise<BigNumber>;
 
+  req(overrides?: CallOverrides): Promise<string>;
+
   rewards(arg0: string, overrides?: CallOverrides): Promise<BigNumber>;
 
   setAuthority(
@@ -327,6 +334,8 @@ export class NoteKeeper extends BaseContract {
     ): Promise<BigNumber>;
 
     refReward(overrides?: CallOverrides): Promise<BigNumber>;
+
+    req(overrides?: CallOverrides): Promise<string>;
 
     rewards(arg0: string, overrides?: CallOverrides): Promise<BigNumber>;
 
@@ -400,6 +409,8 @@ export class NoteKeeper extends BaseContract {
 
     refReward(overrides?: CallOverrides): Promise<BigNumber>;
 
+    req(overrides?: CallOverrides): Promise<BigNumber>;
+
     rewards(arg0: string, overrides?: CallOverrides): Promise<BigNumber>;
 
     setAuthority(
@@ -467,6 +478,8 @@ export class NoteKeeper extends BaseContract {
     ): Promise<PopulatedTransaction>;
 
     refReward(overrides?: CallOverrides): Promise<PopulatedTransaction>;
+
+    req(overrides?: CallOverrides): Promise<PopulatedTransaction>;
 
     rewards(
       arg0: string,

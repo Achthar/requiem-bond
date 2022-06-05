@@ -14,46 +14,21 @@ async function main() {
     const [operator] = await ethers.getSigners();
     const chainId = await operator.getChainId()
 
-    const assetAddress = addresses.assets.STABLELP[chainId]
-
     // address of Diamon to upgrade
     const depoAddress = addresses.bondDepo[chainId]
 
     const bondDepositoryContract = new ethers.Contract(depoAddress, new ethers.utils.Interface(BondDepositoryABI.abi), operator)
-
-
-    // parameters
-    const capacity = ethers.BigNumber.from(10000).mul(one18);
-    const initialPrice = ethers.BigNumber.from(10).mul(one18);
-    const buffer = 2e5;
-
-    const vesting = 60 * 60 * 24;
-    const timeToConclusion = 60 * 60 * 24 * 5;
-    const block = await ethers.provider.getBlock("latest");
-    const conclusion = block.timestamp + timeToConclusion;
-    const capacityInQuote = false
-    const fixedTerm = true
-    const depositInterval = 60 * 60 * 30;
-    const tuneInterval = 60 * 60;
-
-
-
+    const market = 6
     // create Bond
-    const tx = await bondDepositoryContract.create(
-        assetAddress,
-        [capacity, initialPrice, buffer],
-        [capacityInQuote, fixedTerm],
-        [vesting, conclusion],
-        [depositInterval, tuneInterval]
-    )
+    const tx = await bondDepositoryContract.close(market)
 
     receipt = await tx.wait()
 
     // throw error in case of a failure
     if (!receipt.status) {
-        throw Error(`Creation of bond failed: ${tx.hash}`)
+        throw Error(`Close of bond ${market} failed: ${tx.hash}`)
     } else {
-        console.log("Creation succeeded")
+        console.log(`Close of ${market} succeeded`)
     }
 }
 

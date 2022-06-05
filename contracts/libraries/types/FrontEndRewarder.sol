@@ -13,7 +13,7 @@ abstract contract FrontEndRewarder is AccessControlled {
   mapping(address => uint256) public rewards; // front end operator rewards
   mapping(address => bool) public whitelisted; // whitelisted status for operators
 
-  IERC20 internal immutable req; // reward token
+  IERC20 public immutable req; // reward token
 
   constructor(IAuthority _authority, IERC20 _req) {
     intitalizeAuthority(IAuthority(_authority));

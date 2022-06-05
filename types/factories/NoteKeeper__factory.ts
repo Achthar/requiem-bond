@@ -210,6 +210,19 @@ const _abi = [
     type: "function",
   },
   {
+    inputs: [],
+    name: "req",
+    outputs: [
+      {
+        internalType: "contract IERC20",
+        name: "",
+        type: "address",
+      },
+    ],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
     inputs: [
       {
         internalType: "address",

@@ -49,7 +49,7 @@ const addresses = {
             43113: "0x22D2f800D6ef1DBB02E8fBb95cDc2DF19451e790"
         },
         "TreasuryFacet": {
-            43113: "0x40103f8C109C92E7abe460ceFDCD539F0eB4D521"
+            43113: "0xdad13c4b17b76ac307e35536e6ff89bab4529a9e"
         },
         "ManagementFacet": {
             43113: "0x53f54c22Ae77706bCCC7Ebc2078851EB42f95c17"
@@ -57,19 +57,19 @@ const addresses = {
     },
     "pricers": {
         "STABLE": {
-            43113: "0x3e6f6f5991fa6b94e08cddbecf03567c7e8da38f"
+            43113: "0xbA2B783cB21726E454eCa3712CE9E1b5806bAFC5"
         },
         "WEIGHTED": {
-            43113: "0xbbE84b4dE5B9D40eEb2E97e5A731938992868177"
+            43113: "0x5ad0Dd39cbd3a6Ef4E1f47D3b0Dce9e3A62CEf99"
         },
         "PAIR": {
-            43113: "0x113C1e5f4746A203E2dc94691fe2466780Bd8673"
+            43113: "0x1A5855aAE72411bC19bcAE9c282B5cdBbEAf20aF"
         },
         "TRIVIAL": {
-            43113: "0x9fd926C3f4DCA70F84ead144512eEc00C653E4ee"
+            43113: "0x197F855676D830661f54aEB591dEA84f1d629838"
         },
         "ABREQ_PAIR": {
-            43113: "0x150dd0aF8FCE1E86D78d3641E268584CEb2a5935"
+            43113: "0xb6111cB73CC8dC4E5e231745c286f60FBb31Ba02"
         }
     },
     "quotes": {

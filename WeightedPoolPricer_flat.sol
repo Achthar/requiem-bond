@@ -255,6 +255,12 @@ interface IAssetPricer {
         address _quote,
         uint256 _amount
     ) external view returns (uint256);
+
+    function slashedValuation(
+        address _pair,
+        address _quote,
+        uint256 _amount
+    ) external view returns (uint256);
 }
 
 // File: contracts/pricers/WeightedPoolPricer.sol
@@ -294,7 +300,6 @@ contract WeightedPoolPricer is IAssetPricer {
                 _value += reserves[i];
             }
         }
-
         _value *= 10**(18 - IERC20(_quote).decimals());
     }
 
@@ -302,14 +307,25 @@ contract WeightedPoolPricer is IAssetPricer {
         address _lpAddress,
         address _quote,
         uint256 _amount
-    ) external view override returns (uint256 _value) {
-        uint256 totalValue = getTotalValue(_lpAddress, _quote);
-        uint256 totalSupply = IStableLPToken(_lpAddress).totalSupply();
-
-        _value = (totalValue * FixedPoint.fraction(_amount, totalSupply).decode112with18()) / 1e18;
+    ) external view override returns (uint256) {
+        return _valuation(_lpAddress, _quote, _amount);
     }
 
-    function markdown(address _lpAddress, address _quote) external view returns (uint256) {
-        return getTotalValue(_lpAddress, _quote);
+    function slashedValuation(
+        address _lpAddress,
+        address _quote,
+        uint256 _amount
+    ) external view override returns (uint256) {
+        return _valuation(_lpAddress, _quote, _amount);
+    }
+
+    function _valuation(
+        address _lpAddress,
+        address _quote,
+        uint256 _amount
+    ) internal view returns (uint256 _value) {
+        uint256 totalValue = getTotalValue(_lpAddress, _quote);
+        uint256 totalSupply = IStableLPToken(_lpAddress).totalSupply();
+        _value = (totalValue * FixedPoint.fraction(_amount, totalSupply).decode112with18()) / 1e18;
     }
 }

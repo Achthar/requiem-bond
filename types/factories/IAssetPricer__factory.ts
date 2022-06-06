@@ -11,6 +11,35 @@ const _abi = [
     inputs: [
       {
         internalType: "address",
+        name: "_pair",
+        type: "address",
+      },
+      {
+        internalType: "address",
+        name: "_quote",
+        type: "address",
+      },
+      {
+        internalType: "uint256",
+        name: "_amount",
+        type: "uint256",
+      },
+    ],
+    name: "slashedValuation",
+    outputs: [
+      {
+        internalType: "uint256",
+        name: "",
+        type: "uint256",
+      },
+    ],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [
+      {
+        internalType: "address",
         name: "_asset",
         type: "address",
       },

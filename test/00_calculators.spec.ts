@@ -132,14 +132,9 @@ describe('Calculator-Test', () => {
 		it('test requiem calculator', async () => {
 
 
-			const val = await calculatorRequiemNative.getTotalValue(testPair.address, tokenDAI.address)
+			const val = await calculatorRequiemNative.getTotalSlashedValue(testPair.address, tokenDAI.address)
 			console.log("VAL", val.toString())
 			expect(val.toString()).to.equal('110000000000000000000') // 110.00
-
-
-			const markdown = await calculatorRequiemNative.markdown(testPair.address, tokenDAI.address)
-			console.log("Markdown", markdown.toString())
-			expect(markdown.toString()).to.equal('1090909090909090909') // 110.00
 
 		})
 	})

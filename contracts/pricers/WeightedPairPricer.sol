@@ -12,33 +12,15 @@ import "../interfaces/IWeightedPair.sol";
  * Bonding calculator for weighted pairs
  */
 contract WeightedPairPricer is IAssetPricer {
-
     constructor() {}
 
     /**
-     * note for general pairs the price does not necessarily satisfy the conditon
-     * that the lp value consists 50% of the one and the other token since the mid
-     * price is the quotient of the reserves. That is not necessarily the case for
-     * general pairs, therefore, we have to calculate the price separately and apply it
-     * to the reserve amount for conversion
-     * - calculates the total liquidity value denominated in the provided token
-     * - uses the 1bps ouytput reserves for that calculation to avoid slippage to
-     *   have a too large impact
-     * - the sencond token input argument is ignored when using pools with only 2 tokens
+     * @notice standard pair valuation tusing the pool price
      * @param _pair general pair that has the RequiemSwap interface implemented
-     *  - the value is calculated as the geometric average of input and output
-     *  - is consistent with the uniswapV2-type case
      */
     function getTotalValue(address _pair, address _quote) public view returns (uint256 _value) {
         IWeightedPair.ReserveData memory pairData = IWeightedPair(_pair).getReserves();
         (uint32 weight0, uint32 weight1, , ) = IWeightedPair(_pair).getParameters();
-
-        // In case of both weights being 50, it is equivalent to
-        // the UniswapV2 variant. If the weights are different, we define the valuation by
-        // scaling the reserve up or down dependent on the weights and the use the product as
-        // adjusted constant product. We will use the conservative estimation of the price - we upscale
-        // such that the reflected equivalent pool is a uniswapV2 with the higher liquidity that pruduces
-        // the same price of the Requiem token as the weighted pool.
         if (_quote == IWeightedPair(_pair).token0()) {
             _value = pairData.reserve0 + (pairData.vReserve0 * weight1 * pairData.reserve1) / (weight0 * pairData.vReserve1);
         } else {
@@ -49,24 +31,39 @@ contract WeightedPairPricer is IAssetPricer {
     }
 
     /**
-     * - calculates the value in QUOTE that backs reqt 1:1 of the input LP amount provided
+     * @notice Calculates the value in QUOTE 
      * @param _pair general pair that has the RequiemSwap interface implemented
      * @param _amount the amount of LP to price for the backing
-     *  - is consistent with the uniswapV2-type case
      */
     function valuation(
         address _pair,
         address _quote,
         uint256 _amount
-    ) external view override returns (uint256 _value) {
+    ) external view override returns (uint256) {
+        return _valuation(_pair, _quote, _amount);
+    }
+
+    /**
+     * @notice same as valuation as REQ is not expected to be in the pair 
+     * @param _pair general pair that has the RequiemSwap interface implemented
+     * @param _amount the amount of LP to price for the backing
+     */
+    function slashedValuation(
+        address _pair,
+        address _quote,
+        uint256 _amount
+    ) external view override returns (uint256) {
+        return _valuation(_pair, _quote, _amount);
+    }
+
+    function _valuation(
+        address _pair,
+        address _quote,
+        uint256 _amount
+    ) internal view returns (uint256 _value) {
         uint256 totalValue = getTotalValue(_pair, _quote);
         uint256 totalSupply = IWeightedPair(_pair).totalSupply();
 
         _value = (totalValue * _amount) / totalSupply;
-    }
-
-    // markdown function for bond valuation - no discounting fo regular pairs
-    function markdown(address _pair, address _quote) external view returns (uint256) {
-        return getTotalValue(_pair, _quote);
     }
 }

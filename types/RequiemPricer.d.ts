@@ -21,19 +21,24 @@ import type { TypedEventFilter, TypedEvent, TypedListener } from "./common";
 interface RequiemPricerInterface extends ethers.utils.Interface {
   functions: {
     "REQ()": FunctionFragment;
+    "getTotalSlashedValue(address,address)": FunctionFragment;
     "getTotalValue(address,address)": FunctionFragment;
-    "markdown(address,address)": FunctionFragment;
+    "slashedValuation(address,address,uint256)": FunctionFragment;
     "valuation(address,address,uint256)": FunctionFragment;
   };
 
   encodeFunctionData(functionFragment: "REQ", values?: undefined): string;
   encodeFunctionData(
+    functionFragment: "getTotalSlashedValue",
+    values: [string, string]
+  ): string;
+  encodeFunctionData(
     functionFragment: "getTotalValue",
     values: [string, string]
   ): string;
   encodeFunctionData(
-    functionFragment: "markdown",
-    values: [string, string]
+    functionFragment: "slashedValuation",
+    values: [string, string, BigNumberish]
   ): string;
   encodeFunctionData(
     functionFragment: "valuation",
@@ -42,10 +47,17 @@ interface RequiemPricerInterface extends ethers.utils.Interface {
 
   decodeFunctionResult(functionFragment: "REQ", data: BytesLike): Result;
   decodeFunctionResult(
+    functionFragment: "getTotalSlashedValue",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
     functionFragment: "getTotalValue",
     data: BytesLike
   ): Result;
-  decodeFunctionResult(functionFragment: "markdown", data: BytesLike): Result;
+  decodeFunctionResult(
+    functionFragment: "slashedValuation",
+    data: BytesLike
+  ): Result;
   decodeFunctionResult(functionFragment: "valuation", data: BytesLike): Result;
 
   events: {};
@@ -97,66 +109,87 @@ export class RequiemPricer extends BaseContract {
   functions: {
     REQ(overrides?: CallOverrides): Promise<[string]>;
 
-    getTotalValue(
+    getTotalSlashedValue(
       _pair: string,
       arg1: string,
       overrides?: CallOverrides
     ): Promise<[BigNumber] & { _value: BigNumber }>;
 
-    markdown(
+    getTotalValue(
       _pair: string,
       _quote: string,
       overrides?: CallOverrides
-    ): Promise<[BigNumber]>;
+    ): Promise<[BigNumber] & { _value: BigNumber }>;
+
+    slashedValuation(
+      _pair: string,
+      _quote: string,
+      _amount: BigNumberish,
+      overrides?: CallOverrides
+    ): Promise<[BigNumber] & { _value: BigNumber }>;
 
     valuation(
       _pair: string,
       _quote: string,
-      amount_: BigNumberish,
+      _amount: BigNumberish,
       overrides?: CallOverrides
     ): Promise<[BigNumber] & { _value: BigNumber }>;
   };
 
   REQ(overrides?: CallOverrides): Promise<string>;
 
-  getTotalValue(
+  getTotalSlashedValue(
     _pair: string,
     arg1: string,
     overrides?: CallOverrides
   ): Promise<BigNumber>;
 
-  markdown(
+  getTotalValue(
     _pair: string,
     _quote: string,
+    overrides?: CallOverrides
+  ): Promise<BigNumber>;
+
+  slashedValuation(
+    _pair: string,
+    _quote: string,
+    _amount: BigNumberish,
     overrides?: CallOverrides
   ): Promise<BigNumber>;
 
   valuation(
     _pair: string,
     _quote: string,
-    amount_: BigNumberish,
+    _amount: BigNumberish,
     overrides?: CallOverrides
   ): Promise<BigNumber>;
 
   callStatic: {
     REQ(overrides?: CallOverrides): Promise<string>;
 
-    getTotalValue(
+    getTotalSlashedValue(
       _pair: string,
       arg1: string,
       overrides?: CallOverrides
     ): Promise<BigNumber>;
 
-    markdown(
+    getTotalValue(
       _pair: string,
       _quote: string,
+      overrides?: CallOverrides
+    ): Promise<BigNumber>;
+
+    slashedValuation(
+      _pair: string,
+      _quote: string,
+      _amount: BigNumberish,
       overrides?: CallOverrides
     ): Promise<BigNumber>;
 
     valuation(
       _pair: string,
       _quote: string,
-      amount_: BigNumberish,
+      _amount: BigNumberish,
       overrides?: CallOverrides
     ): Promise<BigNumber>;
   };
@@ -166,22 +199,29 @@ export class RequiemPricer extends BaseContract {
   estimateGas: {
     REQ(overrides?: CallOverrides): Promise<BigNumber>;
 
-    getTotalValue(
+    getTotalSlashedValue(
       _pair: string,
       arg1: string,
       overrides?: CallOverrides
     ): Promise<BigNumber>;
 
-    markdown(
+    getTotalValue(
       _pair: string,
       _quote: string,
+      overrides?: CallOverrides
+    ): Promise<BigNumber>;
+
+    slashedValuation(
+      _pair: string,
+      _quote: string,
+      _amount: BigNumberish,
       overrides?: CallOverrides
     ): Promise<BigNumber>;
 
     valuation(
       _pair: string,
       _quote: string,
-      amount_: BigNumberish,
+      _amount: BigNumberish,
       overrides?: CallOverrides
     ): Promise<BigNumber>;
   };
@@ -189,22 +229,29 @@ export class RequiemPricer extends BaseContract {
   populateTransaction: {
     REQ(overrides?: CallOverrides): Promise<PopulatedTransaction>;
 
-    getTotalValue(
+    getTotalSlashedValue(
       _pair: string,
       arg1: string,
       overrides?: CallOverrides
     ): Promise<PopulatedTransaction>;
 
-    markdown(
+    getTotalValue(
       _pair: string,
       _quote: string,
+      overrides?: CallOverrides
+    ): Promise<PopulatedTransaction>;
+
+    slashedValuation(
+      _pair: string,
+      _quote: string,
+      _amount: BigNumberish,
       overrides?: CallOverrides
     ): Promise<PopulatedTransaction>;
 
     valuation(
       _pair: string,
       _quote: string,
-      amount_: BigNumberish,
+      _amount: BigNumberish,
       overrides?: CallOverrides
     ): Promise<PopulatedTransaction>;
   };

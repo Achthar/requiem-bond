@@ -20,14 +20,23 @@ import type { TypedEventFilter, TypedEvent, TypedListener } from "./common";
 
 interface IAssetPricerInterface extends ethers.utils.Interface {
   functions: {
+    "slashedValuation(address,address,uint256)": FunctionFragment;
     "valuation(address,address,uint256)": FunctionFragment;
   };
 
+  encodeFunctionData(
+    functionFragment: "slashedValuation",
+    values: [string, string, BigNumberish]
+  ): string;
   encodeFunctionData(
     functionFragment: "valuation",
     values: [string, string, BigNumberish]
   ): string;
 
+  decodeFunctionResult(
+    functionFragment: "slashedValuation",
+    data: BytesLike
+  ): Result;
   decodeFunctionResult(functionFragment: "valuation", data: BytesLike): Result;
 
   events: {};
@@ -77,6 +86,13 @@ export class IAssetPricer extends BaseContract {
   interface: IAssetPricerInterface;
 
   functions: {
+    slashedValuation(
+      _pair: string,
+      _quote: string,
+      _amount: BigNumberish,
+      overrides?: CallOverrides
+    ): Promise<[BigNumber]>;
+
     valuation(
       _asset: string,
       _quote: string,
@@ -84,6 +100,13 @@ export class IAssetPricer extends BaseContract {
       overrides?: CallOverrides
     ): Promise<[BigNumber]>;
   };
+
+  slashedValuation(
+    _pair: string,
+    _quote: string,
+    _amount: BigNumberish,
+    overrides?: CallOverrides
+  ): Promise<BigNumber>;
 
   valuation(
     _asset: string,
@@ -93,6 +116,13 @@ export class IAssetPricer extends BaseContract {
   ): Promise<BigNumber>;
 
   callStatic: {
+    slashedValuation(
+      _pair: string,
+      _quote: string,
+      _amount: BigNumberish,
+      overrides?: CallOverrides
+    ): Promise<BigNumber>;
+
     valuation(
       _asset: string,
       _quote: string,
@@ -104,6 +134,13 @@ export class IAssetPricer extends BaseContract {
   filters: {};
 
   estimateGas: {
+    slashedValuation(
+      _pair: string,
+      _quote: string,
+      _amount: BigNumberish,
+      overrides?: CallOverrides
+    ): Promise<BigNumber>;
+
     valuation(
       _asset: string,
       _quote: string,
@@ -113,6 +150,13 @@ export class IAssetPricer extends BaseContract {
   };
 
   populateTransaction: {
+    slashedValuation(
+      _pair: string,
+      _quote: string,
+      _amount: BigNumberish,
+      overrides?: CallOverrides
+    ): Promise<PopulatedTransaction>;
+
     valuation(
       _asset: string,
       _quote: string,

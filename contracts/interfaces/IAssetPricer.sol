@@ -7,4 +7,10 @@ interface IAssetPricer {
         address _quote,
         uint256 _amount
     ) external view returns (uint256);
+
+    function slashedValuation(
+        address _pair,
+        address _quote,
+        uint256 _amount
+    ) external view returns (uint256);
 }

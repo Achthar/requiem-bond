@@ -21,7 +21,7 @@ import type { TypedEventFilter, TypedEvent, TypedListener } from "./common";
 interface WeightedPoolPricerInterface extends ethers.utils.Interface {
   functions: {
     "getTotalValue(address,address)": FunctionFragment;
-    "markdown(address,address)": FunctionFragment;
+    "slashedValuation(address,address,uint256)": FunctionFragment;
     "valuation(address,address,uint256)": FunctionFragment;
   };
 
@@ -30,8 +30,8 @@ interface WeightedPoolPricerInterface extends ethers.utils.Interface {
     values: [string, string]
   ): string;
   encodeFunctionData(
-    functionFragment: "markdown",
-    values: [string, string]
+    functionFragment: "slashedValuation",
+    values: [string, string, BigNumberish]
   ): string;
   encodeFunctionData(
     functionFragment: "valuation",
@@ -42,7 +42,10 @@ interface WeightedPoolPricerInterface extends ethers.utils.Interface {
     functionFragment: "getTotalValue",
     data: BytesLike
   ): Result;
-  decodeFunctionResult(functionFragment: "markdown", data: BytesLike): Result;
+  decodeFunctionResult(
+    functionFragment: "slashedValuation",
+    data: BytesLike
+  ): Result;
   decodeFunctionResult(functionFragment: "valuation", data: BytesLike): Result;
 
   events: {};
@@ -98,9 +101,10 @@ export class WeightedPoolPricer extends BaseContract {
       overrides?: CallOverrides
     ): Promise<[BigNumber] & { _value: BigNumber }>;
 
-    markdown(
+    slashedValuation(
       _lpAddress: string,
       _quote: string,
+      _amount: BigNumberish,
       overrides?: CallOverrides
     ): Promise<[BigNumber]>;
 
@@ -109,7 +113,7 @@ export class WeightedPoolPricer extends BaseContract {
       _quote: string,
       _amount: BigNumberish,
       overrides?: CallOverrides
-    ): Promise<[BigNumber] & { _value: BigNumber }>;
+    ): Promise<[BigNumber]>;
   };
 
   getTotalValue(
@@ -118,9 +122,10 @@ export class WeightedPoolPricer extends BaseContract {
     overrides?: CallOverrides
   ): Promise<BigNumber>;
 
-  markdown(
+  slashedValuation(
     _lpAddress: string,
     _quote: string,
+    _amount: BigNumberish,
     overrides?: CallOverrides
   ): Promise<BigNumber>;
 
@@ -138,9 +143,10 @@ export class WeightedPoolPricer extends BaseContract {
       overrides?: CallOverrides
     ): Promise<BigNumber>;
 
-    markdown(
+    slashedValuation(
       _lpAddress: string,
       _quote: string,
+      _amount: BigNumberish,
       overrides?: CallOverrides
     ): Promise<BigNumber>;
 
@@ -161,9 +167,10 @@ export class WeightedPoolPricer extends BaseContract {
       overrides?: CallOverrides
     ): Promise<BigNumber>;
 
-    markdown(
+    slashedValuation(
       _lpAddress: string,
       _quote: string,
+      _amount: BigNumberish,
       overrides?: CallOverrides
     ): Promise<BigNumber>;
 
@@ -182,9 +189,10 @@ export class WeightedPoolPricer extends BaseContract {
       overrides?: CallOverrides
     ): Promise<PopulatedTransaction>;
 
-    markdown(
+    slashedValuation(
       _lpAddress: string,
       _quote: string,
+      _amount: BigNumberish,
       overrides?: CallOverrides
     ): Promise<PopulatedTransaction>;
 

@@ -21,7 +21,7 @@ import type { TypedEventFilter, TypedEvent, TypedListener } from "./common";
 interface TrivialPricerInterface extends ethers.utils.Interface {
   functions: {
     "getTotalValue(address)": FunctionFragment;
-    "markdown(address)": FunctionFragment;
+    "slashedValuation(address,address,uint256)": FunctionFragment;
     "valuation(address,address,uint256)": FunctionFragment;
   };
 
@@ -29,7 +29,10 @@ interface TrivialPricerInterface extends ethers.utils.Interface {
     functionFragment: "getTotalValue",
     values: [string]
   ): string;
-  encodeFunctionData(functionFragment: "markdown", values: [string]): string;
+  encodeFunctionData(
+    functionFragment: "slashedValuation",
+    values: [string, string, BigNumberish]
+  ): string;
   encodeFunctionData(
     functionFragment: "valuation",
     values: [string, string, BigNumberish]
@@ -39,7 +42,10 @@ interface TrivialPricerInterface extends ethers.utils.Interface {
     functionFragment: "getTotalValue",
     data: BytesLike
   ): Result;
-  decodeFunctionResult(functionFragment: "markdown", data: BytesLike): Result;
+  decodeFunctionResult(
+    functionFragment: "slashedValuation",
+    data: BytesLike
+  ): Result;
   decodeFunctionResult(functionFragment: "valuation", data: BytesLike): Result;
 
   events: {};
@@ -94,7 +100,12 @@ export class TrivialPricer extends BaseContract {
       overrides?: CallOverrides
     ): Promise<[BigNumber] & { _value: BigNumber }>;
 
-    markdown(_asset: string, overrides?: CallOverrides): Promise<[BigNumber]>;
+    slashedValuation(
+      _asset: string,
+      arg1: string,
+      _amount: BigNumberish,
+      overrides?: CallOverrides
+    ): Promise<[BigNumber] & { _value: BigNumber }>;
 
     valuation(
       _asset: string,
@@ -106,7 +117,12 @@ export class TrivialPricer extends BaseContract {
 
   getTotalValue(_asset: string, overrides?: CallOverrides): Promise<BigNumber>;
 
-  markdown(_asset: string, overrides?: CallOverrides): Promise<BigNumber>;
+  slashedValuation(
+    _asset: string,
+    arg1: string,
+    _amount: BigNumberish,
+    overrides?: CallOverrides
+  ): Promise<BigNumber>;
 
   valuation(
     _asset: string,
@@ -121,7 +137,12 @@ export class TrivialPricer extends BaseContract {
       overrides?: CallOverrides
     ): Promise<BigNumber>;
 
-    markdown(_asset: string, overrides?: CallOverrides): Promise<BigNumber>;
+    slashedValuation(
+      _asset: string,
+      arg1: string,
+      _amount: BigNumberish,
+      overrides?: CallOverrides
+    ): Promise<BigNumber>;
 
     valuation(
       _asset: string,
@@ -139,7 +160,12 @@ export class TrivialPricer extends BaseContract {
       overrides?: CallOverrides
     ): Promise<BigNumber>;
 
-    markdown(_asset: string, overrides?: CallOverrides): Promise<BigNumber>;
+    slashedValuation(
+      _asset: string,
+      arg1: string,
+      _amount: BigNumberish,
+      overrides?: CallOverrides
+    ): Promise<BigNumber>;
 
     valuation(
       _asset: string,
@@ -155,8 +181,10 @@ export class TrivialPricer extends BaseContract {
       overrides?: CallOverrides
     ): Promise<PopulatedTransaction>;
 
-    markdown(
+    slashedValuation(
       _asset: string,
+      arg1: string,
+      _amount: BigNumberish,
       overrides?: CallOverrides
     ): Promise<PopulatedTransaction>;
 

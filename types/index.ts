@@ -53,6 +53,7 @@ export type { StablePoolPricer } from "./StablePoolPricer";
 export type { TrivialPricer } from "./TrivialPricer";
 export type { WeightedPairPricer } from "./WeightedPairPricer";
 export type { WeightedPoolPricer } from "./WeightedPoolPricer";
+export type { TargetBondDepository } from "./TargetBondDepository";
 
 export { Authority__factory } from "./factories/Authority__factory";
 export { BondDepository__factory } from "./factories/BondDepository__factory";
@@ -106,3 +107,4 @@ export { StablePoolPricer__factory } from "./factories/StablePoolPricer__factory
 export { TrivialPricer__factory } from "./factories/TrivialPricer__factory";
 export { WeightedPairPricer__factory } from "./factories/WeightedPairPricer__factory";
 export { WeightedPoolPricer__factory } from "./factories/WeightedPoolPricer__factory";
+export { TargetBondDepository__factory } from "./factories/TargetBondDepository__factory";

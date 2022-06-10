@@ -7,10 +7,10 @@ import "./interfaces/IBondDepository.sol";
 
 // solhint-disable  max-line-length
 
-/// @title Requiem Bond Depository
-/// @author Requiem: Achthar; Olympus DAO: Zeus, Indigo
+/// @title Requiem Range Bond Depository
+/// @author Achthar
 
-contract TargetBondDepository is IBondDepository, UserTermsKeeper {
+contract RangeBondDepository is IBondDepository, UserTermsKeeper {
     /* ======== DEPENDENCIES ======== */
 
     using SafeERC20 for IERC20;

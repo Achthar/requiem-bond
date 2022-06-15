@@ -7,7 +7,7 @@ interface ICryptoLinkerUserTermsKeeper {
         uint256 cryptoIntitialPrice; // reference price at opening
         uint256 cryptoClosingPrice; // closing price of position
         uint256 baseNotional; // notional base in REQ
-        uint256 strikePrice;
+        uint256 bondPrice;
         uint48 created; // time market was created
         uint48 matured; // timestamp when market is matured
         uint48 redeemed; // time market was redeemed

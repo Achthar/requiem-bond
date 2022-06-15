@@ -218,9 +218,8 @@ contract BondDepository is IBondDepository, UserTermsKeeper {
             uint256 price = _marketPrice(_id);
 
             // standardize capacity into an base token amount
-            // req decimals + price decimals
             uint256 capacity = market.capacityInQuote
-                ? ((market.capacity * (10**(2 * req.decimals()))) / price) / (10**meta.assetDecimals)
+                ? (treasury.assetValue(address(market.asset), market.capacity) * 1e18) / price
                 : market.capacity;
 
             /**

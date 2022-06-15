@@ -20,7 +20,6 @@ describe("Bond Depository", async () => {
     let erc20Factory;
     let mockReqFactory;
     let authFactory;
-    let gOhmFactory;
     let depositoryFactory;
 
     let auth;
@@ -28,7 +27,6 @@ describe("Bond Depository", async () => {
     let req;
     let depository;
     let treasury;
-    let staking;
 
     let capacity = ethers.BigNumber.from(10000).mul(one18);
     let initialPrice = ethers.BigNumber.from(400).mul(one18);

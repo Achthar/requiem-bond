@@ -9,21 +9,22 @@ interface ICryptoLinkerDepository {
     // Info about each type of market
     struct Market {
         uint256 capacity; // capacity remaining
-        IERC20 asset; // token to accept as payment
-        bool capacityInQuote; // capacity limit is in payment token (true) or in REQ (false, default)
+        address asset; // token to accept as payment
+        address index;
+        uint256 strike;
         uint256 totalDebt; // total debt from market
         uint256 maxPayout; // max tokens in/out (determined by capacityInQuote false/true, respectively)
         uint256 sold; // base tokens out
         uint256 purchased; // quote tokens in
-        address underlying; // underlying that the payoff is linked to
-        uint256 ema; // undelying ema - based on user deposits
-        uint256 underlyingCap;
-        uint256 underlyingFloor;
+        uint256 floor; // bond price minimum / floor
+        uint256 maxDebt; // 18 decimal debt maximum in REQ
+        uint48 vesting; // length of time from deposit to maturity if fixed-term
+        uint48 conclusion; // timestamp when market no longer offered (doubles as time when market matures if fixed-expiry)
     }
 
     // Info for creating new markets
     struct Terms {
-        bool fixedTerm; // fixed term or fixed expiration
+        uint256 leverage;
         uint256 controlVariable; // scaling variable for price
         uint48 vesting; // length of time from deposit to maturity if fixed-term
         uint48 conclusion; // timestamp when market no longer offered (doubles as time when market matures if fixed-expiry)
@@ -32,10 +33,11 @@ interface ICryptoLinkerDepository {
 
     // Additional info about market.
     struct Metadata {
-        uint256 alpha; // ema alpha
+        uint256 lastReferencePrice; // underlying 
+        uint256 lastReferenceBondPrice; // reference Bond price to accrue on
         uint48 lastTune; // last timestamp when control variable was tuned
         uint48 lastDecay; // last timestamp when market was created and debt was decayed
-        uint48 length; // time from creation to conclusion. used as speed to decay debt.
+        uint48 marketLength; // time from creation to conclusion. used as speed to decay debt.
         uint48 depositInterval; // target frequency of deposits
         uint48 tuneInterval; // frequency of tuning
         uint8 assetDecimals; // decimals of quote token
@@ -43,47 +45,41 @@ interface ICryptoLinkerDepository {
 
     // Control variable adjustment data
     struct Adjustment {
+        uint256 referencePrice;
         uint256 change;
         uint48 lastAdjustment;
         uint48 timeToAdjusted;
         bool active;
     }
 
-    /**
-     * @notice deposit market
-     * @param _bid uint256
-     * @param _amount uint256
-     * @param _maxPrice uint256
-     * @param _user address
-     * @param _referral address
-     * @return payout_ uint256
-     * @return expiry_ uint256
-     * @return index_ uint256
-     */
-    function deposit(
-        uint256 _bid,
-        uint256 _amount,
-        uint256 _strike,
-        uint256 _maxPrice,
-        address _user,
-        address _referral
-    )
-        external
-        returns (
-            uint256 payout_,
-            uint256 expiry_,
-            uint256 index_
-        );
+    struct IndexData {
+        address index; // underlying
+        uint256 referencePrice;
+        uint48 lastUpdate;
+    }
 
-    function create(
-        IERC20 _asset, // token used to deposit
-        address _underlying,
-        uint256[2] memory _underlyingCircuits,
-        uint256[5] memory _market, // [capacity, initial price]
-        bool[2] memory _booleans, // [capacity in quote, fixed term]
-        uint256[2] memory _terms, // [vesting, conclusion]
-        uint32[2] memory _intervals // [deposit interval, tune interval]
-    ) external returns (uint256 id_);
+    // /**
+    //  * @notice deposit market
+    //  * @param _bid uint256
+    //  * @param _amount uint256
+    //  * @param _maxPrice uint256
+    //  * @param _user address
+    //  */
+    // function deposit(
+    //     uint256 _bid,
+    //     uint256 _amount,
+    //     uint256 _strike,
+    //     uint256 _maxPrice,
+    //     address _user
+    // ) external returns (uint256 payout_, uint256 index_);
+
+    // function create(
+    //     address _asset, // token used to deposit
+    //     address _underlying,
+    //     uint256[4] memory _market, // [capacity, initial price, buffer, floor price]
+    //     uint256[2] memory _terms, // [vesting, conclusion]
+    //     uint32[2] memory _intervals // [deposit interval, tune interval]
+    // ) external returns (uint256 id_);
 
     function close(uint256 _id) external;
 

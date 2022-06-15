@@ -23,8 +23,8 @@ contract CryptoLinkerDepository is ICryptoLinkerDepository, ICryptoLinkerUserTer
 
     event CreateMarket(uint256 indexed id, address indexed baseToken, address indexed asset, uint256 initialPrice);
     event CloseMarket(uint256 indexed id);
-    event Bond(uint256 indexed id, uint256 amount, uint256 price);
-    event Tuned(uint256 indexed id, uint256 oldControlVariable, uint256 newControlVariable);
+    event CryptoLinker(uint256 indexed id, uint256 amount, uint256 notional);
+    event ReferencePriceUpdated(uint256 indexed id, uint256 oldPrice, uint256 newPrice);
 
     /* ======== STATE VARIABLES ======== */
 
@@ -39,8 +39,6 @@ contract CryptoLinkerDepository is ICryptoLinkerDepository, ICryptoLinkerUserTer
     Terms[] public terms; // deposit construction data
     Metadata[] public metadata; // extraneous market data
     mapping(uint256 => Adjustment) public adjustments; // control variable changes
-    mapping(address => address) public oracles;
-
     // Queries
     mapping(address => uint256[]) public marketsForQuote; // market IDs for quote token
 
@@ -50,266 +48,35 @@ contract CryptoLinkerDepository is ICryptoLinkerDepository, ICryptoLinkerUserTer
         treasury = ITreasury(_treasury);
     }
 
-    /* ======== DEPOSIT ======== */
-
-    /**
-     * @notice             deposit quote tokens in exchange for a bond from a specified market
-     * @param _id          the ID of the market
-     * @param _amount      the amount of quote token to spend
-     * @param _maxPrice    the maximum price at which to buy
-     * @param _user        the recipient of the payout
-     * @param _referral    the front end operator address
-     * @return payout_     the amount of REQ due
-     * @return expiry_     the timestamp at which payout is redeemable
-     * @return index_      the user index of the Terms (used to redeem or query information)
-     */
-    function deposit(
-        uint256 _id,
-        uint256 _amount,
-        uint256 _strike,
-        uint256 _maxPrice,
-        address _user,
-        address _referral
-    )
-        external
-        override
-        returns (
-            uint256 payout_,
-            uint256 expiry_,
-            uint256 index_
-        )
-    {
-        Market storage market = markets[_id];
-        Terms memory term = terms[_id];
-        uint48 currentTime = uint48(block.timestamp);
-
-        // Markets end at a defined timestamp
-        // |-------------------------------------| t
-        require(currentTime < term.conclusion, "Depository: market concluded");
-
-        // Debt and the control variable decay over time
-        _decay(_id, currentTime);
-
-        // Users input a maximum price, which protects them from price changes after
-        // entering the mempool. max price is a slippage mitigation measure
-        uint256 price = _marketPrice(_id);
-        require(price <= _maxPrice, "Depository: more than max price");
-
-        (, int256 _fetchedPrice, , , ) = getLatestPriceData(oracles[address(market.asset)]);
-
-        uint256 _initialCryproPrice = uint256(_fetchedPrice);
-        // uint80 roundId,
-        // int256 answer,
-        // uint256 startedAt,
-        // uint256 updatedAt, // relevant timestamp
-        // uint80 answeredInRound
-
-        /**
-         * payout for the deposit = value / price
-         *
-         * where
-         * payout = REQ out
-         * value = value of deposited asset amount in quote provided by treasury (always 18 dec)
-         * price = quote tokens : req (i.e. 42069 DAI : REQ)
-         *
-         * REQ decimals is supposed to match price decimals
-         */
-        payout_ = (treasury.assetValue(address(market.asset), _amount) * 1e18) / price;
-
-        // markets have a max payout amount, capping size because deposits
-        // do not experience slippage. max payout is recalculated upon tuning
-        require(payout_ <= market.maxPayout, "Depository: max size exceeded");
-
-        /*
-         * each market is initialized with a capacity
-         *
-         * this is either the number of REQ that the market can sell
-         * (if capacity in quote is false),
-         *
-         * or the number of quote tokens that the market can buy
-         * (if capacity in quote is true)
-         */
-        market.capacity -= market.capacityInQuote ? _amount : payout_;
-
-        /**
-         * bonds mature with a cliff at a set timestamp
-         * prior to the expiry timestamp, no payout tokens are accessible to the user
-         * after the expiry timestamp, the entire payout can be redeemed
-         *
-         * there are two types of bonds: fixed-term and fixed-expiration
-         *
-         * fixed-term bonds mature in a set amount of time from deposit
-         * i.e. term = 1 week. when alice deposits on day 1, her bond
-         * expires on day 8. when bob deposits on day 2, his bond expires day 9.
-         *
-         * fixed-expiration bonds mature at a set timestamp
-         * i.e. expiration = day 10. when alice deposits on day 1, her term
-         * is 9 days. when bob deposits on day 2, his term is 8 days.
-         */
-        expiry_ = term.fixedTerm ? term.vesting + currentTime : term.vesting;
-
-        // markets keep track of how many quote tokens have been
-        // purchased, and how much REQ has been sold
-        market.purchased += _amount;
-        market.sold += payout_;
-
-        // incrementing total debt raises the price of the next bond
-        market.totalDebt += payout_;
-
-        emit Bond(_id, _amount, price);
-
-        /**
-         * user data is stored as Termss. these are isolated array entries
-         * storing the amount due, the time created, the time when payout
-         * is redeemable, the time when payout was redeemed, and the ID
-         * of the market deposited into
-         */
-        index_ = addTerms(_user, _initialCryproPrice, _strike, payout_, uint48(expiry_), uint48(_id), _referral);
-
-        // transfer payment to treasury
-        market.asset.safeTransferFrom(msg.sender, address(treasury), _amount);
-
-        // if max debt is breached, the market is closed
-        // this a circuit breaker
-        if (term.maxDebt < market.totalDebt) {
-            market.capacity = 0;
-            emit CloseMarket(_id);
-        } else {
-            // if market will continue, the control variable is tuned to hit targets on time
-            _tune(_id, currentTime);
-        }
-    }
-
-    /**
-     * @notice             decay debt, and adjust control variable if there is an active change
-     * @param _id          ID of market
-     * @param _time        uint48 timestamp (saves gas when passed in)
-     */
-    function _decay(uint256 _id, uint48 _time) internal {
-        // Debt decay
-
-        /*
-         * Debt is a time-decayed sum of tokens spent in a market
-         * Debt is added when deposits occur and removed over time
-         * |
-         * |    debt falls with
-         * |   / \  inactivity       / \
-         * | /     \              /\/    \
-         * |         \           /         \
-         * |           \      /\/            \
-         * |             \  /  and rises       \
-         * |                with deposits
-         * |
-         * |------------------------------------| t
-         */
-        markets[_id].totalDebt -= debtDecay(_id);
-        metadata[_id].lastDecay = _time;
-
-        // Control variable decay
-
-        // The bond control variable is continually tuned. When it is lowered (which
-        // lowers the market price), the change is carried out smoothly over time.
-        if (adjustments[_id].active) {
-            Adjustment storage adjustment = adjustments[_id];
-
-            (uint256 adjustBy, uint48 secondsSince, bool stillActive) = _controlDecay(_id);
-            terms[_id].controlVariable -= adjustBy;
-
-            if (stillActive) {
-                adjustment.change -= adjustBy;
-                adjustment.timeToAdjusted -= secondsSince;
-                adjustment.lastAdjustment = _time;
-            } else {
-                adjustment.active = false;
-            }
-        }
-    }
-
-    /**
-     * @notice             auto-adjust control variable to hit capacity/spend target
-     * @param _id          ID of market
-     * @param _time        uint48 timestamp (saves gas when passed in)
-     */
-    function _tune(uint256 _id, uint48 _time) internal {
-        Metadata memory meta = metadata[_id];
-
-        if (_time >= meta.lastTune + meta.tuneInterval) {
-            Market memory market = markets[_id];
-
-            // compute seconds remaining until market will conclude
-            uint256 timeRemaining = terms[_id].conclusion - _time;
-            uint256 price = _marketPrice(_id);
-
-            // standardize capacity into an base token amount
-            // req decimals + price decimals
-            uint256 capacity = market.capacityInQuote
-                ? ((market.capacity * (10**(2 * req.decimals()))) / price) / (10**meta.assetDecimals)
-                : market.capacity;
-
-            /**
-             * calculate the correct payout to complete on time assuming each bond
-             * will be max size in the desired deposit interval for the remaining time
-             *
-             * i.e. market has 10 days remaining. deposit interval is 1 day. capacity
-             * is 10,000 REQ. max payout would be 1,000 REQ (10,000 * 1 / 10).
-             */
-            markets[_id].maxPayout = uint256((capacity * meta.depositInterval) / timeRemaining);
-
-            // calculate the ideal total debt to satisfy capacity in the remaining time
-            uint256 targetDebt = (capacity * meta.length) / timeRemaining;
-
-            // derive a new control variable from the target debt and current supply
-            uint256 newControlVariable = uint256((price * treasury.baseSupply()) / targetDebt);
-
-            emit Tuned(_id, terms[_id].controlVariable, newControlVariable);
-
-            if (newControlVariable >= terms[_id].controlVariable) {
-                terms[_id].controlVariable = newControlVariable;
-            } else {
-                // if decrease, control variable change will be carried out over the tune interval
-                // this is because price will be lowered
-                uint256 change = terms[_id].controlVariable - newControlVariable;
-                adjustments[_id] = Adjustment(change, _time, meta.tuneInterval, true);
-            }
-            metadata[_id].lastTune = _time;
-        }
-    }
-
     /* ======== CREATE ======== */
 
     /**
      * @notice             creates a new market type
      * @dev                current price should be in 9 decimals.
      * @param _asset  token used to deposit
-     * @param _market      [capacity (in REQ or quote), initial price / REQ (18 decimals), debt buffer (3 decimals), initial ema underlying, alpha]
-     * @param _booleans    [capacity in quote, fixed term]
+     * @param _market      [capacity (in REQ or quote), initial price / REQ (18 decimals), debt buffer (3 decimals), floor, strike]
      * @param _terms       [vesting length (if fixed term) or vested timestamp, conclusion timestamp]
      * @param _intervals   [deposit interval (seconds), tune interval (seconds)]
      * @return id_         ID of new bond market
      */
     function create(
-        IERC20 _asset,
-        address _underlying,
-        uint256[2] memory _underlyingCircuits,
+        address _asset,
+        address _underlyingOracle,
         uint256[5] memory _market,
-        bool[2] memory _booleans,
         uint256[2] memory _terms,
         uint32[2] memory _intervals
-    ) external override onlyPolicy returns (uint256 id_) {
+    ) external onlyPolicy returns (uint256 id_) {
         // the length of the program, in seconds
         uint256 secondsToConclusion = _terms[1] - block.timestamp;
 
-        // the decimal count of the quote token
-        uint256 decimals = _asset.decimals();
+        (, int256 _fetchedPrice, , uint256 _timestamp, ) = getLatestPriceData(_underlyingOracle);
 
         /*
          * initial target debt is equal to capacity (this is the amount of debt
          * that will decay over in the length of the program if price remains the same).
          * it is converted into base token terms if passed in in quote token terms.
-         *
-         * 1e18 = req decimals (x) + initial price decimals (18)
          */
-        uint256 targetDebt = uint256(_booleans[0] ? ((_market[0] * (10**(2 * req.decimals()))) / _market[1]) / 10**decimals : _market[0]);
+        uint256 targetDebt = _market[0];
 
         /*
          * max payout is the amount of capacity that should be utilized in a deposit
@@ -345,44 +112,169 @@ contract CryptoLinkerDepository is ICryptoLinkerDepository, ICryptoLinkerUserTer
         markets.push(
             Market({
                 asset: _asset,
-                underlying: _underlying,
-                underlyingFloor: _underlyingCircuits[0],
-                underlyingCap: _underlyingCircuits[1],
-                capacityInQuote: _booleans[0],
+                index: _underlyingOracle,
                 capacity: _market[0],
                 totalDebt: targetDebt,
                 maxPayout: maxPayout,
+                floor: _market[3],
+                strike: _market[4],
                 purchased: 0,
                 sold: 0,
-                ema: _market[3]
-            })
-        );
-
-        terms.push(
-            Terms({
-                fixedTerm: _booleans[1],
                 vesting: uint48(_terms[0]),
                 conclusion: uint48(_terms[1]),
-                controlVariable: controlVariable,
                 maxDebt: maxDebt
             })
         );
 
+        terms.push(
+            Terms({vesting: uint48(_terms[0]), conclusion: uint48(_terms[1]), controlVariable: controlVariable, leverage: 1, maxDebt: maxDebt})
+        );
+
         metadata.push(
             Metadata({
-                alpha: _market[4],
-                lastTune: uint48(block.timestamp),
+                lastReferencePrice: uint256(_fetchedPrice),
+                lastReferenceBondPrice: _market[1],
+                lastTune: uint48(_timestamp),
                 lastDecay: uint48(block.timestamp),
-                length: uint48(secondsToConclusion),
+                marketLength: uint48(secondsToConclusion),
                 depositInterval: _intervals[0],
                 tuneInterval: _intervals[1],
-                assetDecimals: uint8(decimals)
+                assetDecimals: uint8(IERC20(_asset).decimals())
             })
         );
 
         marketsForQuote[address(_asset)].push(id_);
 
         emit CreateMarket(id_, address(req), address(_asset), _market[1]);
+    }
+
+    /* ======== DEPOSIT ======== */
+
+    /**
+     * @notice             deposit quote tokens in exchange for a bond from a specified market
+     * @param _id          the ID of the market
+     * @param _amount      the amount of quote token to spend
+     * @param _maxPrice    the maximum price at which to buy
+     * @param _user        the recipient of the payout
+     */
+    function deposit(
+        uint256 _id,
+        uint256 _amount,
+        uint256 _maxPrice,
+        uint256 _timeSlippage,
+        address _user
+    ) external returns (uint256) {
+        Market storage market = markets[_id];
+        Terms memory term = terms[_id];
+        // uint48 currentTime = uint48(block.timestamp);
+
+        // Markets end at a defined timestamp
+        // |-------------------------------------| t
+        require(block.timestamp < term.conclusion, "Depository: market concluded");
+
+        // Debt and the control variable decay over time
+        _decay(_id, uint48(block.timestamp));
+
+        int256 _fetchedPrice = _fetchAndValidate(market.index, _timeSlippage);
+
+        /**
+         * user data is stored as Terms and relevant parameters are returned
+         */
+        (uint256 _index, uint256 _baseNotional, uint256 _price) = bondAsset(_user, _maxPrice, market, _id, _amount, _fetchedPrice);
+
+        /*
+         * each market is initialized with a capacity
+         * this is either the number of REQ that the market can sell
+         */
+        market.capacity -= _baseNotional;
+
+        // markets keep track of how many quote tokens have been
+        // purchased, and how much REQ has been sold
+        market.purchased += _amount;
+        market.sold += _baseNotional;
+
+        // incrementing total debt raises the price of the next bond
+        market.totalDebt += _baseNotional;
+
+        emit CryptoLinker(_id, _amount, _baseNotional);
+
+        // transfer payment to treasury
+        IERC20(market.asset).safeTransferFrom(msg.sender, address(treasury), _amount);
+
+        // if max debt is breached, the market is closed
+        // this a circuit breaker
+        if (term.maxDebt < market.totalDebt) {
+            market.capacity = 0;
+            emit CloseMarket(_id);
+        } else {
+            // if market will continue, the market is updated
+            _updateMarket(_id, uint256(_fetchedPrice), _price, uint48(block.timestamp));
+        }
+
+        return _index;
+    }
+
+    /**
+     * @notice             decay debt, and adjust control variable if there is an active change
+     * @param _id          ID of market
+     * @param _time        uint48 timestamp (saves gas when passed in)
+     */
+    function _decay(uint256 _id, uint48 _time) internal {
+        // Debt decay
+
+        /*
+         * Debt is a time-decayed sum of tokens spent in a market
+         * Debt is added when deposits occur and removed over time
+         * |
+         * |    debt falls with
+         * |   / \  inactivity       / \
+         * | /     \              /\/    \
+         * |         \           /         \
+         * |           \      /\/            \
+         * |             \  /  and rises       \
+         * |                with deposits
+         * |
+         * |------------------------------------| t
+         */
+        markets[_id].totalDebt -= debtDecay(_id);
+        metadata[_id].lastDecay = _time;
+    }
+
+    /**
+     * @notice             auto-adjust control variable to hit capacity/spend target
+     * @param _id          ID of market
+     * @param _time        uint48 timestamp (saves gas when passed in)
+     */
+    function _updateMarket(
+        uint256 _id,
+        uint256 _referencePrice,
+        uint256 _bondRefPrice,
+        uint48 _time
+    ) internal {
+        Metadata memory meta = metadata[_id];
+
+        if (_time >= meta.lastTune + meta.tuneInterval) {
+            Market memory market = markets[_id];
+
+            // compute seconds remaining until market will conclude
+            uint256 timeRemaining = terms[_id].conclusion - _time;
+
+            /**
+             * calculate the correct payout to complete on time assuming each bond
+             * will be max size in the desired deposit interval for the remaining time
+             *
+             * i.e. market has 10 days remaining. deposit interval is 1 day. capacity
+             * is 10,000 REQ. max payout would be 1,000 REQ (10,000 * 1 / 10).
+             */
+            markets[_id].maxPayout = uint256((market.capacity * meta.depositInterval) / timeRemaining);
+
+            meta.lastReferenceBondPrice = _bondRefPrice;
+            meta.lastReferencePrice = _referencePrice;
+
+            emit ReferencePriceUpdated(_id, meta.lastReferencePrice, _referencePrice);
+
+            metadata[_id].lastTune = _time;
+        }
     }
 
     /**
@@ -426,6 +318,23 @@ contract CryptoLinkerDepository is ICryptoLinkerDepository, ICryptoLinkerUserTer
      */
     function marketPrice(uint256 _id) public view override returns (uint256) {
         return (currentControlVariable(_id) * debtRatio(_id)) / (10**metadata[_id].assetDecimals);
+    }
+
+    function _bondPrice(uint256 _id, int256 _fetchedPrice) internal view returns (uint256 _refPrice) {
+        Market memory _market = markets[_id];
+        Metadata memory _meta = metadata[_id];
+
+        int256 lastReference = int256(_meta.lastReferencePrice);
+        int256 adjustmentToPrice = 1e18 +
+            int256(_multiplier(terms[_id].maxDebt, _market.capacity)) *
+            (((lastReference - _fetchedPrice) * 1e18) / lastReference);
+        _refPrice = (_meta.lastReferenceBondPrice * uint256(adjustmentToPrice)) / 1e18;
+
+        _refPrice = _refPrice > _market.floor ? _refPrice : _market.floor;
+    }
+
+    function _multiplier(uint256 _remainingCapacity, uint256 _maxCapacity) internal pure returns (uint256) {
+        return 1e18 + (_remainingCapacity * 1e18) / _maxCapacity;
     }
 
     /**
@@ -472,7 +381,7 @@ contract CryptoLinkerDepository is ICryptoLinkerDepository, ICryptoLinkerUserTer
 
         uint256 secondsSince = block.timestamp - meta.lastDecay;
 
-        return (markets[_id].totalDebt * secondsSince) / meta.length;
+        return (markets[_id].totalDebt * secondsSince) / meta.marketLength;
     }
 
     /**
@@ -599,35 +508,46 @@ contract CryptoLinkerDepository is ICryptoLinkerDepository, ICryptoLinkerUserTer
     /**
      * @notice             adds a new Terms for a user, stores the front end & DAO rewards, and mints & stakes payout & rewards
      * @param _user        the user that owns the Terms
-     * @param _strike      the underlying strike price
-     * @param _expiry      the timestamp when the Terms is redeemable
-     * @param _marketId    the ID of the market deposited into
-     * @return index_      the index of the Terms in the user's array
      */
-    function addTerms(
+    function bondAsset(
         address _user,
-        uint256 _initialPrice,
-        uint256 _strike,
-        uint256 _baseNotional,
-        uint48 _expiry,
-        uint48 _marketId,
-        address _referral
-    ) internal returns (uint256 index_) {
+        uint256 _maxPrice,
+        Market memory _market,
+        uint256 _marketId,
+        uint256 _amount,
+        int256 _fetchedPrice
+    )
+        internal
+        returns (
+            uint256 _index,
+            uint256 _baseNotional,
+            uint256 _price
+        )
+    {
+        // entering the mempool. max price is a slippage mitigation measure
+        _price = _bondPrice(_marketId, _fetchedPrice);
+        require(_price <= _maxPrice, "Depository: more than max price");
+
+        /**
+         * payout for the deposit = value / price
+         */
+        _baseNotional = (treasury.assetValue(_market.asset, _amount) * 1e18) / _price;
+
         // the index of the note is the next in the user's array
-        index_ = userTerms[_user].length;
+        _index = userTerms[_user].length;
 
         // the new note is pushed to the user's array
         userTerms[_user].push(
             UserTerms({
-                cryptoIntitialPrice: _initialPrice,
+                cryptoIntitialPrice: uint256(_fetchedPrice),
                 cryptoClosingPrice: 0,
-                strikePrice: _strike,
                 baseNotional: _baseNotional,
                 created: uint48(block.timestamp),
-                matured: _expiry,
+                matured: uint48(block.timestamp + _market.vesting),
                 redeemed: 0,
                 exercised: 0,
-                marketId: _marketId
+                marketId: uint48(_marketId),
+                bondPrice: 0
             })
         );
 
@@ -652,6 +572,9 @@ contract CryptoLinkerDepository is ICryptoLinkerDepository, ICryptoLinkerUserTer
             if (matured) {
                 userTerms[_user][_indexes[i]].exercised = time; // mark as exerciseed
                 payout_ += pay;
+                uint256 marketId = userTerms[_user][_indexes[i]].marketId;
+                (, int256 _fetchedPrice, , , ) = getLatestPriceData(markets[marketId].index);
+                if ((uint256(_fetchedPrice) * 1e18) / userTerms[_user][_indexes[i]].cryptoIntitialPrice > markets[marketId].strike) {}
             }
         }
 
@@ -737,5 +660,12 @@ contract CryptoLinkerDepository is ICryptoLinkerDepository, ICryptoLinkerUserTer
 
         payout_ = note.baseNotional;
         matured_ = note.redeemed == 0 && note.matured <= block.timestamp && note.baseNotional != 0;
+    }
+
+    function _fetchAndValidate(address _index, uint256 _timeSlippage) internal view returns (int256) {
+        (, int256 _fetchedPrice, , uint256 _time, ) = getLatestPriceData(_index);
+
+        require(block.timestamp - _time <= _timeSlippage, "Depository: Undelying Price too delayed");
+        return _fetchedPrice;
     }
 }

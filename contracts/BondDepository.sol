@@ -407,8 +407,8 @@ contract BondDepository is IBondDepository, UserTermsKeeper {
      * @dev we assume that the market price decimals and req decimals match (that is why we use 2 * req decimals)
      */
     function payoutFor(uint256 _amount, uint256 _id) external view override returns (uint256) {
-        Metadata memory meta = metadata[_id];
-        return (_amount * 10**(2 * req.decimals())) / marketPrice(_id) / 10**meta.assetDecimals;
+        Market memory market = markets[_id];
+        return (treasury.assetValue(address(market.asset), _amount) * 1e18) / marketPrice(_id);
     }
 
     /**

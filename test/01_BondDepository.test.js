@@ -186,6 +186,7 @@ describe("Bond Depository", async () => {
     it("should give accurate payout for price", async () => {
         let price = await depository.marketPrice(bid);
         let amount = "10000000000000000000000"; // 10,000
+        await treasury.assetValue.returns(amount)
         let expectedPayout = amount / price;
         let lowerBound = mulDiv(expectedPayout, 0.9999, 1);
         const payout = await depository.payoutFor(amount, 0)

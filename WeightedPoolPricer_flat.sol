@@ -3,7 +3,7 @@
 
 
 
-pragma solidity >=0.8.14;
+pragma solidity >=0.8.15;
 
 // solhint-disable no-inline-assembly, reason-string, max-line-length
 
@@ -136,7 +136,7 @@ library FullMath {
 // File: contracts/libraries/math/FixedPoint.sol
 
 
-pragma solidity 0.8.14;
+pragma solidity 0.8.15;
 
 
 library FixedPoint {
@@ -189,7 +189,7 @@ library FixedPoint {
 // File: contracts/interfaces/ERC20/IERC20.sol
 
 
-pragma solidity 0.8.14;
+pragma solidity 0.8.15;
 
 interface IERC20 {
     function decimals() external view returns (uint8);
@@ -214,7 +214,7 @@ interface IERC20 {
 
 
 
-pragma solidity ^0.8.14;
+pragma solidity ^0.8.15;
 
 
 interface ISwap {
@@ -235,7 +235,7 @@ interface ISwap {
 
 
 
-pragma solidity ^0.8.14;
+pragma solidity ^0.8.15;
 
 
 interface IStableLPToken {
@@ -247,7 +247,7 @@ interface IStableLPToken {
 // File: contracts/interfaces/IAssetPricer.sol
 
 
-pragma solidity ^0.8.14;
+pragma solidity ^0.8.15;
 
 interface IAssetPricer {
     function valuation(
@@ -267,7 +267,7 @@ interface IAssetPricer {
 
 
 
-pragma solidity 0.8.14;
+pragma solidity 0.8.15;
 
 
 

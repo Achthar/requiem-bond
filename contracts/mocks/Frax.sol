@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Unlicensed
-pragma solidity 0.8.14;
+pragma solidity 0.8.15;
 
 // solhint-disable max-line-length
 

@@ -15,7 +15,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-pragma solidity ^0.8.14;
+pragma solidity ^0.8.15;
 
 // solhint-disable
 library RequiemErrors {
@@ -252,7 +252,7 @@ library Errors {
 // size and runtime costs.
 // The `unchecked_at` function was also added, which allows for more gas efficient data reads in some scenarios.
 
-pragma solidity ^0.8.14;
+pragma solidity ^0.8.15;
 
 // solhint-disable func-name-mixedcase
 
@@ -546,7 +546,7 @@ library EnumerableSet {
 
 // File: libraries/AccessControl.sol
 
-pragma solidity ^0.8.14;
+pragma solidity ^0.8.15;
 
 /**
  * @dev Contract module that allows children to implement role-based access
@@ -789,7 +789,7 @@ abstract contract AccessControl {
 
 // File: interfaces/ERC20/IERC20.sol
 
-pragma solidity ^0.8.14;
+pragma solidity ^0.8.15;
 
 /**
  * @dev Interface of the ERC20 standard as defined in the EIP.
@@ -886,7 +886,7 @@ interface IERC20 {
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-pragma solidity ^0.8.14;
+pragma solidity ^0.8.15;
 
 /**
  * @dev Interface for WETH9.
@@ -915,7 +915,7 @@ interface IWETH is IERC20 {
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-pragma solidity ^0.8.14;
+pragma solidity ^0.8.15;
 
 contract TestWETH is AccessControl, IWETH {
   bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");

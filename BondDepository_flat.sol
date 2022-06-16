@@ -2,7 +2,7 @@
 // File: contracts/libraries/Address.sol
 
 
-pragma solidity 0.8.14;
+pragma solidity 0.8.15;
 
 library Address {
   function isContract(address account) internal view returns (bool) {
@@ -199,7 +199,7 @@ library Address {
 // File: contracts/interfaces/IUserTermsKeeper.sol
 
 
-pragma solidity >=0.8.14;
+pragma solidity >=0.8.15;
 
 interface IUserTermsKeeper {
     // Info for market note
@@ -230,7 +230,7 @@ interface IUserTermsKeeper {
 // File: contracts/interfaces/ITreasury.sol
 
 
-pragma solidity >=0.8.14;
+pragma solidity >=0.8.15;
 
 interface ITreasury {
     function deposit(
@@ -259,7 +259,7 @@ interface ITreasury {
 // File: contracts/interfaces/ERC20/IERC20.sol
 
 
-pragma solidity 0.8.14;
+pragma solidity 0.8.15;
 
 interface IERC20 {
     function decimals() external view returns (uint8);
@@ -283,7 +283,7 @@ interface IERC20 {
 // File: contracts/interfaces/IBondDepository.sol
 
 
-pragma solidity >=0.8.14;
+pragma solidity >=0.8.15;
 
 
 interface IBondDepository {
@@ -486,7 +486,7 @@ library SafeERC20 {
 // File: contracts/interfaces/IAuthority.sol
 
 
-pragma solidity >=0.8.14;
+pragma solidity >=0.8.15;
 
 interface IAuthority {
     /* ========== EVENTS ========== */
@@ -516,7 +516,7 @@ interface IAuthority {
 
 
 
-pragma solidity >=0.8.14;
+pragma solidity >=0.8.15;
 
 
 abstract contract AccessControlled {
@@ -828,7 +828,7 @@ abstract contract UserTermsKeeper is IUserTermsKeeper, FrontEndRewarder {
 // File: contracts/BondDepository.sol
 
 
-pragma solidity ^0.8.14;
+pragma solidity ^0.8.15;
 
 
 

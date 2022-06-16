@@ -3,7 +3,7 @@
 
 
 
-pragma solidity ^0.8.14;
+pragma solidity ^0.8.15;
 
 // solhint-disable func-name-mixedcase
 
@@ -40,7 +40,7 @@ interface IWeightedPair {
 // File: contracts/interfaces/ERC20/IERC20.sol
 
 
-pragma solidity 0.8.14;
+pragma solidity 0.8.15;
 
 interface IERC20 {
     function decimals() external view returns (uint8);
@@ -65,7 +65,7 @@ interface IERC20 {
 
 
 
-pragma solidity ^0.8.14;
+pragma solidity ^0.8.15;
 
 
 interface ISwap {
@@ -85,7 +85,7 @@ interface ISwap {
 // File: contracts/interfaces/IAssetPricer.sol
 
 
-pragma solidity ^0.8.14;
+pragma solidity ^0.8.15;
 
 interface IAssetPricer {
     function valuation(
@@ -105,7 +105,7 @@ interface IAssetPricer {
 
 
 
-pragma solidity 0.8.14;
+pragma solidity 0.8.15;
 
 
 

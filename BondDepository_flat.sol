@@ -874,7 +874,7 @@ contract BondDepository is IBondDepository, UserTermsKeeper {
      * @param _maxPrice    the maximum price at which to buy
      * @param _user        the recipient of the payout
      * @param _referral    the front end operator address
-     * @return payout_     the amount of gREQ due
+     * @return payout_     the amount of REQ due
      * @return expiry_     the timestamp at which payout is redeemable
      * @return index_      the user index of the Terms (used to redeem or query information)
      */
@@ -1046,9 +1046,8 @@ contract BondDepository is IBondDepository, UserTermsKeeper {
             uint256 price = _marketPrice(_id);
 
             // standardize capacity into an base token amount
-            // req decimals + price decimals
             uint256 capacity = market.capacityInQuote
-                ? ((market.capacity * (10**(2 * req.decimals()))) / price) / (10**meta.assetDecimals)
+                ? (treasury.assetValue(address(market.asset), market.capacity) * 1e18) / price
                 : market.capacity;
 
             /**

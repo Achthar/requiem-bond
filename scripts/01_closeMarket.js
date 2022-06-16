@@ -15,10 +15,10 @@ async function main() {
     const chainId = await operator.getChainId()
 
     // address of Diamon to upgrade
-    const depoAddress = addresses.bondDepo[chainId]
+    const depoAddress = '0xd57697959027073D3f5276Bb2b1124fCe3fd2540'// addresses.bondDepo[chainId]
 
     const bondDepositoryContract = new ethers.Contract(depoAddress, new ethers.utils.Interface(BondDepositoryABI.abi), operator)
-    const market = 2
+    const market = 4
     // create Bond
     const tx = await bondDepositoryContract.close(market)
 

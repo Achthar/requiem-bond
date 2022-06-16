@@ -448,7 +448,7 @@ export class CryptoLinkerDepository extends BaseContract {
     marketPrice(
       _id: BigNumberish,
       overrides?: CallOverrides
-    ): Promise<[BigNumber]>;
+    ): Promise<[BigNumber] & { _refPrice: BigNumber }>;
 
     markets(
       arg0: BigNumberish,

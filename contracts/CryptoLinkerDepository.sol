@@ -290,43 +290,18 @@ contract CryptoLinkerDepository is ICryptoLinkerDepository, ICryptoLinkerUserTer
     /* ======== EXTERNAL VIEW ======== */
 
     /**
-     * @notice             calculate current market price of quote token in base token
-     * @dev                accounts for debt and control variable decay since last deposit (vs _marketPrice())
-     * @param _id          ID of market
-     * @return             price for market in REQ decimals
-     *
-     * price is derived from the equation
-     *
-     * p = cv * dr
-     *
-     * where
-     * p = price
-     * cv = control variable
-     * dr = debt ratio
-     *
-     * dr = d / s
-     *
-     * where
-     * d = debt
-     * s = supply of token at market creation
-     *
-     * d -= ( d * (dt / l) )
-     *
-     * where
-     * dt = change in time
-     * l = length of program
+     * @notice calcualtes the current market price
+     * @param _id marketId
      */
-    function marketPrice(uint256 _id) public view override returns (uint256) {
-        return (currentControlVariable(_id) * debtRatio(_id)) / (10**metadata[_id].assetDecimals);
-    }
-
-    function _bondPrice(uint256 _id, int256 _fetchedPrice) internal view returns (uint256 _refPrice) {
+    function marketPrice(uint256 _id) public view returns (uint256 _refPrice) {
         Market memory _market = markets[_id];
         Metadata memory _meta = metadata[_id];
 
+        (, int256 _fetchedPrice, , , ) = getLatestPriceData(_market.index);
+
         int256 lastReference = int256(_meta.lastReferencePrice);
         int256 adjustmentToPrice = 1e18 +
-            int256(_multiplier(terms[_id].maxDebt, _market.capacity)) *
+            int256(_multiplier(terms[_id].maxDebt - _market.capacity, terms[_id].maxDebt)) *
             (((lastReference - _fetchedPrice) * 1e18) / lastReference);
         _refPrice = (_meta.lastReferenceBondPrice * uint256(adjustmentToPrice)) / 1e18;
 
@@ -347,8 +322,8 @@ contract CryptoLinkerDepository is ICryptoLinkerDepository, ICryptoLinkerUserTer
      * @dev we assume that the market price decimals and req decimals match (that is why we use 2 * req decimals)
      */
     function payoutFor(uint256 _amount, uint256 _id) external view override returns (uint256) {
-        Metadata memory meta = metadata[_id];
-        return (_amount * 10**(2 * req.decimals())) / marketPrice(_id) / 10**meta.assetDecimals;
+        Market memory _market = markets[_id];
+        return (treasury.assetValue(_market.asset, _amount) * 1e18) / marketPrice(_id);
     }
 
     /**
@@ -450,24 +425,21 @@ contract CryptoLinkerDepository is ICryptoLinkerDepository, ICryptoLinkerUserTer
     /* ======== INTERNAL VIEW ======== */
 
     /**
-     * @notice                  calculate current market price of quote token in base token
-     * @dev                     see marketPrice() for explanation of price computation
-     * @dev                     uses info from storage because data has been updated before call (vs marketPrice())
-     * @param _id               market ID
-     * @return                  price for market in REQ decimals
+     * @notice calcualtes the current market price for a given price
+     * @param _id marketId
+     * @param _fetchedPrice underlying price provided from oracle
      */
-    function _marketPrice(uint256 _id) internal view returns (uint256) {
-        return (terms[_id].controlVariable * _debtRatio(_id)) / (10**metadata[_id].assetDecimals);
-    }
+    function _marketPrice(uint256 _id, int256 _fetchedPrice) internal view returns (uint256 _refPrice) {
+        Market memory _market = markets[_id];
+        Metadata memory _meta = metadata[_id];
 
-    /**
-     * @notice                  calculate debt factoring in decay
-     * @dev                     uses info from storage because data has been updated before call (vs debtRatio())
-     * @param _id               market ID
-     * @return                  current debt for market in quote decimals
-     */
-    function _debtRatio(uint256 _id) internal view returns (uint256) {
-        return (markets[_id].totalDebt * (10**metadata[_id].assetDecimals)) / treasury.baseSupply();
+        int256 lastReference = int256(_meta.lastReferencePrice);
+        int256 adjustmentToPrice = 1e18 +
+            int256(_multiplier(_market.capacity, terms[_id].maxDebt)) *
+            (((lastReference - _fetchedPrice) * 1e18) / lastReference);
+        _refPrice = (_meta.lastReferenceBondPrice * uint256(adjustmentToPrice)) / 1e18;
+
+        _refPrice = _refPrice > _market.floor ? _refPrice : _market.floor;
     }
 
     /**
@@ -525,7 +497,7 @@ contract CryptoLinkerDepository is ICryptoLinkerDepository, ICryptoLinkerUserTer
         )
     {
         // entering the mempool. max price is a slippage mitigation measure
-        _price = _bondPrice(_marketId, _fetchedPrice);
+        _price = _marketPrice(_marketId, _fetchedPrice);
         require(_price <= _maxPrice, "Depository: more than max price");
 
         /**

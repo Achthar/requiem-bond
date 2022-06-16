@@ -281,9 +281,9 @@ contract BondDepository is IBondDepository, UserTermsKeeper {
          * that will decay over in the length of the program if price remains the same).
          * it is converted into base token terms if passed in in quote token terms.
          *
-         * 1e18 = req decimals (x) + initial price decimals (18)
+         * -> prices the capacity in quote token if desired
          */
-        uint256 targetDebt = uint256(_booleans[0] ? ((_market[0] * (10**(2 * req.decimals()))) / _market[1]) / 10**decimals : _market[0]);
+        uint256 targetDebt = uint256(_booleans[0] ? ((treasury.assetValue(address(_asset), _market[0]) * 1e18) / _market[1]) : _market[0]);
 
         /*
          * max payout is the amount of capacity that should be utilized in a deposit

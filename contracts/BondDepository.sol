@@ -37,6 +37,120 @@ contract BondDepository is IBondDepository, UserTermsKeeper {
 
     constructor(IERC20 _req, address _treasury) UserTermsKeeper(_req, _treasury) {}
 
+
+    /* ======== CREATE ======== */
+
+    /**
+     * @notice             creates a new market type
+     * @dev                current price should be in 9 decimals.
+     * @param _asset  token used to deposit
+     * @param _market      [capacity (in REQ or quote), initial price / REQ (18 decimals), debt buffer (3 decimals)]
+     * @param _booleans    [capacity in quote, fixed term]
+     * @param _terms       [vesting length (if fixed term) or vested timestamp, conclusion timestamp]
+     * @param _intervals   [deposit interval (seconds), tune interval (seconds)]
+     * @return id_         ID of new bond market
+     */
+    function create(
+        IERC20 _asset,
+        uint256[3] memory _market,
+        bool[2] memory _booleans,
+        uint256[2] memory _terms,
+        uint32[2] memory _intervals
+    ) external override onlyPolicy returns (uint256 id_) {
+        // the length of the program, in seconds
+        uint256 secondsToConclusion = _terms[1] - block.timestamp;
+
+        // the decimal count of the quote token
+        uint256 decimals = _asset.decimals();
+
+        /*
+         * initial target debt is equal to capacity (this is the amount of debt
+         * that will decay over in the length of the program if price remains the same).
+         * it is converted into base token terms if passed in in quote token terms.
+         *
+         * -> prices the capacity in quote token if desired
+         */
+        uint256 targetDebt = uint256(_booleans[0] ? ((treasury.assetValue(address(_asset), _market[0]) * 1e18) / _market[1]) : _market[0]);
+
+        /*
+         * max payout is the amount of capacity that should be utilized in a deposit
+         * interval. for example, if capacity is 1,000 REQ, there are 10 days to conclusion,
+         * and the preferred deposit interval is 1 day, max payout would be 100 REQ.
+         */
+        uint256 maxPayout = uint256((targetDebt * _intervals[0]) / secondsToConclusion);
+
+        /*
+         * max debt serves as a circuit breaker for the market. let's say the quote
+         * token is a stablecoin, and that stablecoin depegs. without max debt, the
+         * market would continue to buy until it runs out of capacity. this is
+         * configurable with a 3 decimal buffer (1000 = 1% above initial price).
+         * note that its likely advisable to keep this buffer wide.
+         * note that the buffer is above 100%. i.e. 10% buffer = initial debt * 1.1
+         */
+        uint256 maxDebt = targetDebt + ((targetDebt * _market[2]) / 1e5); // 1e5 = 100,000. 10,000 / 100,000 = 10%.
+
+        /*
+         * the control variable is set so that initial price equals the desired
+         * initial price. the control variable is the ultimate determinant of price,
+         * so we compute this last.
+         *
+         * price = control variable * debt ratio
+         * debt ratio = total debt / supply
+         * therefore, control variable = price / debt ratio
+         */
+        uint256 controlVariable = (_market[1] * treasury.baseSupply()) / targetDebt;
+
+        // depositing into, or getting info for, the created market uses this ID
+        id_ = markets.length;
+
+        markets.push(
+            Market({
+                asset: _asset,
+                capacityInQuote: _booleans[0],
+                capacity: _market[0],
+                totalDebt: targetDebt,
+                maxPayout: maxPayout,
+                purchased: 0,
+                sold: 0
+            })
+        );
+
+        terms.push(
+            Terms({
+                fixedTerm: _booleans[1],
+                vesting: uint48(_terms[0]),
+                conclusion: uint48(_terms[1]),
+                controlVariable: controlVariable,
+                maxDebt: maxDebt
+            })
+        );
+
+        metadata.push(
+            Metadata({
+                lastTune: uint48(block.timestamp),
+                lastDecay: uint48(block.timestamp),
+                length: uint48(secondsToConclusion),
+                depositInterval: _intervals[0],
+                tuneInterval: _intervals[1],
+                assetDecimals: uint8(decimals)
+            })
+        );
+
+        marketsForQuote[address(_asset)].push(id_);
+
+        emit CreateMarket(id_, address(req), address(_asset), _market[1]);
+    }
+
+    /**
+     * @notice             disable existing market
+     * @param _id          ID of market to close
+     */
+    function close(uint256 _id) external override onlyPolicy {
+        terms[_id].conclusion = uint48(block.timestamp);
+        markets[_id].capacity = 0;
+        emit CloseMarket(_id);
+    }
+
     /* ======== DEPOSIT ======== */
 
     /**
@@ -89,7 +203,7 @@ contract BondDepository is IBondDepository, UserTermsKeeper {
          * value = value of deposited asset amount in quote provided by treasury (always 18 dec)
          * price = quote tokens : req (i.e. 42069 DAI : REQ)
          *
-         * REQ decimals is supposed to match price decimals
+         * REQ decimals is supposed to match price decimals (18)
          */
         payout_ = (treasury.assetValue(address(market.asset), _amount) * 1e18) / price;
 
@@ -249,119 +363,6 @@ contract BondDepository is IBondDepository, UserTermsKeeper {
             }
             metadata[_id].lastTune = _time;
         }
-    }
-
-    /* ======== CREATE ======== */
-
-    /**
-     * @notice             creates a new market type
-     * @dev                current price should be in 9 decimals.
-     * @param _asset  token used to deposit
-     * @param _market      [capacity (in REQ or quote), initial price / REQ (18 decimals), debt buffer (3 decimals)]
-     * @param _booleans    [capacity in quote, fixed term]
-     * @param _terms       [vesting length (if fixed term) or vested timestamp, conclusion timestamp]
-     * @param _intervals   [deposit interval (seconds), tune interval (seconds)]
-     * @return id_         ID of new bond market
-     */
-    function create(
-        IERC20 _asset,
-        uint256[3] memory _market,
-        bool[2] memory _booleans,
-        uint256[2] memory _terms,
-        uint32[2] memory _intervals
-    ) external override onlyPolicy returns (uint256 id_) {
-        // the length of the program, in seconds
-        uint256 secondsToConclusion = _terms[1] - block.timestamp;
-
-        // the decimal count of the quote token
-        uint256 decimals = _asset.decimals();
-
-        /*
-         * initial target debt is equal to capacity (this is the amount of debt
-         * that will decay over in the length of the program if price remains the same).
-         * it is converted into base token terms if passed in in quote token terms.
-         *
-         * -> prices the capacity in quote token if desired
-         */
-        uint256 targetDebt = uint256(_booleans[0] ? ((treasury.assetValue(address(_asset), _market[0]) * 1e18) / _market[1]) : _market[0]);
-
-        /*
-         * max payout is the amount of capacity that should be utilized in a deposit
-         * interval. for example, if capacity is 1,000 REQ, there are 10 days to conclusion,
-         * and the preferred deposit interval is 1 day, max payout would be 100 REQ.
-         */
-        uint256 maxPayout = uint256((targetDebt * _intervals[0]) / secondsToConclusion);
-
-        /*
-         * max debt serves as a circuit breaker for the market. let's say the quote
-         * token is a stablecoin, and that stablecoin depegs. without max debt, the
-         * market would continue to buy until it runs out of capacity. this is
-         * configurable with a 3 decimal buffer (1000 = 1% above initial price).
-         * note that its likely advisable to keep this buffer wide.
-         * note that the buffer is above 100%. i.e. 10% buffer = initial debt * 1.1
-         */
-        uint256 maxDebt = targetDebt + ((targetDebt * _market[2]) / 1e5); // 1e5 = 100,000. 10,000 / 100,000 = 10%.
-
-        /*
-         * the control variable is set so that initial price equals the desired
-         * initial price. the control variable is the ultimate determinant of price,
-         * so we compute this last.
-         *
-         * price = control variable * debt ratio
-         * debt ratio = total debt / supply
-         * therefore, control variable = price / debt ratio
-         */
-        uint256 controlVariable = (_market[1] * treasury.baseSupply()) / targetDebt;
-
-        // depositing into, or getting info for, the created market uses this ID
-        id_ = markets.length;
-
-        markets.push(
-            Market({
-                asset: _asset,
-                capacityInQuote: _booleans[0],
-                capacity: _market[0],
-                totalDebt: targetDebt,
-                maxPayout: maxPayout,
-                purchased: 0,
-                sold: 0
-            })
-        );
-
-        terms.push(
-            Terms({
-                fixedTerm: _booleans[1],
-                vesting: uint48(_terms[0]),
-                conclusion: uint48(_terms[1]),
-                controlVariable: controlVariable,
-                maxDebt: maxDebt
-            })
-        );
-
-        metadata.push(
-            Metadata({
-                lastTune: uint48(block.timestamp),
-                lastDecay: uint48(block.timestamp),
-                length: uint48(secondsToConclusion),
-                depositInterval: _intervals[0],
-                tuneInterval: _intervals[1],
-                assetDecimals: uint8(decimals)
-            })
-        );
-
-        marketsForQuote[address(_asset)].push(id_);
-
-        emit CreateMarket(id_, address(req), address(_asset), _market[1]);
-    }
-
-    /**
-     * @notice             disable existing market
-     * @param _id          ID of market to close
-     */
-    function close(uint256 _id) external override onlyPolicy {
-        terms[_id].conclusion = uint48(block.timestamp);
-        markets[_id].capacity = 0;
-        emit CloseMarket(_id);
     }
 
     /* ======== EXTERNAL VIEW ======== */

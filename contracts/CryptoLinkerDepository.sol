@@ -54,16 +54,16 @@ contract CryptoLinkerDepository is ICryptoLinkerDepository, ICryptoLinkerUserTer
      * @notice             creates a new market type
      * @dev                current price should be in 9 decimals.
      * @param _asset  token used to deposit
-     * @param _market      [capacity (in REQ or quote), initial price / REQ (18 decimals), debt buffer (3 decimals), floor, strike]
-     * @param _terms       [vesting length (if fixed term) or vested timestamp, conclusion timestamp]
+     * @param _market      [capacity in REQ, initial price / REQ (18 decimals), debt buffer (3 decimals), floor, strike, digitalPayout, init leverage], last 3 in as 18 dec fraction (100%=1.0)
+     * @param _terms       [vesting length (if fixed term) or vested timestamp, conclusion timestamp, exercise duration]
      * @param _intervals   [deposit interval (seconds), tune interval (seconds)]
      * @return id_         ID of new bond market
      */
     function create(
         address _asset,
         address _underlyingOracle,
-        uint256[5] memory _market,
-        uint256[2] memory _terms,
+        uint256[7] memory _market,
+        uint256[3] memory _terms,
         uint32[2] memory _intervals
     ) external onlyPolicy returns (uint256 id_) {
         // the length of the program, in seconds
@@ -95,17 +95,6 @@ contract CryptoLinkerDepository is ICryptoLinkerDepository, ICryptoLinkerUserTer
          */
         uint256 maxDebt = targetDebt + ((targetDebt * _market[2]) / 1e5); // 1e5 = 100,000. 10,000 / 100,000 = 10%.
 
-        /*
-         * the control variable is set so that initial price equals the desired
-         * initial price. the control variable is the ultimate determinant of price,
-         * so we compute this last.
-         *
-         * price = control variable * debt ratio
-         * debt ratio = total debt / supply
-         * therefore, control variable = price / debt ratio
-         */
-        uint256 controlVariable = (_market[1] * treasury.baseSupply()) / targetDebt;
-
         // depositing into, or getting info for, the created market uses this ID
         id_ = markets.length;
 
@@ -117,7 +106,8 @@ contract CryptoLinkerDepository is ICryptoLinkerDepository, ICryptoLinkerUserTer
                 totalDebt: targetDebt,
                 maxPayout: maxPayout,
                 floor: _market[3],
-                strike: _market[4],
+                strike: int256(_market[4]),
+                digitalPayout: _market[5],
                 purchased: 0,
                 sold: 0,
                 vesting: uint48(_terms[0]),
@@ -127,7 +117,15 @@ contract CryptoLinkerDepository is ICryptoLinkerDepository, ICryptoLinkerUserTer
         );
 
         terms.push(
-            Terms({vesting: uint48(_terms[0]), conclusion: uint48(_terms[1]), controlVariable: controlVariable, leverage: 1, maxDebt: maxDebt})
+            Terms({
+                vesting: uint48(_terms[0]),
+                conclusion: uint48(_terms[1]),
+                currentLeverage: 1e18,
+                targetLeverage: int256(_market[6]),
+                maxDebt: maxDebt,
+                exerciseDuration: uint48(_terms[2]),
+                lastUpdate: uint48(block.timestamp)
+            })
         );
 
         metadata.push(
@@ -172,8 +170,8 @@ contract CryptoLinkerDepository is ICryptoLinkerDepository, ICryptoLinkerUserTer
         // |-------------------------------------| t
         require(block.timestamp < term.conclusion, "Depository: market concluded");
 
-        // Debt and the control variable decay over time
-        _decay(_id, uint48(block.timestamp));
+        // Increase leverage over time
+        _increment(_id, uint48(block.timestamp));
 
         int256 _fetchedPrice = _fetchAndValidate(market.index, _timeSlippage);
 
@@ -219,25 +217,15 @@ contract CryptoLinkerDepository is ICryptoLinkerDepository, ICryptoLinkerUserTer
      * @param _id          ID of market
      * @param _time        uint48 timestamp (saves gas when passed in)
      */
-    function _decay(uint256 _id, uint48 _time) internal {
-        // Debt decay
-
+    function _increment(uint256 _id, uint48 _time) internal {
+        // leverage increment
         /*
-         * Debt is a time-decayed sum of tokens spent in a market
-         * Debt is added when deposits occur and removed over time
-         * |
-         * |    debt falls with
-         * |   / \  inactivity       / \
-         * | /     \              /\/    \
-         * |         \           /         \
-         * |           \      /\/            \
-         * |             \  /  and rises       \
-         * |                with deposits
-         * |
+         * Leverge increases over time causing higher reference
+         * price volatility
          * |------------------------------------| t
          */
-        markets[_id].totalDebt -= debtDecay(_id);
-        metadata[_id].lastDecay = _time;
+        terms[_id].currentLeverage += leverageIncrement(_id);
+        terms[_id].lastUpdate = _time;
     }
 
     /**
@@ -300,16 +288,20 @@ contract CryptoLinkerDepository is ICryptoLinkerDepository, ICryptoLinkerUserTer
         (, int256 _fetchedPrice, , , ) = getLatestPriceData(_market.index);
 
         int256 lastReference = int256(_meta.lastReferencePrice);
-        int256 adjustmentToPrice = 1e18 +
-            int256(_multiplier(terms[_id].maxDebt - _market.capacity, terms[_id].maxDebt)) *
-            (((lastReference - _fetchedPrice) * 1e18) / lastReference);
+
+        int256 _pricePerformance = ((lastReference - _fetchedPrice) * 1e18) / lastReference;
+
+        // return floor if adjustment would lead to negative notional
+        if (_pricePerformance < 1e18) {
+            return _market.floor;
+        }
+
+        int256 adjustmentToPrice = 1e18 + (currentLeverage(_id) * _pricePerformance) / 1e18;
+
+        // adjust price by multiplier
         _refPrice = (_meta.lastReferenceBondPrice * uint256(adjustmentToPrice)) / 1e18;
 
         _refPrice = _refPrice > _market.floor ? _refPrice : _market.floor;
-    }
-
-    function _multiplier(uint256 _remainingCapacity, uint256 _maxCapacity) internal pure returns (uint256) {
-        return 1e18 + (_remainingCapacity * 1e18) / _maxCapacity;
     }
 
     /**
@@ -327,47 +319,21 @@ contract CryptoLinkerDepository is ICryptoLinkerDepository, ICryptoLinkerUserTer
     }
 
     /**
-     * @notice             calculate current ratio of debt to supply
-     * @dev                uses current debt, which accounts for debt decay since last deposit (vs _debtRatio())
-     * @param _id          ID of market
-     * @return             debt ratio for market in quote decimals
-     */
-    function debtRatio(uint256 _id) public view override returns (uint256) {
-        return (currentDebt(_id) * (10**metadata[_id].assetDecimals)) / treasury.baseSupply();
-    }
-
-    /**
-     * @notice             calculate debt factoring in decay
-     * @dev                accounts for debt decay since last deposit
-     * @param _id          ID of market
-     * @return             current debt for market in REQ decimals
-     */
-    function currentDebt(uint256 _id) public view override returns (uint256) {
-        return markets[_id].totalDebt - debtDecay(_id);
-    }
-
-    /**
-     * @notice             amount of debt to decay from total debt for market ID
-     * @param _id          ID of market
-     * @return             amount of debt to decay
-     */
-    function debtDecay(uint256 _id) public view override returns (uint256) {
-        Metadata memory meta = metadata[_id];
-
-        uint256 secondsSince = block.timestamp - meta.lastDecay;
-
-        return (markets[_id].totalDebt * secondsSince) / meta.marketLength;
-    }
-
-    /**
      * @notice             up to date control variable
      * @dev                accounts for control variable adjustment
      * @param _id          ID of market
      * @return             control variable for market in REQ decimals
      */
-    function currentControlVariable(uint256 _id) public view returns (uint256) {
-        (uint256 decay, , ) = _controlDecay(_id);
-        return terms[_id].controlVariable - decay;
+    function currentLeverage(uint256 _id) public view returns (int256) {
+        return terms[_id].currentLeverage + leverageIncrement(_id);
+    }
+
+    function leverageIncrement(uint256 _id) public view returns (int256) {
+        Metadata memory meta = metadata[_id];
+
+        uint256 secondsSince = block.timestamp - meta.lastDecay;
+        uint256 leverageDist = uint256(terms[_id].targetLeverage - terms[_id].currentLeverage);
+        return int256((leverageDist * secondsSince) / meta.marketLength);
     }
 
     /**
@@ -434,37 +400,15 @@ contract CryptoLinkerDepository is ICryptoLinkerDepository, ICryptoLinkerUserTer
         Metadata memory _meta = metadata[_id];
 
         int256 lastReference = int256(_meta.lastReferencePrice);
-        int256 adjustmentToPrice = 1e18 +
-            int256(_multiplier(_market.capacity, terms[_id].maxDebt)) *
-            (((lastReference - _fetchedPrice) * 1e18) / lastReference);
+
+        int256 _pricePerformance = ((lastReference - _fetchedPrice) * 1e18) / lastReference;
+
+        int256 adjustmentToPrice = 1e18 + (terms[_id].currentLeverage * _pricePerformance) / 1e18;
+
+        // adjust price by multiplier
         _refPrice = (_meta.lastReferenceBondPrice * uint256(adjustmentToPrice)) / 1e18;
 
         _refPrice = _refPrice > _market.floor ? _refPrice : _market.floor;
-    }
-
-    /**
-     * @notice                  amount to decay control variable by
-     * @param _id               ID of market
-     * @return decay_           change in control variable
-     * @return secondsSince_    seconds since last change in control variable
-     * @return active_          whether or not change remains active
-     */
-    function _controlDecay(uint256 _id)
-        internal
-        view
-        returns (
-            uint256 decay_,
-            uint48 secondsSince_,
-            bool active_
-        )
-    {
-        Adjustment memory info = adjustments[_id];
-        if (!info.active) return (0, 0, false);
-
-        secondsSince_ = uint48(block.timestamp) - info.lastAdjustment;
-
-        active_ = secondsSince_ < info.timeToAdjusted;
-        decay_ = active_ ? (info.change * secondsSince_) / info.timeToAdjusted : info.change;
     }
 
     /* ========== USER TERMS MANAGEMENT ========== */
@@ -511,13 +455,14 @@ contract CryptoLinkerDepository is ICryptoLinkerDepository, ICryptoLinkerUserTer
         // the new note is pushed to the user's array
         userTerms[_user].push(
             UserTerms({
-                cryptoIntitialPrice: uint256(_fetchedPrice),
+                cryptoIntitialPrice: _fetchedPrice,
                 cryptoClosingPrice: 0,
                 baseNotional: _baseNotional,
                 created: uint48(block.timestamp),
                 matured: uint48(block.timestamp + _market.vesting),
                 redeemed: 0,
                 exercised: 0,
+                notionalClaimed: 0,
                 marketId: uint48(_marketId),
                 bondPrice: 0
             })
@@ -530,7 +475,7 @@ contract CryptoLinkerDepository is ICryptoLinkerDepository, ICryptoLinkerUserTer
     /* ========== REDEEM ========== */
 
     /**
-     * @notice             exercise userTerms for user
+     * @notice             exercise option for user (if possible)
      * @param _user        the user to exercise for
      * @param _indexes     the note indexes to exercise
      * @return payout_     sum of payout sent, in REQ
@@ -539,17 +484,52 @@ contract CryptoLinkerDepository is ICryptoLinkerDepository, ICryptoLinkerUserTer
         uint48 time = uint48(block.timestamp);
 
         for (uint256 i = 0; i < _indexes.length; i++) {
-            (uint256 pay, bool matured) = pendingFor(_user, _indexes[i]);
+            uint256 _index = _indexes[i];
+            (, , bool payoffClaimable) = pendingFor(_user, _index);
+            uint256 marketId = userTerms[_user][_index].marketId;
 
+            (, int256 _fetchedPrice, , , ) = getLatestPriceData(markets[marketId].index);
+            if (payoffClaimable && calculatePayoff(userTerms[_user][_index].cryptoIntitialPrice, _fetchedPrice, markets[marketId].strike) > 0) {
+                userTerms[_user][_index].exercised = time; // mark as exerciseed
+                // add digital payoff
+                payout_ += (payout_ * uint256(markets[_index].strike)) / 1e18;
+            }
+
+            // transfer digital payoffs
+            req.transfer(_user, payout_);
+        }
+    }
+
+    /**
+     * @notice             claim notional and exercise Option for user if possible
+     * @param _user        the user to exercise for
+     * @param _indexes     the note indexes to exercise
+     * @return payout_     sum of payout sent, in REQ
+     */
+    function claimAndExercise(address _user, uint256[] memory _indexes) public returns (uint256 payout_) {
+        uint48 time = uint48(block.timestamp);
+
+        for (uint256 i = 0; i < _indexes.length; i++) {
+            uint256 _index = _indexes[i];
+            (uint256 pay, bool matured, bool payoffClaimable) = pendingFor(_user, _index);
+            uint256 marketId = userTerms[_user][_index].marketId;
+
+            // check whether notional can be claimed
             if (matured) {
-                userTerms[_user][_indexes[i]].exercised = time; // mark as exerciseed
+                userTerms[_user][_index].notionalClaimed = time; // mark as claimed
                 payout_ += pay;
-                uint256 marketId = userTerms[_user][_indexes[i]].marketId;
-                (, int256 _fetchedPrice, , , ) = getLatestPriceData(markets[marketId].index);
-                if ((uint256(_fetchedPrice) * 1e18) / userTerms[_user][_indexes[i]].cryptoIntitialPrice > markets[marketId].strike) {}
+            }
+
+            // check whether option can be exercised
+            (, int256 _fetchedPrice, , , ) = getLatestPriceData(markets[marketId].index);
+            if (payoffClaimable && calculatePayoff(userTerms[_user][_index].cryptoIntitialPrice, _fetchedPrice, markets[marketId].strike) > 0) {
+                userTerms[_user][_index].exercised = time; // mark as exerciseed
+                // add digital payoff
+                payout_ += (payout_ * uint256(markets[_index].strike)) / 1e18;
             }
         }
 
+        // transfer notionals and digital payoffs
         req.transfer(_user, payout_);
     }
 
@@ -592,6 +572,15 @@ contract CryptoLinkerDepository is ICryptoLinkerDepository, ICryptoLinkerUserTer
 
     /* ========== VIEW ========== */
 
+    function calculatePayoff(
+        int256 _initialPrice,
+        int256 _priceNow,
+        int256 _strike
+    ) internal pure returns (uint256) {
+        int256 _kMinusS = (1e18 + _strike) * _initialPrice - _priceNow;
+        return _kMinusS > 0 ? uint256(_kMinusS) : 0;
+    }
+
     // Terms info
 
     /**
@@ -627,11 +616,20 @@ contract CryptoLinkerDepository is ICryptoLinkerDepository, ICryptoLinkerUserTer
      * @return payout_     the payout due, in gREQ
      * @return matured_    if the payout can be redeemed
      */
-    function pendingFor(address _user, uint256 _index) public view override returns (uint256 payout_, bool matured_) {
+    function pendingFor(address _user, uint256 _index)
+        public
+        view
+        returns (
+            uint256 payout_,
+            bool matured_,
+            bool payoffClaimable_
+        )
+    {
         UserTerms memory note = userTerms[_user][_index];
 
         payout_ = note.baseNotional;
-        matured_ = note.redeemed == 0 && note.matured <= block.timestamp && note.baseNotional != 0;
+        matured_ = note.notionalClaimed == 0 && note.matured <= block.timestamp && note.baseNotional != 0;
+        payoffClaimable_ = note.exercised == 0 && note.matured + terms[_index].exerciseDuration <= block.timestamp; // notional can be already claimed
     }
 
     function _fetchAndValidate(address _index, uint256 _timeSlippage) internal view returns (int256) {

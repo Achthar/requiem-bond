@@ -11,7 +11,8 @@ interface ICryptoLinkerDepository {
         uint256 capacity; // capacity remaining
         address asset; // token to accept as payment
         address index;
-        uint256 strike;
+        int256 strike;
+        uint256 digitalPayout;
         uint256 totalDebt; // total debt from market
         uint256 maxPayout; // max tokens in/out (determined by capacityInQuote false/true, respectively)
         uint256 sold; // base tokens out
@@ -24,16 +25,18 @@ interface ICryptoLinkerDepository {
 
     // Info for creating new markets
     struct Terms {
-        uint256 leverage;
-        uint256 controlVariable; // scaling variable for price
+        int256 currentLeverage;
+        int256 targetLeverage;
+        uint256 maxDebt; // 18 decimal debt maximum in REQ
         uint48 vesting; // length of time from deposit to maturity if fixed-term
         uint48 conclusion; // timestamp when market no longer offered (doubles as time when market matures if fixed-expiry)
-        uint256 maxDebt; // 18 decimal debt maximum in REQ
+        uint48 exerciseDuration; // the time users have to exercise their option component
+        uint48 lastUpdate;
     }
 
     // Additional info about market.
     struct Metadata {
-        uint256 lastReferencePrice; // underlying 
+        uint256 lastReferencePrice; // underlying
         uint256 lastReferenceBondPrice; // reference Bond price to accrue on
         uint48 lastTune; // last timestamp when control variable was tuned
         uint48 lastDecay; // last timestamp when market was created and debt was decayed
@@ -50,12 +53,6 @@ interface ICryptoLinkerDepository {
         uint48 lastAdjustment;
         uint48 timeToAdjusted;
         bool active;
-    }
-
-    struct IndexData {
-        address index; // underlying
-        uint256 referencePrice;
-        uint48 lastUpdate;
     }
 
     // /**
@@ -92,10 +89,4 @@ interface ICryptoLinkerDepository {
     function payoutFor(uint256 _amount, uint256 _bid) external view returns (uint256);
 
     function marketPrice(uint256 _bid) external view returns (uint256);
-
-    function currentDebt(uint256 _bid) external view returns (uint256);
-
-    function debtRatio(uint256 _bid) external view returns (uint256);
-
-    function debtDecay(uint256 _bid) external view returns (uint256);
 }

@@ -97,6 +97,11 @@ const _abi = [
         name: "matured_",
         type: "bool",
       },
+      {
+        internalType: "bool",
+        name: "payoffClaimable_",
+        type: "bool",
+      },
     ],
     stateMutability: "view",
     type: "function",

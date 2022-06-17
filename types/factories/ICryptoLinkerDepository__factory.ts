@@ -31,63 +31,6 @@ const _abi = [
         type: "uint256",
       },
     ],
-    name: "currentDebt",
-    outputs: [
-      {
-        internalType: "uint256",
-        name: "",
-        type: "uint256",
-      },
-    ],
-    stateMutability: "view",
-    type: "function",
-  },
-  {
-    inputs: [
-      {
-        internalType: "uint256",
-        name: "_bid",
-        type: "uint256",
-      },
-    ],
-    name: "debtDecay",
-    outputs: [
-      {
-        internalType: "uint256",
-        name: "",
-        type: "uint256",
-      },
-    ],
-    stateMutability: "view",
-    type: "function",
-  },
-  {
-    inputs: [
-      {
-        internalType: "uint256",
-        name: "_bid",
-        type: "uint256",
-      },
-    ],
-    name: "debtRatio",
-    outputs: [
-      {
-        internalType: "uint256",
-        name: "",
-        type: "uint256",
-      },
-    ],
-    stateMutability: "view",
-    type: "function",
-  },
-  {
-    inputs: [
-      {
-        internalType: "uint256",
-        name: "_bid",
-        type: "uint256",
-      },
-    ],
     name: "isLive",
     outputs: [
       {

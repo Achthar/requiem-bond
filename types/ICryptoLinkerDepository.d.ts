@@ -22,9 +22,6 @@ import type { TypedEventFilter, TypedEvent, TypedListener } from "./common";
 interface ICryptoLinkerDepositoryInterface extends ethers.utils.Interface {
   functions: {
     "close(uint256)": FunctionFragment;
-    "currentDebt(uint256)": FunctionFragment;
-    "debtDecay(uint256)": FunctionFragment;
-    "debtRatio(uint256)": FunctionFragment;
     "isLive(uint256)": FunctionFragment;
     "liveMarkets()": FunctionFragment;
     "liveMarketsFor(address)": FunctionFragment;
@@ -33,18 +30,6 @@ interface ICryptoLinkerDepositoryInterface extends ethers.utils.Interface {
   };
 
   encodeFunctionData(functionFragment: "close", values: [BigNumberish]): string;
-  encodeFunctionData(
-    functionFragment: "currentDebt",
-    values: [BigNumberish]
-  ): string;
-  encodeFunctionData(
-    functionFragment: "debtDecay",
-    values: [BigNumberish]
-  ): string;
-  encodeFunctionData(
-    functionFragment: "debtRatio",
-    values: [BigNumberish]
-  ): string;
   encodeFunctionData(
     functionFragment: "isLive",
     values: [BigNumberish]
@@ -67,12 +52,6 @@ interface ICryptoLinkerDepositoryInterface extends ethers.utils.Interface {
   ): string;
 
   decodeFunctionResult(functionFragment: "close", data: BytesLike): Result;
-  decodeFunctionResult(
-    functionFragment: "currentDebt",
-    data: BytesLike
-  ): Result;
-  decodeFunctionResult(functionFragment: "debtDecay", data: BytesLike): Result;
-  decodeFunctionResult(functionFragment: "debtRatio", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "isLive", data: BytesLike): Result;
   decodeFunctionResult(
     functionFragment: "liveMarkets",
@@ -140,21 +119,6 @@ export class ICryptoLinkerDepository extends BaseContract {
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
 
-    currentDebt(
-      _bid: BigNumberish,
-      overrides?: CallOverrides
-    ): Promise<[BigNumber]>;
-
-    debtDecay(
-      _bid: BigNumberish,
-      overrides?: CallOverrides
-    ): Promise<[BigNumber]>;
-
-    debtRatio(
-      _bid: BigNumberish,
-      overrides?: CallOverrides
-    ): Promise<[BigNumber]>;
-
     isLive(_bid: BigNumberish, overrides?: CallOverrides): Promise<[boolean]>;
 
     liveMarkets(overrides?: CallOverrides): Promise<[BigNumber[]]>;
@@ -181,15 +145,6 @@ export class ICryptoLinkerDepository extends BaseContract {
     overrides?: Overrides & { from?: string | Promise<string> }
   ): Promise<ContractTransaction>;
 
-  currentDebt(
-    _bid: BigNumberish,
-    overrides?: CallOverrides
-  ): Promise<BigNumber>;
-
-  debtDecay(_bid: BigNumberish, overrides?: CallOverrides): Promise<BigNumber>;
-
-  debtRatio(_bid: BigNumberish, overrides?: CallOverrides): Promise<BigNumber>;
-
   isLive(_bid: BigNumberish, overrides?: CallOverrides): Promise<boolean>;
 
   liveMarkets(overrides?: CallOverrides): Promise<BigNumber[]>;
@@ -212,21 +167,6 @@ export class ICryptoLinkerDepository extends BaseContract {
 
   callStatic: {
     close(_id: BigNumberish, overrides?: CallOverrides): Promise<void>;
-
-    currentDebt(
-      _bid: BigNumberish,
-      overrides?: CallOverrides
-    ): Promise<BigNumber>;
-
-    debtDecay(
-      _bid: BigNumberish,
-      overrides?: CallOverrides
-    ): Promise<BigNumber>;
-
-    debtRatio(
-      _bid: BigNumberish,
-      overrides?: CallOverrides
-    ): Promise<BigNumber>;
 
     isLive(_bid: BigNumberish, overrides?: CallOverrides): Promise<boolean>;
 
@@ -257,21 +197,6 @@ export class ICryptoLinkerDepository extends BaseContract {
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<BigNumber>;
 
-    currentDebt(
-      _bid: BigNumberish,
-      overrides?: CallOverrides
-    ): Promise<BigNumber>;
-
-    debtDecay(
-      _bid: BigNumberish,
-      overrides?: CallOverrides
-    ): Promise<BigNumber>;
-
-    debtRatio(
-      _bid: BigNumberish,
-      overrides?: CallOverrides
-    ): Promise<BigNumber>;
-
     isLive(_bid: BigNumberish, overrides?: CallOverrides): Promise<BigNumber>;
 
     liveMarkets(overrides?: CallOverrides): Promise<BigNumber>;
@@ -297,21 +222,6 @@ export class ICryptoLinkerDepository extends BaseContract {
     close(
       _id: BigNumberish,
       overrides?: Overrides & { from?: string | Promise<string> }
-    ): Promise<PopulatedTransaction>;
-
-    currentDebt(
-      _bid: BigNumberish,
-      overrides?: CallOverrides
-    ): Promise<PopulatedTransaction>;
-
-    debtDecay(
-      _bid: BigNumberish,
-      overrides?: CallOverrides
-    ): Promise<PopulatedTransaction>;
-
-    debtRatio(
-      _bid: BigNumberish,
-      overrides?: CallOverrides
     ): Promise<PopulatedTransaction>;
 
     isLive(

@@ -23,13 +23,11 @@ interface CryptoLinkerDepositoryInterface extends ethers.utils.Interface {
   functions: {
     "adjustments(uint256)": FunctionFragment;
     "authority()": FunctionFragment;
+    "claimAndExercise(address,uint256[])": FunctionFragment;
     "close(uint256)": FunctionFragment;
-    "create(address,address,uint256[5],uint256[2],uint32[2])": FunctionFragment;
-    "currentControlVariable(uint256)": FunctionFragment;
-    "currentDebt(uint256)": FunctionFragment;
+    "create(address,address,uint256[7],uint256[3],uint32[2])": FunctionFragment;
+    "currentLeverage(uint256)": FunctionFragment;
     "daoReward()": FunctionFragment;
-    "debtDecay(uint256)": FunctionFragment;
-    "debtRatio(uint256)": FunctionFragment;
     "deposit(uint256,uint256,uint256,uint256,address)": FunctionFragment;
     "exercise(address,uint256[])": FunctionFragment;
     "exerciseAll(address)": FunctionFragment;
@@ -37,6 +35,7 @@ interface CryptoLinkerDepositoryInterface extends ethers.utils.Interface {
     "getReward()": FunctionFragment;
     "indexesFor(address)": FunctionFragment;
     "isLive(uint256)": FunctionFragment;
+    "leverageIncrement(uint256)": FunctionFragment;
     "liveMarkets()": FunctionFragment;
     "liveMarketsFor(address)": FunctionFragment;
     "marketPrice(uint256)": FunctionFragment;
@@ -64,34 +63,34 @@ interface CryptoLinkerDepositoryInterface extends ethers.utils.Interface {
     values: [BigNumberish]
   ): string;
   encodeFunctionData(functionFragment: "authority", values?: undefined): string;
+  encodeFunctionData(
+    functionFragment: "claimAndExercise",
+    values: [string, BigNumberish[]]
+  ): string;
   encodeFunctionData(functionFragment: "close", values: [BigNumberish]): string;
   encodeFunctionData(
     functionFragment: "create",
     values: [
       string,
       string,
-      [BigNumberish, BigNumberish, BigNumberish, BigNumberish, BigNumberish],
-      [BigNumberish, BigNumberish],
+      [
+        BigNumberish,
+        BigNumberish,
+        BigNumberish,
+        BigNumberish,
+        BigNumberish,
+        BigNumberish,
+        BigNumberish
+      ],
+      [BigNumberish, BigNumberish, BigNumberish],
       [BigNumberish, BigNumberish]
     ]
   ): string;
   encodeFunctionData(
-    functionFragment: "currentControlVariable",
-    values: [BigNumberish]
-  ): string;
-  encodeFunctionData(
-    functionFragment: "currentDebt",
+    functionFragment: "currentLeverage",
     values: [BigNumberish]
   ): string;
   encodeFunctionData(functionFragment: "daoReward", values?: undefined): string;
-  encodeFunctionData(
-    functionFragment: "debtDecay",
-    values: [BigNumberish]
-  ): string;
-  encodeFunctionData(
-    functionFragment: "debtRatio",
-    values: [BigNumberish]
-  ): string;
   encodeFunctionData(
     functionFragment: "deposit",
     values: [BigNumberish, BigNumberish, BigNumberish, BigNumberish, string]
@@ -109,6 +108,10 @@ interface CryptoLinkerDepositoryInterface extends ethers.utils.Interface {
   encodeFunctionData(functionFragment: "indexesFor", values: [string]): string;
   encodeFunctionData(
     functionFragment: "isLive",
+    values: [BigNumberish]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "leverageIncrement",
     values: [BigNumberish]
   ): string;
   encodeFunctionData(
@@ -179,19 +182,17 @@ interface CryptoLinkerDepositoryInterface extends ethers.utils.Interface {
     data: BytesLike
   ): Result;
   decodeFunctionResult(functionFragment: "authority", data: BytesLike): Result;
+  decodeFunctionResult(
+    functionFragment: "claimAndExercise",
+    data: BytesLike
+  ): Result;
   decodeFunctionResult(functionFragment: "close", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "create", data: BytesLike): Result;
   decodeFunctionResult(
-    functionFragment: "currentControlVariable",
-    data: BytesLike
-  ): Result;
-  decodeFunctionResult(
-    functionFragment: "currentDebt",
+    functionFragment: "currentLeverage",
     data: BytesLike
   ): Result;
   decodeFunctionResult(functionFragment: "daoReward", data: BytesLike): Result;
-  decodeFunctionResult(functionFragment: "debtDecay", data: BytesLike): Result;
-  decodeFunctionResult(functionFragment: "debtRatio", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "deposit", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "exercise", data: BytesLike): Result;
   decodeFunctionResult(
@@ -205,6 +206,10 @@ interface CryptoLinkerDepositoryInterface extends ethers.utils.Interface {
   decodeFunctionResult(functionFragment: "getReward", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "indexesFor", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "isLive", data: BytesLike): Result;
+  decodeFunctionResult(
+    functionFragment: "leverageIncrement",
+    data: BytesLike
+  ): Result;
   decodeFunctionResult(
     functionFragment: "liveMarkets",
     data: BytesLike
@@ -352,6 +357,12 @@ export class CryptoLinkerDepository extends BaseContract {
 
     authority(overrides?: CallOverrides): Promise<[string]>;
 
+    claimAndExercise(
+      _user: string,
+      _indexes: BigNumberish[],
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<ContractTransaction>;
+
     close(
       _id: BigNumberish,
       overrides?: Overrides & { from?: string | Promise<string> }
@@ -365,34 +376,21 @@ export class CryptoLinkerDepository extends BaseContract {
         BigNumberish,
         BigNumberish,
         BigNumberish,
+        BigNumberish,
+        BigNumberish,
         BigNumberish
       ],
-      _terms: [BigNumberish, BigNumberish],
+      _terms: [BigNumberish, BigNumberish, BigNumberish],
       _intervals: [BigNumberish, BigNumberish],
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
 
-    currentControlVariable(
-      _id: BigNumberish,
-      overrides?: CallOverrides
-    ): Promise<[BigNumber]>;
-
-    currentDebt(
+    currentLeverage(
       _id: BigNumberish,
       overrides?: CallOverrides
     ): Promise<[BigNumber]>;
 
     daoReward(overrides?: CallOverrides): Promise<[BigNumber]>;
-
-    debtDecay(
-      _id: BigNumberish,
-      overrides?: CallOverrides
-    ): Promise<[BigNumber]>;
-
-    debtRatio(
-      _id: BigNumberish,
-      overrides?: CallOverrides
-    ): Promise<[BigNumber]>;
 
     deposit(
       _id: BigNumberish,
@@ -438,6 +436,11 @@ export class CryptoLinkerDepository extends BaseContract {
 
     isLive(_id: BigNumberish, overrides?: CallOverrides): Promise<[boolean]>;
 
+    leverageIncrement(
+      _id: BigNumberish,
+      overrides?: CallOverrides
+    ): Promise<[BigNumber]>;
+
     liveMarkets(overrides?: CallOverrides): Promise<[BigNumber[]]>;
 
     liveMarketsFor(
@@ -465,6 +468,7 @@ export class CryptoLinkerDepository extends BaseContract {
         BigNumber,
         BigNumber,
         BigNumber,
+        BigNumber,
         number,
         number
       ] & {
@@ -472,6 +476,7 @@ export class CryptoLinkerDepository extends BaseContract {
         asset: string;
         index: string;
         strike: BigNumber;
+        digitalPayout: BigNumber;
         totalDebt: BigNumber;
         maxPayout: BigNumber;
         sold: BigNumber;
@@ -516,7 +521,11 @@ export class CryptoLinkerDepository extends BaseContract {
       _index: BigNumberish,
       overrides?: CallOverrides
     ): Promise<
-      [BigNumber, boolean] & { payout_: BigNumber; matured_: boolean }
+      [BigNumber, boolean, boolean] & {
+        payout_: BigNumber;
+        matured_: boolean;
+        payoffClaimable_: boolean;
+      }
     >;
 
     pullTerms(
@@ -552,12 +561,14 @@ export class CryptoLinkerDepository extends BaseContract {
       arg0: BigNumberish,
       overrides?: CallOverrides
     ): Promise<
-      [BigNumber, BigNumber, number, number, BigNumber] & {
-        leverage: BigNumber;
-        controlVariable: BigNumber;
+      [BigNumber, BigNumber, BigNumber, number, number, number, number] & {
+        currentLeverage: BigNumber;
+        targetLeverage: BigNumber;
+        maxDebt: BigNumber;
         vesting: number;
         conclusion: number;
-        maxDebt: BigNumber;
+        exerciseDuration: number;
+        lastUpdate: number;
       }
     >;
 
@@ -579,6 +590,7 @@ export class CryptoLinkerDepository extends BaseContract {
         number,
         number,
         number,
+        number,
         number
       ] & {
         cryptoIntitialPrice: BigNumber;
@@ -590,6 +602,7 @@ export class CryptoLinkerDepository extends BaseContract {
         redeemed: number;
         exercised: number;
         marketId: number;
+        notionalClaimed: number;
       }
     >;
 
@@ -616,6 +629,12 @@ export class CryptoLinkerDepository extends BaseContract {
 
   authority(overrides?: CallOverrides): Promise<string>;
 
+  claimAndExercise(
+    _user: string,
+    _indexes: BigNumberish[],
+    overrides?: Overrides & { from?: string | Promise<string> }
+  ): Promise<ContractTransaction>;
+
   close(
     _id: BigNumberish,
     overrides?: Overrides & { from?: string | Promise<string> }
@@ -629,25 +648,21 @@ export class CryptoLinkerDepository extends BaseContract {
       BigNumberish,
       BigNumberish,
       BigNumberish,
+      BigNumberish,
+      BigNumberish,
       BigNumberish
     ],
-    _terms: [BigNumberish, BigNumberish],
+    _terms: [BigNumberish, BigNumberish, BigNumberish],
     _intervals: [BigNumberish, BigNumberish],
     overrides?: Overrides & { from?: string | Promise<string> }
   ): Promise<ContractTransaction>;
 
-  currentControlVariable(
+  currentLeverage(
     _id: BigNumberish,
     overrides?: CallOverrides
   ): Promise<BigNumber>;
 
-  currentDebt(_id: BigNumberish, overrides?: CallOverrides): Promise<BigNumber>;
-
   daoReward(overrides?: CallOverrides): Promise<BigNumber>;
-
-  debtDecay(_id: BigNumberish, overrides?: CallOverrides): Promise<BigNumber>;
-
-  debtRatio(_id: BigNumberish, overrides?: CallOverrides): Promise<BigNumber>;
 
   deposit(
     _id: BigNumberish,
@@ -690,6 +705,11 @@ export class CryptoLinkerDepository extends BaseContract {
 
   isLive(_id: BigNumberish, overrides?: CallOverrides): Promise<boolean>;
 
+  leverageIncrement(
+    _id: BigNumberish,
+    overrides?: CallOverrides
+  ): Promise<BigNumber>;
+
   liveMarkets(overrides?: CallOverrides): Promise<BigNumber[]>;
 
   liveMarketsFor(
@@ -714,6 +734,7 @@ export class CryptoLinkerDepository extends BaseContract {
       BigNumber,
       BigNumber,
       BigNumber,
+      BigNumber,
       number,
       number
     ] & {
@@ -721,6 +742,7 @@ export class CryptoLinkerDepository extends BaseContract {
       asset: string;
       index: string;
       strike: BigNumber;
+      digitalPayout: BigNumber;
       totalDebt: BigNumber;
       maxPayout: BigNumber;
       sold: BigNumber;
@@ -764,7 +786,13 @@ export class CryptoLinkerDepository extends BaseContract {
     _user: string,
     _index: BigNumberish,
     overrides?: CallOverrides
-  ): Promise<[BigNumber, boolean] & { payout_: BigNumber; matured_: boolean }>;
+  ): Promise<
+    [BigNumber, boolean, boolean] & {
+      payout_: BigNumber;
+      matured_: boolean;
+      payoffClaimable_: boolean;
+    }
+  >;
 
   pullTerms(
     _from: string,
@@ -799,12 +827,14 @@ export class CryptoLinkerDepository extends BaseContract {
     arg0: BigNumberish,
     overrides?: CallOverrides
   ): Promise<
-    [BigNumber, BigNumber, number, number, BigNumber] & {
-      leverage: BigNumber;
-      controlVariable: BigNumber;
+    [BigNumber, BigNumber, BigNumber, number, number, number, number] & {
+      currentLeverage: BigNumber;
+      targetLeverage: BigNumber;
+      maxDebt: BigNumber;
       vesting: number;
       conclusion: number;
-      maxDebt: BigNumber;
+      exerciseDuration: number;
+      lastUpdate: number;
     }
   >;
 
@@ -826,6 +856,7 @@ export class CryptoLinkerDepository extends BaseContract {
       number,
       number,
       number,
+      number,
       number
     ] & {
       cryptoIntitialPrice: BigNumber;
@@ -837,6 +868,7 @@ export class CryptoLinkerDepository extends BaseContract {
       redeemed: number;
       exercised: number;
       marketId: number;
+      notionalClaimed: number;
     }
   >;
 
@@ -863,6 +895,12 @@ export class CryptoLinkerDepository extends BaseContract {
 
     authority(overrides?: CallOverrides): Promise<string>;
 
+    claimAndExercise(
+      _user: string,
+      _indexes: BigNumberish[],
+      overrides?: CallOverrides
+    ): Promise<BigNumber>;
+
     close(_id: BigNumberish, overrides?: CallOverrides): Promise<void>;
 
     create(
@@ -873,28 +911,21 @@ export class CryptoLinkerDepository extends BaseContract {
         BigNumberish,
         BigNumberish,
         BigNumberish,
+        BigNumberish,
+        BigNumberish,
         BigNumberish
       ],
-      _terms: [BigNumberish, BigNumberish],
+      _terms: [BigNumberish, BigNumberish, BigNumberish],
       _intervals: [BigNumberish, BigNumberish],
       overrides?: CallOverrides
     ): Promise<BigNumber>;
 
-    currentControlVariable(
-      _id: BigNumberish,
-      overrides?: CallOverrides
-    ): Promise<BigNumber>;
-
-    currentDebt(
+    currentLeverage(
       _id: BigNumberish,
       overrides?: CallOverrides
     ): Promise<BigNumber>;
 
     daoReward(overrides?: CallOverrides): Promise<BigNumber>;
-
-    debtDecay(_id: BigNumberish, overrides?: CallOverrides): Promise<BigNumber>;
-
-    debtRatio(_id: BigNumberish, overrides?: CallOverrides): Promise<BigNumber>;
 
     deposit(
       _id: BigNumberish,
@@ -932,6 +963,11 @@ export class CryptoLinkerDepository extends BaseContract {
 
     isLive(_id: BigNumberish, overrides?: CallOverrides): Promise<boolean>;
 
+    leverageIncrement(
+      _id: BigNumberish,
+      overrides?: CallOverrides
+    ): Promise<BigNumber>;
+
     liveMarkets(overrides?: CallOverrides): Promise<BigNumber[]>;
 
     liveMarketsFor(
@@ -959,6 +995,7 @@ export class CryptoLinkerDepository extends BaseContract {
         BigNumber,
         BigNumber,
         BigNumber,
+        BigNumber,
         number,
         number
       ] & {
@@ -966,6 +1003,7 @@ export class CryptoLinkerDepository extends BaseContract {
         asset: string;
         index: string;
         strike: BigNumber;
+        digitalPayout: BigNumber;
         totalDebt: BigNumber;
         maxPayout: BigNumber;
         sold: BigNumber;
@@ -1010,7 +1048,11 @@ export class CryptoLinkerDepository extends BaseContract {
       _index: BigNumberish,
       overrides?: CallOverrides
     ): Promise<
-      [BigNumber, boolean] & { payout_: BigNumber; matured_: boolean }
+      [BigNumber, boolean, boolean] & {
+        payout_: BigNumber;
+        matured_: boolean;
+        payoffClaimable_: boolean;
+      }
     >;
 
     pullTerms(
@@ -1046,12 +1088,14 @@ export class CryptoLinkerDepository extends BaseContract {
       arg0: BigNumberish,
       overrides?: CallOverrides
     ): Promise<
-      [BigNumber, BigNumber, number, number, BigNumber] & {
-        leverage: BigNumber;
-        controlVariable: BigNumber;
+      [BigNumber, BigNumber, BigNumber, number, number, number, number] & {
+        currentLeverage: BigNumber;
+        targetLeverage: BigNumber;
+        maxDebt: BigNumber;
         vesting: number;
         conclusion: number;
-        maxDebt: BigNumber;
+        exerciseDuration: number;
+        lastUpdate: number;
       }
     >;
 
@@ -1071,6 +1115,7 @@ export class CryptoLinkerDepository extends BaseContract {
         number,
         number,
         number,
+        number,
         number
       ] & {
         cryptoIntitialPrice: BigNumber;
@@ -1082,6 +1127,7 @@ export class CryptoLinkerDepository extends BaseContract {
         redeemed: number;
         exercised: number;
         marketId: number;
+        notionalClaimed: number;
       }
     >;
 
@@ -1182,6 +1228,12 @@ export class CryptoLinkerDepository extends BaseContract {
 
     authority(overrides?: CallOverrides): Promise<BigNumber>;
 
+    claimAndExercise(
+      _user: string,
+      _indexes: BigNumberish[],
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<BigNumber>;
+
     close(
       _id: BigNumberish,
       overrides?: Overrides & { from?: string | Promise<string> }
@@ -1195,28 +1247,21 @@ export class CryptoLinkerDepository extends BaseContract {
         BigNumberish,
         BigNumberish,
         BigNumberish,
+        BigNumberish,
+        BigNumberish,
         BigNumberish
       ],
-      _terms: [BigNumberish, BigNumberish],
+      _terms: [BigNumberish, BigNumberish, BigNumberish],
       _intervals: [BigNumberish, BigNumberish],
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<BigNumber>;
 
-    currentControlVariable(
-      _id: BigNumberish,
-      overrides?: CallOverrides
-    ): Promise<BigNumber>;
-
-    currentDebt(
+    currentLeverage(
       _id: BigNumberish,
       overrides?: CallOverrides
     ): Promise<BigNumber>;
 
     daoReward(overrides?: CallOverrides): Promise<BigNumber>;
-
-    debtDecay(_id: BigNumberish, overrides?: CallOverrides): Promise<BigNumber>;
-
-    debtRatio(_id: BigNumberish, overrides?: CallOverrides): Promise<BigNumber>;
 
     deposit(
       _id: BigNumberish,
@@ -1250,6 +1295,11 @@ export class CryptoLinkerDepository extends BaseContract {
     indexesFor(_user: string, overrides?: CallOverrides): Promise<BigNumber>;
 
     isLive(_id: BigNumberish, overrides?: CallOverrides): Promise<BigNumber>;
+
+    leverageIncrement(
+      _id: BigNumberish,
+      overrides?: CallOverrides
+    ): Promise<BigNumber>;
 
     liveMarkets(overrides?: CallOverrides): Promise<BigNumber>;
 
@@ -1342,6 +1392,12 @@ export class CryptoLinkerDepository extends BaseContract {
 
     authority(overrides?: CallOverrides): Promise<PopulatedTransaction>;
 
+    claimAndExercise(
+      _user: string,
+      _indexes: BigNumberish[],
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<PopulatedTransaction>;
+
     close(
       _id: BigNumberish,
       overrides?: Overrides & { from?: string | Promise<string> }
@@ -1355,34 +1411,21 @@ export class CryptoLinkerDepository extends BaseContract {
         BigNumberish,
         BigNumberish,
         BigNumberish,
+        BigNumberish,
+        BigNumberish,
         BigNumberish
       ],
-      _terms: [BigNumberish, BigNumberish],
+      _terms: [BigNumberish, BigNumberish, BigNumberish],
       _intervals: [BigNumberish, BigNumberish],
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<PopulatedTransaction>;
 
-    currentControlVariable(
-      _id: BigNumberish,
-      overrides?: CallOverrides
-    ): Promise<PopulatedTransaction>;
-
-    currentDebt(
+    currentLeverage(
       _id: BigNumberish,
       overrides?: CallOverrides
     ): Promise<PopulatedTransaction>;
 
     daoReward(overrides?: CallOverrides): Promise<PopulatedTransaction>;
-
-    debtDecay(
-      _id: BigNumberish,
-      overrides?: CallOverrides
-    ): Promise<PopulatedTransaction>;
-
-    debtRatio(
-      _id: BigNumberish,
-      overrides?: CallOverrides
-    ): Promise<PopulatedTransaction>;
 
     deposit(
       _id: BigNumberish,
@@ -1419,6 +1462,11 @@ export class CryptoLinkerDepository extends BaseContract {
     ): Promise<PopulatedTransaction>;
 
     isLive(
+      _id: BigNumberish,
+      overrides?: CallOverrides
+    ): Promise<PopulatedTransaction>;
+
+    leverageIncrement(
       _id: BigNumberish,
       overrides?: CallOverrides
     ): Promise<PopulatedTransaction>;

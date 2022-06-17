@@ -126,7 +126,11 @@ export class ICryptoLinkerUserTermsKeeper extends BaseContract {
       _index: BigNumberish,
       overrides?: CallOverrides
     ): Promise<
-      [BigNumber, boolean] & { payout_: BigNumber; matured_: boolean }
+      [BigNumber, boolean, boolean] & {
+        payout_: BigNumber;
+        matured_: boolean;
+        payoffClaimable_: boolean;
+      }
     >;
 
     pullTerms(
@@ -159,7 +163,13 @@ export class ICryptoLinkerUserTermsKeeper extends BaseContract {
     _user: string,
     _index: BigNumberish,
     overrides?: CallOverrides
-  ): Promise<[BigNumber, boolean] & { payout_: BigNumber; matured_: boolean }>;
+  ): Promise<
+    [BigNumber, boolean, boolean] & {
+      payout_: BigNumber;
+      matured_: boolean;
+      payoffClaimable_: boolean;
+    }
+  >;
 
   pullTerms(
     from: string,
@@ -189,7 +199,11 @@ export class ICryptoLinkerUserTermsKeeper extends BaseContract {
       _index: BigNumberish,
       overrides?: CallOverrides
     ): Promise<
-      [BigNumber, boolean] & { payout_: BigNumber; matured_: boolean }
+      [BigNumber, boolean, boolean] & {
+        payout_: BigNumber;
+        matured_: boolean;
+        payoffClaimable_: boolean;
+      }
     >;
 
     pullTerms(

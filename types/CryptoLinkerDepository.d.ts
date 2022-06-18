@@ -21,11 +21,10 @@ import type { TypedEventFilter, TypedEvent, TypedListener } from "./common";
 
 interface CryptoLinkerDepositoryInterface extends ethers.utils.Interface {
   functions: {
-    "adjustments(uint256)": FunctionFragment;
     "authority()": FunctionFragment;
     "claimAndExercise(address,uint256[])": FunctionFragment;
     "close(uint256)": FunctionFragment;
-    "create(address,address,uint256[7],uint256[3],uint32[2])": FunctionFragment;
+    "create(address,address,uint256[8],uint256[3],uint32[2])": FunctionFragment;
     "currentLeverage(uint256)": FunctionFragment;
     "daoReward()": FunctionFragment;
     "deposit(uint256,uint256,uint256,uint256,address)": FunctionFragment;
@@ -44,6 +43,7 @@ interface CryptoLinkerDepositoryInterface extends ethers.utils.Interface {
     "metadata(uint256)": FunctionFragment;
     "payoutFor(uint256,uint256)": FunctionFragment;
     "pendingFor(address,uint256)": FunctionFragment;
+    "perf(int256,int256)": FunctionFragment;
     "pullTerms(address,uint256)": FunctionFragment;
     "pushTerms(address,uint256)": FunctionFragment;
     "refReward()": FunctionFragment;
@@ -58,10 +58,6 @@ interface CryptoLinkerDepositoryInterface extends ethers.utils.Interface {
     "whitelisted(address)": FunctionFragment;
   };
 
-  encodeFunctionData(
-    functionFragment: "adjustments",
-    values: [BigNumberish]
-  ): string;
   encodeFunctionData(functionFragment: "authority", values?: undefined): string;
   encodeFunctionData(
     functionFragment: "claimAndExercise",
@@ -74,6 +70,7 @@ interface CryptoLinkerDepositoryInterface extends ethers.utils.Interface {
       string,
       string,
       [
+        BigNumberish,
         BigNumberish,
         BigNumberish,
         BigNumberish,
@@ -147,6 +144,10 @@ interface CryptoLinkerDepositoryInterface extends ethers.utils.Interface {
     values: [string, BigNumberish]
   ): string;
   encodeFunctionData(
+    functionFragment: "perf",
+    values: [BigNumberish, BigNumberish]
+  ): string;
+  encodeFunctionData(
     functionFragment: "pullTerms",
     values: [string, BigNumberish]
   ): string;
@@ -177,10 +178,6 @@ interface CryptoLinkerDepositoryInterface extends ethers.utils.Interface {
   encodeFunctionData(functionFragment: "whitelist", values: [string]): string;
   encodeFunctionData(functionFragment: "whitelisted", values: [string]): string;
 
-  decodeFunctionResult(
-    functionFragment: "adjustments",
-    data: BytesLike
-  ): Result;
   decodeFunctionResult(functionFragment: "authority", data: BytesLike): Result;
   decodeFunctionResult(
     functionFragment: "claimAndExercise",
@@ -230,6 +227,7 @@ interface CryptoLinkerDepositoryInterface extends ethers.utils.Interface {
   decodeFunctionResult(functionFragment: "metadata", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "payoutFor", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "pendingFor", data: BytesLike): Result;
+  decodeFunctionResult(functionFragment: "perf", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "pullTerms", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "pushTerms", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "refReward", data: BytesLike): Result;
@@ -342,19 +340,6 @@ export class CryptoLinkerDepository extends BaseContract {
   interface: CryptoLinkerDepositoryInterface;
 
   functions: {
-    adjustments(
-      arg0: BigNumberish,
-      overrides?: CallOverrides
-    ): Promise<
-      [BigNumber, BigNumber, number, number, boolean] & {
-        referencePrice: BigNumber;
-        change: BigNumber;
-        lastAdjustment: number;
-        timeToAdjusted: number;
-        active: boolean;
-      }
-    >;
-
     authority(overrides?: CallOverrides): Promise<[string]>;
 
     claimAndExercise(
@@ -372,6 +357,7 @@ export class CryptoLinkerDepository extends BaseContract {
       _asset: string,
       _underlyingOracle: string,
       _market: [
+        BigNumberish,
         BigNumberish,
         BigNumberish,
         BigNumberish,
@@ -528,6 +514,12 @@ export class CryptoLinkerDepository extends BaseContract {
       }
     >;
 
+    perf(
+      _newPrice: BigNumberish,
+      _oldPrice: BigNumberish,
+      overrides?: CallOverrides
+    ): Promise<[BigNumber]>;
+
     pullTerms(
       _from: string,
       _index: BigNumberish,
@@ -614,19 +606,6 @@ export class CryptoLinkerDepository extends BaseContract {
     whitelisted(arg0: string, overrides?: CallOverrides): Promise<[boolean]>;
   };
 
-  adjustments(
-    arg0: BigNumberish,
-    overrides?: CallOverrides
-  ): Promise<
-    [BigNumber, BigNumber, number, number, boolean] & {
-      referencePrice: BigNumber;
-      change: BigNumber;
-      lastAdjustment: number;
-      timeToAdjusted: number;
-      active: boolean;
-    }
-  >;
-
   authority(overrides?: CallOverrides): Promise<string>;
 
   claimAndExercise(
@@ -644,6 +623,7 @@ export class CryptoLinkerDepository extends BaseContract {
     _asset: string,
     _underlyingOracle: string,
     _market: [
+      BigNumberish,
       BigNumberish,
       BigNumberish,
       BigNumberish,
@@ -794,6 +774,12 @@ export class CryptoLinkerDepository extends BaseContract {
     }
   >;
 
+  perf(
+    _newPrice: BigNumberish,
+    _oldPrice: BigNumberish,
+    overrides?: CallOverrides
+  ): Promise<BigNumber>;
+
   pullTerms(
     _from: string,
     _index: BigNumberish,
@@ -880,19 +866,6 @@ export class CryptoLinkerDepository extends BaseContract {
   whitelisted(arg0: string, overrides?: CallOverrides): Promise<boolean>;
 
   callStatic: {
-    adjustments(
-      arg0: BigNumberish,
-      overrides?: CallOverrides
-    ): Promise<
-      [BigNumber, BigNumber, number, number, boolean] & {
-        referencePrice: BigNumber;
-        change: BigNumber;
-        lastAdjustment: number;
-        timeToAdjusted: number;
-        active: boolean;
-      }
-    >;
-
     authority(overrides?: CallOverrides): Promise<string>;
 
     claimAndExercise(
@@ -907,6 +880,7 @@ export class CryptoLinkerDepository extends BaseContract {
       _asset: string,
       _underlyingOracle: string,
       _market: [
+        BigNumberish,
         BigNumberish,
         BigNumberish,
         BigNumberish,
@@ -1054,6 +1028,12 @@ export class CryptoLinkerDepository extends BaseContract {
         payoffClaimable_: boolean;
       }
     >;
+
+    perf(
+      _newPrice: BigNumberish,
+      _oldPrice: BigNumberish,
+      overrides?: CallOverrides
+    ): Promise<BigNumber>;
 
     pullTerms(
       _from: string,
@@ -1221,11 +1201,6 @@ export class CryptoLinkerDepository extends BaseContract {
   };
 
   estimateGas: {
-    adjustments(
-      arg0: BigNumberish,
-      overrides?: CallOverrides
-    ): Promise<BigNumber>;
-
     authority(overrides?: CallOverrides): Promise<BigNumber>;
 
     claimAndExercise(
@@ -1243,6 +1218,7 @@ export class CryptoLinkerDepository extends BaseContract {
       _asset: string,
       _underlyingOracle: string,
       _market: [
+        BigNumberish,
         BigNumberish,
         BigNumberish,
         BigNumberish,
@@ -1335,6 +1311,12 @@ export class CryptoLinkerDepository extends BaseContract {
       overrides?: CallOverrides
     ): Promise<BigNumber>;
 
+    perf(
+      _newPrice: BigNumberish,
+      _oldPrice: BigNumberish,
+      overrides?: CallOverrides
+    ): Promise<BigNumber>;
+
     pullTerms(
       _from: string,
       _index: BigNumberish,
@@ -1385,11 +1367,6 @@ export class CryptoLinkerDepository extends BaseContract {
   };
 
   populateTransaction: {
-    adjustments(
-      arg0: BigNumberish,
-      overrides?: CallOverrides
-    ): Promise<PopulatedTransaction>;
-
     authority(overrides?: CallOverrides): Promise<PopulatedTransaction>;
 
     claimAndExercise(
@@ -1407,6 +1384,7 @@ export class CryptoLinkerDepository extends BaseContract {
       _asset: string,
       _underlyingOracle: string,
       _market: [
+        BigNumberish,
         BigNumberish,
         BigNumberish,
         BigNumberish,
@@ -1508,6 +1486,12 @@ export class CryptoLinkerDepository extends BaseContract {
     pendingFor(
       _user: string,
       _index: BigNumberish,
+      overrides?: CallOverrides
+    ): Promise<PopulatedTransaction>;
+
+    perf(
+      _newPrice: BigNumberish,
+      _oldPrice: BigNumberish,
       overrides?: CallOverrides
     ): Promise<PopulatedTransaction>;
 

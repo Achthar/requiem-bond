@@ -38,7 +38,6 @@ contract CryptoLinkerDepository is ICryptoLinkerDepository, ICryptoLinkerUserTer
     Market[] public markets; // persistent market data
     Terms[] public terms; // deposit construction data
     Metadata[] public metadata; // extraneous market data
-    mapping(uint256 => Adjustment) public adjustments; // control variable changes
     // Queries
     mapping(address => uint256[]) public marketsForQuote; // market IDs for quote token
 
@@ -54,7 +53,7 @@ contract CryptoLinkerDepository is ICryptoLinkerDepository, ICryptoLinkerUserTer
      * @notice             creates a new market type
      * @dev                current price should be in 9 decimals.
      * @param _asset  token used to deposit
-     * @param _market      [capacity in REQ, initial price / REQ (18 decimals), debt buffer (3 decimals), floor, strike, digitalPayout, init leverage], last 3 in as 18 dec fraction (100%=1.0)
+     * @param _market      [capacity in REQ, initial price / REQ (18 decimals), debt buffer (3 decimals), floor, strike, digitalPayout, init leverage, target leverage], last 3 in as 18 dec fraction (100%=1.0)
      * @param _terms       [vesting length (if fixed term) or vested timestamp, conclusion timestamp, exercise duration]
      * @param _intervals   [deposit interval (seconds), tune interval (seconds)]
      * @return id_         ID of new bond market
@@ -62,14 +61,14 @@ contract CryptoLinkerDepository is ICryptoLinkerDepository, ICryptoLinkerUserTer
     function create(
         address _asset,
         address _underlyingOracle,
-        uint256[7] memory _market,
+        uint256[8] memory _market,
         uint256[3] memory _terms,
         uint32[2] memory _intervals
     ) external onlyPolicy returns (uint256 id_) {
         // the length of the program, in seconds
         uint256 secondsToConclusion = _terms[1] - block.timestamp;
 
-        (, int256 _fetchedPrice, , uint256 _timestamp, ) = getLatestPriceData(_underlyingOracle);
+        (, int256 _fetchedPrice, , , ) = getLatestPriceData(_underlyingOracle);
 
         /*
          * initial target debt is equal to capacity (this is the amount of debt
@@ -120,8 +119,8 @@ contract CryptoLinkerDepository is ICryptoLinkerDepository, ICryptoLinkerUserTer
             Terms({
                 vesting: uint48(_terms[0]),
                 conclusion: uint48(_terms[1]),
-                currentLeverage: 1e18,
-                targetLeverage: int256(_market[6]),
+                currentLeverage: int256(_market[6]),
+                targetLeverage: int256(_market[7]),
                 maxDebt: maxDebt,
                 exerciseDuration: uint48(_terms[2]),
                 lastUpdate: uint48(block.timestamp)
@@ -132,7 +131,7 @@ contract CryptoLinkerDepository is ICryptoLinkerDepository, ICryptoLinkerUserTer
             Metadata({
                 lastReferencePrice: uint256(_fetchedPrice),
                 lastReferenceBondPrice: _market[1],
-                lastTune: uint48(_timestamp),
+                lastTune: uint48(block.timestamp),
                 lastDecay: uint48(block.timestamp),
                 marketLength: uint48(secondsToConclusion),
                 depositInterval: _intervals[0],
@@ -256,8 +255,8 @@ contract CryptoLinkerDepository is ICryptoLinkerDepository, ICryptoLinkerUserTer
              */
             markets[_id].maxPayout = uint256((market.capacity * meta.depositInterval) / timeRemaining);
 
-            meta.lastReferenceBondPrice = _bondRefPrice;
-            meta.lastReferencePrice = _referencePrice;
+            metadata[_id].lastReferenceBondPrice = _bondRefPrice;
+            metadata[_id].lastReferencePrice = _referencePrice;
 
             emit ReferencePriceUpdated(_id, meta.lastReferencePrice, _referencePrice);
 
@@ -289,14 +288,11 @@ contract CryptoLinkerDepository is ICryptoLinkerDepository, ICryptoLinkerUserTer
 
         int256 lastReference = int256(_meta.lastReferencePrice);
 
-        int256 _pricePerformance = ((lastReference - _fetchedPrice) * 1e18) / lastReference;
-
+        int256 adjustmentToPrice = 1e18 + (currentLeverage(_id) * calculatePerformance(_fetchedPrice, lastReference)) / 1e18;
         // return floor if adjustment would lead to negative notional
-        if (_pricePerformance < 1e18) {
+        if (adjustmentToPrice < 0) {
             return _market.floor;
         }
-
-        int256 adjustmentToPrice = 1e18 + (currentLeverage(_id) * _pricePerformance) / 1e18;
 
         // adjust price by multiplier
         _refPrice = (_meta.lastReferenceBondPrice * uint256(adjustmentToPrice)) / 1e18;
@@ -401,9 +397,12 @@ contract CryptoLinkerDepository is ICryptoLinkerDepository, ICryptoLinkerUserTer
 
         int256 lastReference = int256(_meta.lastReferencePrice);
 
-        int256 _pricePerformance = ((lastReference - _fetchedPrice) * 1e18) / lastReference;
+        int256 adjustmentToPrice = 1e18 + (terms[_id].currentLeverage * calculatePerformance(_fetchedPrice, lastReference)) / 1e18;
 
-        int256 adjustmentToPrice = 1e18 + (terms[_id].currentLeverage * _pricePerformance) / 1e18;
+        // return floor if adjustment would lead to negative notional
+        if (adjustmentToPrice < 0) {
+            return _market.floor;
+        }
 
         // adjust price by multiplier
         _refPrice = (_meta.lastReferenceBondPrice * uint256(adjustmentToPrice)) / 1e18;

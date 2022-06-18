@@ -46,15 +46,6 @@ interface ICryptoLinkerDepository {
         uint8 assetDecimals; // decimals of quote token
     }
 
-    // Control variable adjustment data
-    struct Adjustment {
-        uint256 referencePrice;
-        uint256 change;
-        uint48 lastAdjustment;
-        uint48 timeToAdjusted;
-        bool active;
-    }
-
     // /**
     //  * @notice deposit market
     //  * @param _bid uint256

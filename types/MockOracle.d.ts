@@ -24,6 +24,7 @@ interface MockOracleInterface extends ethers.utils.Interface {
     "decimals()": FunctionFragment;
     "description()": FunctionFragment;
     "getRoundData(uint80)": FunctionFragment;
+    "lastRoundId()": FunctionFragment;
     "latestRoundData()": FunctionFragment;
     "refPice()": FunctionFragment;
     "setPrice(int256)": FunctionFragment;
@@ -38,6 +39,10 @@ interface MockOracleInterface extends ethers.utils.Interface {
   encodeFunctionData(
     functionFragment: "getRoundData",
     values: [BigNumberish]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "lastRoundId",
+    values?: undefined
   ): string;
   encodeFunctionData(
     functionFragment: "latestRoundData",
@@ -57,6 +62,10 @@ interface MockOracleInterface extends ethers.utils.Interface {
   ): Result;
   decodeFunctionResult(
     functionFragment: "getRoundData",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "lastRoundId",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
@@ -131,6 +140,8 @@ export class MockOracle extends BaseContract {
       }
     >;
 
+    lastRoundId(overrides?: CallOverrides): Promise<[BigNumber]>;
+
     latestRoundData(
       overrides?: CallOverrides
     ): Promise<
@@ -169,6 +180,8 @@ export class MockOracle extends BaseContract {
       answeredInRound: BigNumber;
     }
   >;
+
+  lastRoundId(overrides?: CallOverrides): Promise<BigNumber>;
 
   latestRoundData(
     overrides?: CallOverrides
@@ -209,6 +222,8 @@ export class MockOracle extends BaseContract {
       }
     >;
 
+    lastRoundId(overrides?: CallOverrides): Promise<BigNumber>;
+
     latestRoundData(
       overrides?: CallOverrides
     ): Promise<
@@ -240,6 +255,8 @@ export class MockOracle extends BaseContract {
       overrides?: CallOverrides
     ): Promise<BigNumber>;
 
+    lastRoundId(overrides?: CallOverrides): Promise<BigNumber>;
+
     latestRoundData(overrides?: CallOverrides): Promise<BigNumber>;
 
     refPice(overrides?: CallOverrides): Promise<BigNumber>;
@@ -261,6 +278,8 @@ export class MockOracle extends BaseContract {
       _roundId: BigNumberish,
       overrides?: CallOverrides
     ): Promise<PopulatedTransaction>;
+
+    lastRoundId(overrides?: CallOverrides): Promise<PopulatedTransaction>;
 
     latestRoundData(overrides?: CallOverrides): Promise<PopulatedTransaction>;
 

@@ -20,4 +20,12 @@ contract PriceConsumer {
     {
         return IAggregatorV3(_feed).latestRoundData();
     }
+
+    function calculatePerformance(int256 _newPrice, int256 _oldPrice) internal pure returns (int256 _pricePerformance) {
+        _pricePerformance = ((_newPrice - _oldPrice) * 1e18) / _oldPrice;
+    }
+
+    function perf(int256 _newPrice, int256 _oldPrice) public pure returns (int256) {
+        return calculatePerformance(_newPrice, _oldPrice);
+    }
 }

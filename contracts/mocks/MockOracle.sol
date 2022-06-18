@@ -5,9 +5,11 @@ import "../interfaces/IAggragatorV3.sol";
 
 contract MockOracle is IAggregatorV3 {
     int256 public refPice;
+    uint80 public lastRoundId;
 
     constructor() {
         refPice = 1e18;
+        lastRoundId = 0;
     }
 
     function decimals() external pure returns (uint8) {
@@ -54,8 +56,8 @@ contract MockOracle is IAggregatorV3 {
             uint80 answeredInRound
         )
     {
-        roundId = 1;
-        answer = 1e18;
+        roundId = lastRoundId;
+        answer = refPice;
         startedAt = block.timestamp;
         updatedAt = block.timestamp;
         answeredInRound = 0;
@@ -63,5 +65,6 @@ contract MockOracle is IAggregatorV3 {
 
     function setPrice(int256 _price) public {
         refPice = _price;
+        lastRoundId += 1;
     }
 }

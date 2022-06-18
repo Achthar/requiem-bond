@@ -32,11 +32,15 @@ describe("Crypto Linker Depository", async () => {
 
     let capacity = ethers.BigNumber.from(10000).mul(one18);
     let initialPrice = ethers.BigNumber.from(400).mul(one18);
+    let initalLevervage = one18;
+    let targetLeverage = one18.mul(5)
+    let digitalPayout = one18.div(20) // 20%
     let buffer = 2e5;
     let floor = one18.div(2)
     let strike = one18.div(20) // 5%
     let vesting = 100;
     let timeToConclusion = 60 * 60 * 24;
+    let exerciseDuration = 60 * 60 * 24;
     let conclusion;
     let timeSlippage = 60;
 
@@ -47,6 +51,10 @@ describe("Crypto Linker Depository", async () => {
     let daoReward = 50;
 
     var bid = 0;
+
+    let userTerms;
+    let market;
+    let metadata;
 
     /**
      * Everything in this block is only run once before all tests.
@@ -107,6 +115,8 @@ describe("Crypto Linker Depository", async () => {
         await treasury.policy.returns(deployer.address);
 
 
+
+
         await req.connect(alice).approve(depository.address, LARGE_APPROVAL);
         await dai.connect(bob).approve(depository.address, LARGE_APPROVAL);
 
@@ -116,15 +126,22 @@ describe("Crypto Linker Depository", async () => {
         await dai.connect(alice).approve(depository.address, capacity);
 
         mockOracle = await mockOracleFactory.deploy()
-        await mockOracle.setPrice(one18.mul(2))
+        await mockOracle.setPrice(one18)
+
         // create the first bond
         await depository.create(
             dai.address,
             mockOracle.address,
-            [capacity, initialPrice, buffer, floor, strike],
-            [vesting, conclusion],
+            [
+                capacity, initialPrice,
+                buffer, floor,
+                strike, digitalPayout,
+                initalLevervage, targetLeverage
+            ],
+            [vesting, conclusion, exerciseDuration],
             [depositInterval, tuneInterval]
         );
+
     });
 
     it("should create market", async () => {
@@ -132,10 +149,9 @@ describe("Crypto Linker Depository", async () => {
     });
 
     it("should conclude in correct amount of time", async () => {
-        let [, , , concludes] = await depository.terms(bid);
-        expect(concludes).to.equal(conclusion);
-        let metadata = await depository.metadata(bid);
-        console.log("ND", metadata)
+        let terms = await depository.terms(bid);
+        expect(terms.conclusion).to.equal(conclusion);
+        metadata = await depository.metadata(bid);
         // timestamps are a bit inaccurate with tests
         var upperBound = timeToConclusion * 1.0033;
         var lowerBound = timeToConclusion * 0.9967;
@@ -144,7 +160,7 @@ describe("Crypto Linker Depository", async () => {
     });
 
     it("should set max payout to correct % of capacity", async () => {
-        let market = await depository.markets(bid);
+        market = await depository.markets(bid);
         var upperBound = mulDiv(capacity, 1.0033, 6);
         var lowerBound = mulDiv(capacity, 0.9967, 6);
         expect(market.maxPayout.gt(lowerBound)).to.be.equal(true);
@@ -156,8 +172,13 @@ describe("Crypto Linker Depository", async () => {
         await depository.create(
             dai.address,
             mockOracle.address,
-            [capacity, initialPrice, buffer, floor, strike],
-            [vesting, conclusion],
+            [
+                capacity, initialPrice,
+                buffer, floor,
+                strike, digitalPayout,
+                initalLevervage, targetLeverage
+            ],
+            [vesting, conclusion, exerciseDuration],
             [depositInterval, tuneInterval]
         );
         let [first, second] = await depository.liveMarkets();
@@ -170,8 +191,13 @@ describe("Crypto Linker Depository", async () => {
         await depository.create(
             dai.address,
             mockOracle.address,
-            [capacity, initialPrice, buffer, floor, strike],
-            [vesting, conclusion],
+            [
+                capacity, initialPrice,
+                buffer, floor,
+                strike, digitalPayout,
+                initalLevervage, targetLeverage
+            ],
+            [vesting, conclusion, exerciseDuration],
             [depositInterval, tuneInterval]
         );
         // close the first bond
@@ -200,14 +226,55 @@ describe("Crypto Linker Depository", async () => {
         expect(payout.gt(lowerBound)).to.be.equal(true);
     });
 
-    it("should decay debt", async () => {
-        let preMarket = await depository.markets(0);
+    it("should increase leverage", async () => {
+        let preTerms = await depository.terms(0);
 
         await network.provider.send("evm_increaseTime", [100]);
         await depository.connect(bob).deposit(bid, "0", initialPrice, timeSlippage, carol.address);
 
-        let postMarket = await depository.markets(0);
-        expect(Number(preMarket.totalDebt)).to.be.greaterThan(Number(postMarket.totalDebt));
+        let postTerms = await depository.terms(0);
+        expect(Number(postTerms.currentLeverage)).to.be.greaterThan(Number(preTerms.currentLeverage));
+    });
+
+
+    it("should provide linked pricing", async () => {
+        let amount = one18; // 10,000
+        await treasury.assetValue.returns(amount)
+        let last = await mockOracle.latestRoundData()
+        console.log("BEFORE", ethers.utils.formatEther(last.answer))
+
+
+        // last = await mockOracle.latestRoundData()
+        // console.log("AFTER", ethers.utils.formatEther(last.answer))
+
+        let mp = await depository.marketPrice(bid)
+        console.log("MP", mp.toString())
+        let lev = await depository.currentLeverage(bid)
+        console.log("LEV", ethers.utils.formatEther(lev))
+        await mockOracle.setPrice(one18.mul(11).div(10))
+        await depository
+            .connect(bob)
+            .deposit(bid, amount, initialPrice.mul(2), timeSlippage, bob.address);
+        mp = await depository.marketPrice(bid)
+        console.log("MP", mp.toString())
+        userTerms = await depository.userTerms(bob.address, 0)
+        console.log("ATTAINED P", ethers.utils.formatEther(userTerms.baseNotional.mul(mp).div(one18)))
+        metadata = await depository.metadata(bid)
+        console.log("LAST REF", ethers.utils.formatEther(metadata.lastReferencePrice), ethers.utils.formatEther(metadata.lastReferenceBondPrice))
+        await network.provider.send("evm_increaseTime", [tuneInterval]);
+        await depository
+            .connect(bob)
+            .deposit(bid, amount, initialPrice.mul(2), timeSlippage, carol.address);
+
+        await network.provider.send("evm_increaseTime", [tuneInterval]);
+        await depository
+            .connect(bob)
+            .deposit(bid, amount, initialPrice.mul(2), timeSlippage, carol.address);
+
+        metadata = await depository.metadata(bid)
+        console.log("LAST REF after", ethers.utils.formatEther(metadata.lastReferencePrice), ethers.utils.formatEther(metadata.lastReferenceBondPrice))
+        // let [change, lastAdjustment, timeToAdjusted, active] = await depository.adjustments(bid);
+        expect(Boolean(false)).to.equal(false);
     });
 
     it("should not start adjustment if ahead of schedule", async () => {
@@ -224,8 +291,8 @@ describe("Crypto Linker Depository", async () => {
         await depository
             .connect(bob)
             .deposit(bid, amount, initialPrice.mul(2), timeSlippage, carol.address);
-        let [change, lastAdjustment, timeToAdjusted, active] = await depository.adjustments(bid);
-        expect(Boolean(active)).to.equal(false);
+        // let [change, lastAdjustment, timeToAdjusted, active] = await depository.adjustments(bid);
+        // expect(Boolean(active)).to.equal(false);
     });
 
     it("should start adjustment if behind schedule", async () => {
@@ -235,8 +302,8 @@ describe("Crypto Linker Depository", async () => {
         await depository
             .connect(bob)
             .deposit(bid, amount, initialPrice, timeSlippage, carol.address);
-        let [change, lastAdjustment, timeToAdjusted, active] = await depository.adjustments(bid);
-        expect(Boolean(active)).to.equal(true);
+        // let [change, lastAdjustment, timeToAdjusted, active] = await depository.adjustments(bid);
+        expect(Boolean(false)).to.equal(true);
     });
 
     // it("adjustment should lower control variable by change in tune interval if behind", async () => {

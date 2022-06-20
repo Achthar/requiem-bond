@@ -532,7 +532,7 @@ contract CryptoLinkerDepository is ICryptoLinkerDepository, ICryptoLinkerUserTer
             if (payoffClaimable && calculatePayoff(userTerms[_user][_index].cryptoIntitialPrice, _fetchedPrice, markets[marketId].strike) > 0) {
                 userTerms[_user][_index].exercised = time; // mark as exerciseed
                 // add digital payoff
-                payout_ += (payout_ * uint256(markets[_index].strike)) / 1e18;
+                payout_ += (userTerms[_user][_index].baseNotional * uint256(markets[_index].strike)) / 1e18;
             }
         }
 
@@ -548,6 +548,16 @@ contract CryptoLinkerDepository is ICryptoLinkerDepository, ICryptoLinkerUserTer
      */
     function exerciseAll(address _user) external override returns (uint256) {
         return exercise(_user, indexesFor(_user));
+    }
+
+    /**
+     * @notice             exercise all exerciseable markets for user
+     * @dev                if possible, query indexesFor() off-chain and input in exercise() to save gas
+     * @param _user        user to exercise all userTerms for
+     * @return             sum of payout sent, in REQ
+     */
+    function claimAndExerciseAll(address _user) external returns (uint256) {
+        return claimAndExercise(_user, indexesFor(_user));
     }
 
     /* ========== TRANSFER ========== */
@@ -583,9 +593,9 @@ contract CryptoLinkerDepository is ICryptoLinkerDepository, ICryptoLinkerUserTer
         int256 _initialPrice,
         int256 _priceNow,
         int256 _strike
-    ) internal pure returns (uint256) {
-        int256 _kMinusS = (1e18 + _strike) * _initialPrice - _priceNow;
-        return _kMinusS > 0 ? uint256(_kMinusS) : 0;
+    ) public pure returns (uint256) {
+        int256 _kMinusS = _priceNow * 1e18 - (1e18 + _strike) * _initialPrice;
+        return _kMinusS > 0 ? uint256(_kMinusS / 1e18) : 0;
     }
 
     // Terms info
@@ -636,7 +646,8 @@ contract CryptoLinkerDepository is ICryptoLinkerDepository, ICryptoLinkerUserTer
 
         payout_ = note.baseNotional;
         matured_ = note.notionalClaimed == 0 && note.matured <= block.timestamp && note.baseNotional != 0;
-        payoffClaimable_ = note.exercised == 0 && note.matured + terms[_index].exerciseDuration <= block.timestamp; // notional can be already claimed
+        // notional can already have been claimed
+        payoffClaimable_ = note.exercised == 0 && note.matured <= block.timestamp && note.matured + terms[_index].exerciseDuration >= block.timestamp;
     }
 
     function _fetchAndValidate(

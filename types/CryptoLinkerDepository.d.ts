@@ -22,7 +22,9 @@ import type { TypedEventFilter, TypedEvent, TypedListener } from "./common";
 interface CryptoLinkerDepositoryInterface extends ethers.utils.Interface {
   functions: {
     "authority()": FunctionFragment;
+    "calculatePayoff(int256,int256,int256)": FunctionFragment;
     "claimAndExercise(address,uint256[])": FunctionFragment;
+    "claimAndExerciseAll(address)": FunctionFragment;
     "close(uint256)": FunctionFragment;
     "create(address,address,uint256[8],uint256[3],uint32[2])": FunctionFragment;
     "currentLeverage(uint256)": FunctionFragment;
@@ -61,8 +63,16 @@ interface CryptoLinkerDepositoryInterface extends ethers.utils.Interface {
 
   encodeFunctionData(functionFragment: "authority", values?: undefined): string;
   encodeFunctionData(
+    functionFragment: "calculatePayoff",
+    values: [BigNumberish, BigNumberish, BigNumberish]
+  ): string;
+  encodeFunctionData(
     functionFragment: "claimAndExercise",
     values: [string, BigNumberish[]]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "claimAndExerciseAll",
+    values: [string]
   ): string;
   encodeFunctionData(functionFragment: "close", values: [BigNumberish]): string;
   encodeFunctionData(
@@ -185,7 +195,15 @@ interface CryptoLinkerDepositoryInterface extends ethers.utils.Interface {
 
   decodeFunctionResult(functionFragment: "authority", data: BytesLike): Result;
   decodeFunctionResult(
+    functionFragment: "calculatePayoff",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
     functionFragment: "claimAndExercise",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "claimAndExerciseAll",
     data: BytesLike
   ): Result;
   decodeFunctionResult(functionFragment: "close", data: BytesLike): Result;
@@ -351,9 +369,21 @@ export class CryptoLinkerDepository extends BaseContract {
   functions: {
     authority(overrides?: CallOverrides): Promise<[string]>;
 
+    calculatePayoff(
+      _initialPrice: BigNumberish,
+      _priceNow: BigNumberish,
+      _strike: BigNumberish,
+      overrides?: CallOverrides
+    ): Promise<[BigNumber]>;
+
     claimAndExercise(
       _user: string,
       _indexes: BigNumberish[],
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<ContractTransaction>;
+
+    claimAndExerciseAll(
+      _user: string,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
 
@@ -633,9 +663,21 @@ export class CryptoLinkerDepository extends BaseContract {
 
   authority(overrides?: CallOverrides): Promise<string>;
 
+  calculatePayoff(
+    _initialPrice: BigNumberish,
+    _priceNow: BigNumberish,
+    _strike: BigNumberish,
+    overrides?: CallOverrides
+  ): Promise<BigNumber>;
+
   claimAndExercise(
     _user: string,
     _indexes: BigNumberish[],
+    overrides?: Overrides & { from?: string | Promise<string> }
+  ): Promise<ContractTransaction>;
+
+  claimAndExerciseAll(
+    _user: string,
     overrides?: Overrides & { from?: string | Promise<string> }
   ): Promise<ContractTransaction>;
 
@@ -909,9 +951,21 @@ export class CryptoLinkerDepository extends BaseContract {
   callStatic: {
     authority(overrides?: CallOverrides): Promise<string>;
 
+    calculatePayoff(
+      _initialPrice: BigNumberish,
+      _priceNow: BigNumberish,
+      _strike: BigNumberish,
+      overrides?: CallOverrides
+    ): Promise<BigNumber>;
+
     claimAndExercise(
       _user: string,
       _indexes: BigNumberish[],
+      overrides?: CallOverrides
+    ): Promise<BigNumber>;
+
+    claimAndExerciseAll(
+      _user: string,
       overrides?: CallOverrides
     ): Promise<BigNumber>;
 
@@ -1260,9 +1314,21 @@ export class CryptoLinkerDepository extends BaseContract {
   estimateGas: {
     authority(overrides?: CallOverrides): Promise<BigNumber>;
 
+    calculatePayoff(
+      _initialPrice: BigNumberish,
+      _priceNow: BigNumberish,
+      _strike: BigNumberish,
+      overrides?: CallOverrides
+    ): Promise<BigNumber>;
+
     claimAndExercise(
       _user: string,
       _indexes: BigNumberish[],
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<BigNumber>;
+
+    claimAndExerciseAll(
+      _user: string,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<BigNumber>;
 
@@ -1432,9 +1498,21 @@ export class CryptoLinkerDepository extends BaseContract {
   populateTransaction: {
     authority(overrides?: CallOverrides): Promise<PopulatedTransaction>;
 
+    calculatePayoff(
+      _initialPrice: BigNumberish,
+      _priceNow: BigNumberish,
+      _strike: BigNumberish,
+      overrides?: CallOverrides
+    ): Promise<PopulatedTransaction>;
+
     claimAndExercise(
       _user: string,
       _indexes: BigNumberish[],
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<PopulatedTransaction>;
+
+    claimAndExerciseAll(
+      _user: string,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<PopulatedTransaction>;
 

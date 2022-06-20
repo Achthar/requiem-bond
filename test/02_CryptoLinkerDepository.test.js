@@ -38,16 +38,15 @@ describe("Crypto Linker Depository", async () => {
     let req;
     let depository;
     let treasury;
-
     let capacity = ethers.BigNumber.from(10000).mul(one18);
     let initialPrice = ethers.BigNumber.from(400).mul(one18);
     let initalLevervage = one18;
     let targetLeverage = one18.mul(5)
     let digitalPayout = one18.div(20) // 20%
     let buffer = 2e5;
-    let floor = one18.div(2)
+    let floor = initialPrice.div(2)
     let strike = one18.div(20) // 5%
-    let vesting = 100;
+    let vesting = 60 * 60 * 6;
     let timeToConclusion = 60 * 60 * 24;
     let exerciseDuration = 60 * 60 * 24;
     let conclusion;
@@ -77,12 +76,14 @@ describe("Crypto Linker Depository", async () => {
         mockReqFactory = await smock.mock("MockREQ");
         mockOracleFactory = await smock.mock("MockOracle")
         depositoryFactory = await ethers.getContractFactory("CryptoLinkerDepository");
-
-        const block = await ethers.provider.getBlock("latest");
-        conclusion = block.timestamp + timeToConclusion;
     });
 
     beforeEach(async () => {
+        // that parameter has to be reset as we increase the time multiple times and ine the block
+        // for the tests
+        const block = await ethers.provider.getBlock("latest");
+        conclusion = block.timestamp + timeToConclusion;
+
         dai = await erc20Factory.deploy("Dai", "DAI", 18);
 
         auth = await authFactory.deploy(
@@ -273,15 +274,8 @@ describe("Crypto Linker Depository", async () => {
         let levPre = await depository.currentLeverage(bid)
         let incr = await depository.currentLeverageIncrement(bid)
         terms = await depository.terms(bid)
-        // console.log("teRMS",
-        //     terms.lastUpdate,
-        //     time.updatedAt.toString(),
-        //     formatEther(terms.currentLeverage),
-        //     formatEther(incr),
-        //     formatEther(terms.currentLeverage.add(incr)),
-        //     formatEther(levPre)
-        // )
-        // // deposit
+
+        // deposit
         await depository
             .connect(bob)
             .deposit(bid, amount, initialPrice.mul(2), timeSlippage, bob.address);
@@ -309,7 +303,7 @@ describe("Crypto Linker Depository", async () => {
         const price1 = one18.mul(95).div(100)
         await mockOracle.setPrice(price1)
 
-        // increase price
+        // increase time
         await network.provider.send("evm_increaseTime", [tuneInterval]);
         await network.provider.send("evm_mine")
 
@@ -343,6 +337,120 @@ describe("Crypto Linker Depository", async () => {
         expect(actualPriceUser.lt(upperBound)).to.be.equal(true);
 
     });
+
+
+    it("should allow notional claim with no option exercise", async () => {
+        let amount = one18.mul(10000); // 10,000
+        await treasury.assetValue.returns(amount)
+        const price0 = one18
+        await mockOracle.setPrice(price0)
+
+        await depository.connect(bob).deposit(bid, amount, initialPrice, timeSlippage, carol.address);
+
+        await network.provider.send("evm_increaseTime", [vesting]);
+        await network.provider.send("evm_mine")
+        userTerms = await depository.userTerms(carol.address, 0)
+        await depository.claimAndExercise(carol.address, [0]);
+        let balance = await req.balanceOf(carol.address)
+        expect(balance).to.be.equal(userTerms.baseNotional);
+    });
+
+
+    it("should allow notional claim with option exercise", async () => {
+        let amount = one18.mul(10000); // 10,000
+        await treasury.assetValue.returns(amount)
+        const price0 = one18
+        await mockOracle.setPrice(price0)
+
+        await depository.connect(bob).deposit(bid, amount, initialPrice, timeSlippage, carol.address);
+
+        await network.provider.send("evm_increaseTime", [vesting + 5]);
+        await network.provider.send("evm_mine")
+
+        userTerms = await depository.userTerms(carol.address, 0)
+        const price1 = price0.mul(107).div(100)
+        await mockOracle.setPrice(price1)
+        await depository.claimAndExercise(carol.address, [0]);
+        let balance = await req.balanceOf(carol.address)
+        expect(balance).to.be.equal(userTerms.baseNotional.mul(105).div(100));
+    });
+
+    it("should allow notional claim with later option exercise", async () => {
+        let amount = one18.mul(10000); // 10,000
+        await treasury.assetValue.returns(amount)
+        const price0 = one18
+        await mockOracle.setPrice(price0)
+
+        await depository.connect(bob).deposit(bid, amount, initialPrice, timeSlippage, carol.address);
+
+        await network.provider.send("evm_increaseTime", [vesting + 5]);
+        await network.provider.send("evm_mine")
+        userTerms = await depository.userTerms(carol.address, 0)
+        const price1 = price0.mul(102).div(100)
+        await mockOracle.setPrice(price1)
+
+
+        await depository.claimAndExercise(carol.address, [0]);
+        let balance = await req.balanceOf(carol.address)
+
+        expect(balance).to.be.equal(userTerms.baseNotional);
+
+        await network.provider.send("evm_increaseTime", [exerciseDuration - 100]);
+        await network.provider.send("evm_mine")
+        const price2 = price0.mul(107).div(100)
+        await mockOracle.setPrice(price2)
+
+        await depository.claimAndExercise(carol.address, [0]);
+        balance = await req.balanceOf(carol.address)
+
+        expect(balance).to.be.equal(userTerms.baseNotional.mul(105).div(100));
+    });
+
+    it("should not option exercise after exercise duration", async () => {
+        let amount = one18.mul(10000); // 10,000
+        await treasury.assetValue.returns(amount)
+        const price0 = one18
+        await mockOracle.setPrice(price0)
+
+        await depository.connect(bob).deposit(bid, amount, initialPrice, timeSlippage, carol.address);
+
+        await network.provider.send("evm_increaseTime", [vesting + 5]);
+        await network.provider.send("evm_mine")
+        userTerms = await depository.userTerms(carol.address, 0)
+        const price1 = price0.mul(102).div(100)
+        await mockOracle.setPrice(price1)
+
+        await depository.claimAndExercise(carol.address, [0]);
+        let balance = await req.balanceOf(carol.address)
+
+        expect(balance).to.be.equal(userTerms.baseNotional);
+
+        await network.provider.send("evm_increaseTime", [exerciseDuration + 5]);
+        await network.provider.send("evm_mine")
+        const price2 = price0.mul(107).div(100)
+        await mockOracle.setPrice(price2)
+
+        await depository.claimAndExercise(carol.address, [0]);
+        balance = await req.balanceOf(carol.address)
+
+        expect(balance).to.be.equal(userTerms.baseNotional);
+    });
+
+    it("should not price below floor", async () => {
+        let amount = one18.mul(10000); // 10,000
+        await treasury.assetValue.returns(amount)
+        const price0 = one18.mul(5).div(1000)
+        await mockOracle.setPrice(price0)
+        let price = await depository.marketPrice(bid)
+        expect(price).to.equal(floor)
+        await depository.connect(bob).deposit(bid, amount, initialPrice, timeSlippage, carol.address);
+
+        userTerms = await depository.userTerms(carol.address, 0)
+
+        let actualPriceUser = ethers.BigNumber.from(amount).mul(one18).div(userTerms.baseNotional)
+        expect(actualPriceUser).to.equal(floor)
+    });
+
 
     // it("should not start adjustment if ahead of schedule", async () => {
     //     let amount = "650000000000000000000000"; // 10,000
@@ -513,9 +621,9 @@ describe("Crypto Linker Depository", async () => {
     // });
 
     // it("should decay a max payout in target deposit interval", async () => {
-    //     let [, , , , , maxPayout, ,] = await depository.markets(bid);
+    //     market = await depository.markets(bid);
     //     let price = await depository.marketPrice(bid);
-    //     let amount = maxPayout * price;
+    //     let amount = market.maxPayout.mul(price).div(one18);
     //     await depository.connect(bob).deposit(
     //         bid,
     //         amount, // amount for max payout
@@ -528,13 +636,13 @@ describe("Crypto Linker Depository", async () => {
     //     expect(newPrice.lt(initialPrice)).to.equal(true);
     // });
 
-    // it("should close a market", async () => {
-    //     [capacity, , , , , ,] = await depository.markets(bid);
-    //     expect(Number(capacity)).to.be.greaterThan(0);
-    //     await depository.close(bid);
-    //     [capacity, , , , , ,] = await depository.markets(bid);
-    //     expect(Number(capacity)).to.equal(0);
-    // });
+    it("should close a market", async () => {
+        market = await depository.markets(bid);
+        expect(Number(market.capacity)).to.be.greaterThan(0);
+        await depository.close(bid);
+        market = await depository.markets(bid);
+        expect(Number(market.capacity)).to.equal(0);
+    });
 
     // // FIXME Works in isolation but not when run in suite
     // it.skip("should not allow deposit past conclusion", async () => {

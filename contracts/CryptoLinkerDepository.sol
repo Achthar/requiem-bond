@@ -120,6 +120,7 @@ contract CryptoLinkerDepository is ICryptoLinkerDepository, ICryptoLinkerUserTer
                 vesting: uint48(_terms[0]),
                 conclusion: uint48(_terms[1]),
                 currentLeverage: int256(_market[6]),
+                initialLeverage: int256(_market[6]),
                 targetLeverage: int256(_market[7]),
                 maxDebt: maxDebt,
                 exerciseDuration: uint48(_terms[2]),
@@ -163,16 +164,15 @@ contract CryptoLinkerDepository is ICryptoLinkerDepository, ICryptoLinkerUserTer
     ) external returns (uint256) {
         Market storage market = markets[_id];
         Terms memory term = terms[_id];
-        // uint48 currentTime = uint48(block.timestamp);
 
         // Markets end at a defined timestamp
         // |-------------------------------------| t
         require(block.timestamp < term.conclusion, "Depository: market concluded");
 
         // Increase leverage over time
-        _increment(_id, uint48(block.timestamp));
+        _increment(_id, block.timestamp);
 
-        int256 _fetchedPrice = _fetchAndValidate(market.index, _timeSlippage);
+        int256 _fetchedPrice = _fetchAndValidate(market.index, block.timestamp, _timeSlippage);
 
         /**
          * user data is stored as Terms and relevant parameters are returned
@@ -216,15 +216,15 @@ contract CryptoLinkerDepository is ICryptoLinkerDepository, ICryptoLinkerUserTer
      * @param _id          ID of market
      * @param _time        uint48 timestamp (saves gas when passed in)
      */
-    function _increment(uint256 _id, uint48 _time) internal {
+    function _increment(uint256 _id, uint256 _time) internal {
         // leverage increment
         /*
          * Leverge increases over time causing higher reference
          * price volatility
          * |------------------------------------| t
          */
-        terms[_id].currentLeverage += leverageIncrement(_id);
-        terms[_id].lastUpdate = _time;
+        terms[_id].currentLeverage += leverageIncrement(_id, _time);
+        terms[_id].lastUpdate = uint48(_time);
     }
 
     /**
@@ -301,6 +301,16 @@ contract CryptoLinkerDepository is ICryptoLinkerDepository, ICryptoLinkerUserTer
     }
 
     /**
+     * @notice             up to date control variable
+     * @dev                accounts for control variable adjustment
+     * @param _id          ID of market
+     * @return             control variable for market in REQ decimals
+     */
+    function currentLeverage(uint256 _id) public view returns (int256) {
+        return terms[_id].currentLeverage + leverageIncrement(_id, block.timestamp);
+    }
+
+    /**
      * @notice             payout due for amount of quote tokens
      * @dev                accounts for debt and control variable decay so it is up to date
      * @param _amount      amount of quote tokens to spend
@@ -314,21 +324,19 @@ contract CryptoLinkerDepository is ICryptoLinkerDepository, ICryptoLinkerUserTer
         return (treasury.assetValue(_market.asset, _amount) * 1e18) / marketPrice(_id);
     }
 
-    /**
-     * @notice             up to date control variable
-     * @dev                accounts for control variable adjustment
-     * @param _id          ID of market
-     * @return             control variable for market in REQ decimals
-     */
-    function currentLeverage(uint256 _id) public view returns (int256) {
-        return terms[_id].currentLeverage + leverageIncrement(_id);
-    }
-
-    function leverageIncrement(uint256 _id) public view returns (int256) {
+    function leverageIncrement(uint256 _id, uint256 _time) public view returns (int256) {
         Metadata memory meta = metadata[_id];
 
-        uint256 secondsSince = block.timestamp - meta.lastDecay;
-        uint256 leverageDist = uint256(terms[_id].targetLeverage - terms[_id].currentLeverage);
+        uint256 secondsSince = _time - uint256(terms[_id].lastUpdate);
+        uint256 leverageDist = uint256(terms[_id].targetLeverage - terms[_id].initialLeverage);
+        return int256((leverageDist * secondsSince) / meta.marketLength);
+    }
+
+    function currentLeverageIncrement(uint256 _id) public view returns (int256) {
+        Metadata memory meta = metadata[_id];
+
+        uint256 secondsSince = block.timestamp - uint256(terms[_id].lastUpdate);
+        uint256 leverageDist = uint256(terms[_id].targetLeverage - terms[_id].initialLeverage);
         return int256((leverageDist * secondsSince) / meta.marketLength);
     }
 
@@ -631,10 +639,14 @@ contract CryptoLinkerDepository is ICryptoLinkerDepository, ICryptoLinkerUserTer
         payoffClaimable_ = note.exercised == 0 && note.matured + terms[_index].exerciseDuration <= block.timestamp; // notional can be already claimed
     }
 
-    function _fetchAndValidate(address _index, uint256 _timeSlippage) internal view returns (int256) {
+    function _fetchAndValidate(
+        address _index,
+        uint256 _now,
+        uint256 _timeSlippage
+    ) internal view returns (int256) {
         (, int256 _fetchedPrice, , uint256 _time, ) = getLatestPriceData(_index);
 
-        require(block.timestamp - _time <= _timeSlippage, "Depository: Undelying Price too delayed");
+        require(_now - _time <= _timeSlippage, "Depository: Undelying Price too delayed");
         return _fetchedPrice;
     }
 }

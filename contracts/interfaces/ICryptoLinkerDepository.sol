@@ -27,6 +27,7 @@ interface ICryptoLinkerDepository {
     struct Terms {
         int256 currentLeverage;
         int256 targetLeverage;
+        int256 initialLeverage;
         uint256 maxDebt; // 18 decimal debt maximum in REQ
         uint48 vesting; // length of time from deposit to maturity if fixed-term
         uint48 conclusion; // timestamp when market no longer offered (doubles as time when market matures if fixed-expiry)

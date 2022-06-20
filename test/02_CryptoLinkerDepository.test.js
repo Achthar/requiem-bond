@@ -1,8 +1,17 @@
 const { ethers, network } = require("hardhat");
 const { expect } = require("chai");
 const { smock } = require("@defi-wonderland/smock");
+const { formatEther } = require("ethers/lib/utils");
 
 describe("Crypto Linker Depository", async () => {
+
+    const calcBondPrice = (price1, price0, refBond, lev) => {
+        return one18.add(
+            lev.mul(
+                price1.sub(price0).mul(one18).div(price0)
+            ).div(one18)
+        ).mul(refBond).div(one18)
+    }
 
     const mulDiv = (val, mul, div) => {
         return ethers.BigNumber.from(val).mul(ethers.BigNumber.from(Math.round(mul * 1000000))).div(Math.round(div * 1000000))
@@ -240,71 +249,129 @@ describe("Crypto Linker Depository", async () => {
     it("should provide linked pricing", async () => {
         let amount = one18; // 10,000
         await treasury.assetValue.returns(amount)
-        let last = await mockOracle.latestRoundData()
-        console.log("BEFORE", ethers.utils.formatEther(last.answer))
-
-
-        // last = await mockOracle.latestRoundData()
-        // console.log("AFTER", ethers.utils.formatEther(last.answer))
-
-        let mp = await depository.marketPrice(bid)
-        console.log("MP", mp.toString())
+        let mp0 = await depository.marketPrice(bid)
         let lev = await depository.currentLeverage(bid)
-        console.log("LEV", ethers.utils.formatEther(lev))
-        await mockOracle.setPrice(one18.mul(11).div(10))
+        // set price to 10% increas
+        const price0 = one18.mul(11).div(10)
+        await mockOracle.setPrice(price0)
         await depository
             .connect(bob)
             .deposit(bid, amount, initialPrice.mul(2), timeSlippage, bob.address);
-        mp = await depository.marketPrice(bid)
-        console.log("MP", mp.toString())
+
+        // check reference price
+        let mp1 = await depository.metadata(bid)
+        expect(mp0).to.equal(mp1.lastReferenceBondPrice)
         userTerms = await depository.userTerms(bob.address, 0)
-        console.log("ATTAINED P", ethers.utils.formatEther(userTerms.baseNotional.mul(mp).div(one18)))
         metadata = await depository.metadata(bid)
-        console.log("LAST REF", ethers.utils.formatEther(metadata.lastReferencePrice), ethers.utils.formatEther(metadata.lastReferenceBondPrice))
-        await network.provider.send("evm_increaseTime", [tuneInterval]);
-        await depository
-            .connect(bob)
-            .deposit(bid, amount, initialPrice.mul(2), timeSlippage, carol.address);
 
+        // increase time
         await network.provider.send("evm_increaseTime", [tuneInterval]);
+        await network.provider.send("evm_mine")
+
+        let time = await mockOracle.latestRoundData()
+        let mpPre = await depository.marketPrice(bid)
+        let levPre = await depository.currentLeverage(bid)
+        let incr = await depository.currentLeverageIncrement(bid)
+        terms = await depository.terms(bid)
+        // console.log("teRMS",
+        //     terms.lastUpdate,
+        //     time.updatedAt.toString(),
+        //     formatEther(terms.currentLeverage),
+        //     formatEther(incr),
+        //     formatEther(terms.currentLeverage.add(incr)),
+        //     formatEther(levPre)
+        // )
+        // // deposit
         await depository
             .connect(bob)
-            .deposit(bid, amount, initialPrice.mul(2), timeSlippage, carol.address);
+            .deposit(bid, amount, initialPrice.mul(2), timeSlippage, bob.address);
+
+        // fetch price
+        let mp2 = await depository.marketPrice(bid)
+        // let levPost = await depository.currentLeverage(bid)
+        expect(mp2.gt(mp1.lastReferenceBondPrice.mul(11).div(10))).to.equal(true)
+
+        // fetch attained price
+        userTerms = await depository.userTerms(bob.address, 1)
+
+        // check whether prices match 
+        // let expectedPriceUser = calcBondPrice(price0, one18, mp1.lastReferenceBondPrice, levPre)
+        let actualPriceUser = ethers.BigNumber.from(amount).mul(one18).div(userTerms.baseNotional)
+        let lowerBound = mulDiv(mpPre, 0.9999, 1);
+        let upperBound = mulDiv(mpPre, 1.0001, 1);
+
+        expect(actualPriceUser.gt(lowerBound)).to.be.equal(true);
+        expect(actualPriceUser.lt(upperBound)).to.be.equal(true);
+
+        // expect(actualPriceUser).to.equal(expectedPriceUser)
+
+        // set price to decrease 
+        const price1 = one18.mul(95).div(100)
+        await mockOracle.setPrice(price1)
+
+        // increase price
+        await network.provider.send("evm_increaseTime", [tuneInterval]);
+        await network.provider.send("evm_mine")
+
+        // calculate expected price
+        lev = await depository.currentLeverage(bid)
+        let mp3 = await depository.marketPrice(bid)
+        let bmp = await depository.metadata(bid)
+        const expPr = one18.add(lev.mul(price1.sub(price0).mul(one18).div(price0)).div(one18)).mul(bmp.lastReferenceBondPrice).div(one18)
+
+        lowerBound = mulDiv(mp3, 0.9999, 1);
+        upperBound = mulDiv(mp3, 1.0001, 1);
+
+        // comparen to actual one
+        expect(expPr.gt(lowerBound)).to.be.equal(true);
+        expect(expPr.lt(upperBound)).to.be.equal(true);
+
+        mpPre = await depository.marketPrice(bid)
+        await depository
+            .connect(bob)
+            .deposit(bid, amount, initialPrice.mul(2), timeSlippage, bob.address);
 
         metadata = await depository.metadata(bid)
-        console.log("LAST REF after", ethers.utils.formatEther(metadata.lastReferencePrice), ethers.utils.formatEther(metadata.lastReferenceBondPrice))
-        // let [change, lastAdjustment, timeToAdjusted, active] = await depository.adjustments(bid);
-        expect(Boolean(false)).to.equal(false);
+        const inds = await depository.indexesFor(bob.address)
+        userTerms = await depository.userTerms(bob.address, inds[inds.length - 1])
+
+        actualPriceUser = ethers.BigNumber.from(amount).mul(one18).div(userTerms.baseNotional)
+        lowerBound = mulDiv(mpPre, 0.9999, 1);
+        upperBound = mulDiv(mpPre, 1.0001, 1);
+
+        expect(actualPriceUser.gt(lowerBound)).to.be.equal(true);
+        expect(actualPriceUser.lt(upperBound)).to.be.equal(true);
+
     });
 
-    it("should not start adjustment if ahead of schedule", async () => {
-        let amount = "650000000000000000000000"; // 10,000
-        await treasury.assetValue.returns(amount)
-        await depository
-            .connect(bob)
-            .deposit(bid, amount, initialPrice.mul(2), timeSlippage, carol.address);
-        await depository
-            .connect(bob)
-            .deposit(bid, amount, initialPrice.mul(2), timeSlippage, carol.address);
+    // it("should not start adjustment if ahead of schedule", async () => {
+    //     let amount = "650000000000000000000000"; // 10,000
+    //     await treasury.assetValue.returns(amount)
+    //     await depository
+    //         .connect(bob)
+    //         .deposit(bid, amount, initialPrice.mul(2), timeSlippage, carol.address);
+    //     await depository
+    //         .connect(bob)
+    //         .deposit(bid, amount, initialPrice.mul(2), timeSlippage, carol.address);
 
-        await network.provider.send("evm_increaseTime", [tuneInterval]);
-        await depository
-            .connect(bob)
-            .deposit(bid, amount, initialPrice.mul(2), timeSlippage, carol.address);
-        // let [change, lastAdjustment, timeToAdjusted, active] = await depository.adjustments(bid);
-        // expect(Boolean(active)).to.equal(false);
-    });
+    //     await network.provider.send("evm_increaseTime", [tuneInterval]);
+    //     await depository
+    //         .connect(bob)
+    //         .deposit(bid, amount, initialPrice.mul(2), timeSlippage, carol.address);
+    //     // let [change, lastAdjustment, timeToAdjusted, active] = await depository.adjustments(bid);
+    //     // expect(Boolean(active)).to.equal(false);
+    // });
 
-    it("should start adjustment if behind schedule", async () => {
-        await network.provider.send("evm_increaseTime", [tuneInterval]);
-        let amount = "10000000000000000000000"; // 10,000
-        await treasury.assetValue.returns(amount)
-        await depository
-            .connect(bob)
-            .deposit(bid, amount, initialPrice, timeSlippage, carol.address);
-        // let [change, lastAdjustment, timeToAdjusted, active] = await depository.adjustments(bid);
-        expect(Boolean(false)).to.equal(true);
-    });
+    // it("should start adjustment if behind schedule", async () => {
+    //     await network.provider.send("evm_increaseTime", [tuneInterval]);
+    //     let amount = "10000000000000000000000"; // 10,000
+    //     await treasury.assetValue.returns(amount)
+    //     await depository
+    //         .connect(bob)
+    //         .deposit(bid, amount, initialPrice, timeSlippage, carol.address);
+    //     // let [change, lastAdjustment, timeToAdjusted, active] = await depository.adjustments(bid);
+    //     expect(Boolean(false)).to.equal(true);
+    // });
 
     // it("adjustment should lower control variable by change in tune interval if behind", async () => {
     //     await network.provider.send("evm_increaseTime", [tuneInterval]);

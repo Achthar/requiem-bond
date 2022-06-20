@@ -26,6 +26,7 @@ interface CryptoLinkerDepositoryInterface extends ethers.utils.Interface {
     "close(uint256)": FunctionFragment;
     "create(address,address,uint256[8],uint256[3],uint32[2])": FunctionFragment;
     "currentLeverage(uint256)": FunctionFragment;
+    "currentLeverageIncrement(uint256)": FunctionFragment;
     "daoReward()": FunctionFragment;
     "deposit(uint256,uint256,uint256,uint256,address)": FunctionFragment;
     "exercise(address,uint256[])": FunctionFragment;
@@ -34,7 +35,7 @@ interface CryptoLinkerDepositoryInterface extends ethers.utils.Interface {
     "getReward()": FunctionFragment;
     "indexesFor(address)": FunctionFragment;
     "isLive(uint256)": FunctionFragment;
-    "leverageIncrement(uint256)": FunctionFragment;
+    "leverageIncrement(uint256,uint256)": FunctionFragment;
     "liveMarkets()": FunctionFragment;
     "liveMarketsFor(address)": FunctionFragment;
     "marketPrice(uint256)": FunctionFragment;
@@ -87,6 +88,10 @@ interface CryptoLinkerDepositoryInterface extends ethers.utils.Interface {
     functionFragment: "currentLeverage",
     values: [BigNumberish]
   ): string;
+  encodeFunctionData(
+    functionFragment: "currentLeverageIncrement",
+    values: [BigNumberish]
+  ): string;
   encodeFunctionData(functionFragment: "daoReward", values?: undefined): string;
   encodeFunctionData(
     functionFragment: "deposit",
@@ -109,7 +114,7 @@ interface CryptoLinkerDepositoryInterface extends ethers.utils.Interface {
   ): string;
   encodeFunctionData(
     functionFragment: "leverageIncrement",
-    values: [BigNumberish]
+    values: [BigNumberish, BigNumberish]
   ): string;
   encodeFunctionData(
     functionFragment: "liveMarkets",
@@ -187,6 +192,10 @@ interface CryptoLinkerDepositoryInterface extends ethers.utils.Interface {
   decodeFunctionResult(functionFragment: "create", data: BytesLike): Result;
   decodeFunctionResult(
     functionFragment: "currentLeverage",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "currentLeverageIncrement",
     data: BytesLike
   ): Result;
   decodeFunctionResult(functionFragment: "daoReward", data: BytesLike): Result;
@@ -376,6 +385,11 @@ export class CryptoLinkerDepository extends BaseContract {
       overrides?: CallOverrides
     ): Promise<[BigNumber]>;
 
+    currentLeverageIncrement(
+      _id: BigNumberish,
+      overrides?: CallOverrides
+    ): Promise<[BigNumber]>;
+
     daoReward(overrides?: CallOverrides): Promise<[BigNumber]>;
 
     deposit(
@@ -424,6 +438,7 @@ export class CryptoLinkerDepository extends BaseContract {
 
     leverageIncrement(
       _id: BigNumberish,
+      _time: BigNumberish,
       overrides?: CallOverrides
     ): Promise<[BigNumber]>;
 
@@ -553,9 +568,19 @@ export class CryptoLinkerDepository extends BaseContract {
       arg0: BigNumberish,
       overrides?: CallOverrides
     ): Promise<
-      [BigNumber, BigNumber, BigNumber, number, number, number, number] & {
+      [
+        BigNumber,
+        BigNumber,
+        BigNumber,
+        BigNumber,
+        number,
+        number,
+        number,
+        number
+      ] & {
         currentLeverage: BigNumber;
         targetLeverage: BigNumber;
+        initialLeverage: BigNumber;
         maxDebt: BigNumber;
         vesting: number;
         conclusion: number;
@@ -642,6 +667,11 @@ export class CryptoLinkerDepository extends BaseContract {
     overrides?: CallOverrides
   ): Promise<BigNumber>;
 
+  currentLeverageIncrement(
+    _id: BigNumberish,
+    overrides?: CallOverrides
+  ): Promise<BigNumber>;
+
   daoReward(overrides?: CallOverrides): Promise<BigNumber>;
 
   deposit(
@@ -687,6 +717,7 @@ export class CryptoLinkerDepository extends BaseContract {
 
   leverageIncrement(
     _id: BigNumberish,
+    _time: BigNumberish,
     overrides?: CallOverrides
   ): Promise<BigNumber>;
 
@@ -813,9 +844,19 @@ export class CryptoLinkerDepository extends BaseContract {
     arg0: BigNumberish,
     overrides?: CallOverrides
   ): Promise<
-    [BigNumber, BigNumber, BigNumber, number, number, number, number] & {
+    [
+      BigNumber,
+      BigNumber,
+      BigNumber,
+      BigNumber,
+      number,
+      number,
+      number,
+      number
+    ] & {
       currentLeverage: BigNumber;
       targetLeverage: BigNumber;
+      initialLeverage: BigNumber;
       maxDebt: BigNumber;
       vesting: number;
       conclusion: number;
@@ -899,6 +940,11 @@ export class CryptoLinkerDepository extends BaseContract {
       overrides?: CallOverrides
     ): Promise<BigNumber>;
 
+    currentLeverageIncrement(
+      _id: BigNumberish,
+      overrides?: CallOverrides
+    ): Promise<BigNumber>;
+
     daoReward(overrides?: CallOverrides): Promise<BigNumber>;
 
     deposit(
@@ -939,6 +985,7 @@ export class CryptoLinkerDepository extends BaseContract {
 
     leverageIncrement(
       _id: BigNumberish,
+      _time: BigNumberish,
       overrides?: CallOverrides
     ): Promise<BigNumber>;
 
@@ -1068,9 +1115,19 @@ export class CryptoLinkerDepository extends BaseContract {
       arg0: BigNumberish,
       overrides?: CallOverrides
     ): Promise<
-      [BigNumber, BigNumber, BigNumber, number, number, number, number] & {
+      [
+        BigNumber,
+        BigNumber,
+        BigNumber,
+        BigNumber,
+        number,
+        number,
+        number,
+        number
+      ] & {
         currentLeverage: BigNumber;
         targetLeverage: BigNumber;
+        initialLeverage: BigNumber;
         maxDebt: BigNumber;
         vesting: number;
         conclusion: number;
@@ -1237,6 +1294,11 @@ export class CryptoLinkerDepository extends BaseContract {
       overrides?: CallOverrides
     ): Promise<BigNumber>;
 
+    currentLeverageIncrement(
+      _id: BigNumberish,
+      overrides?: CallOverrides
+    ): Promise<BigNumber>;
+
     daoReward(overrides?: CallOverrides): Promise<BigNumber>;
 
     deposit(
@@ -1274,6 +1336,7 @@ export class CryptoLinkerDepository extends BaseContract {
 
     leverageIncrement(
       _id: BigNumberish,
+      _time: BigNumberish,
       overrides?: CallOverrides
     ): Promise<BigNumber>;
 
@@ -1403,6 +1466,11 @@ export class CryptoLinkerDepository extends BaseContract {
       overrides?: CallOverrides
     ): Promise<PopulatedTransaction>;
 
+    currentLeverageIncrement(
+      _id: BigNumberish,
+      overrides?: CallOverrides
+    ): Promise<PopulatedTransaction>;
+
     daoReward(overrides?: CallOverrides): Promise<PopulatedTransaction>;
 
     deposit(
@@ -1446,6 +1514,7 @@ export class CryptoLinkerDepository extends BaseContract {
 
     leverageIncrement(
       _id: BigNumberish,
+      _time: BigNumberish,
       overrides?: CallOverrides
     ): Promise<PopulatedTransaction>;
 

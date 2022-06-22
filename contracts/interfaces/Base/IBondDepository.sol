@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0
 pragma solidity >=0.8.15;
 
-import "./ERC20/IERC20.sol";
+import "../ERC20/IERC20.sol";
 
 interface IBondDepository {
   // Info about each type of market

@@ -3,8 +3,8 @@ pragma solidity ^0.8.15;
 
 import "./libraries/types/FrontEndRewarder.sol";
 import "./libraries/SafeERC20.sol";
-import "./interfaces/ICryptoLinkerDepository.sol";
-import "./interfaces/ICryptoLinkerUserTermsKeeper.sol";
+import "./interfaces/CryptoLinker//ICryptoLinkerDepository.sol";
+import "./interfaces/CryptoLinker/ICryptoLinkerUserTermsKeeper.sol";
 import "./interfaces/IAggragatorV3.sol";
 import "./interfaces/ITreasury.sol";
 import "./libraries/types/PriceConsumer.sol";
@@ -170,7 +170,7 @@ contract CryptoLinkerDepository is ICryptoLinkerDepository, ICryptoLinkerUserTer
         require(block.timestamp < term.conclusion, "Depository: market concluded");
 
         // Increase leverage over time
-        _increment(_id, block.timestamp);
+        _leverageTimeIncrement(_id, block.timestamp);
 
         int256 _fetchedPrice = _fetchAndValidate(market.index, block.timestamp, _timeSlippage);
 
@@ -216,7 +216,7 @@ contract CryptoLinkerDepository is ICryptoLinkerDepository, ICryptoLinkerUserTer
      * @param _id          ID of market
      * @param _time        uint48 timestamp (saves gas when passed in)
      */
-    function _increment(uint256 _id, uint256 _time) internal {
+    function _leverageTimeIncrement(uint256 _id, uint256 _time) internal {
         // leverage increment
         /*
          * Leverge increases over time causing higher reference
@@ -225,6 +225,10 @@ contract CryptoLinkerDepository is ICryptoLinkerDepository, ICryptoLinkerUserTer
          */
         terms[_id].currentLeverage += leverageIncrement(_id, _time);
         terms[_id].lastUpdate = uint48(_time);
+    }
+
+    function _leverageTradeIncrement(uint256 _id, uint256 _time) internal {
+        
     }
 
     /**

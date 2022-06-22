@@ -3,33 +3,25 @@
 pragma solidity ^0.8.10;
 
 import "./FrontEndRewarder.sol";
+import "./PriceConsumer.sol";
 import "../../interfaces/ITreasury.sol";
-import "../../interfaces/Base/IUserTermsKeeper.sol";
+import "../../interfaces/Call/IUserTermsKeeper.sol";
 
 // solhint-disable max-line-length
 
-abstract contract UserTermsKeeper is IUserTermsKeeper, FrontEndRewarder {
+abstract contract CallUserTermsKeeper is IUserTermsKeeper, FrontEndRewarder, PriceConsumer {
     mapping(address => UserTerms[]) public userTerms; // user deposit data
     mapping(address => mapping(uint256 => address)) private noteTransfers; // change note ownership
 
-
     ITreasury internal treasury;
 
-    constructor(
-        IERC20 _req,
-        address _treasury
-    ) FrontEndRewarder(IAuthority(_treasury), _req) {
+    constructor(IERC20 _req, address _treasury) FrontEndRewarder(IAuthority(_treasury), _req) {
         treasury = ITreasury(_treasury);
     }
 
     // if treasury address changes on authority, update it
     function updateTreasury() external {
-        require(
-            msg.sender == authority.governor() ||
-                msg.sender == authority.guardian() ||
-                msg.sender == authority.policy(),
-            "Only authorized"
-        );
+        require(msg.sender == authority.governor() || msg.sender == authority.guardian() || msg.sender == authority.policy(), "Only authorized");
         treasury = ITreasury(authority.vault());
     }
 
@@ -45,21 +37,27 @@ abstract contract UserTermsKeeper is IUserTermsKeeper, FrontEndRewarder {
      */
     function addTerms(
         address _user,
+        address _underlying,
         uint256 _payout,
         uint48 _expiry,
         uint48 _marketID,
         address _referral
-    ) internal returns (uint256 index_) {
+    ) internal returns (uint256 index_, int256 _fetchedPrice) {
         // the index of the note is the next in the user's array
         index_ = userTerms[_user].length;
+
+        (, _fetchedPrice, , , ) = getLatestPriceData(_underlying);
 
         // the new note is pushed to the user's array
         userTerms[_user].push(
             UserTerms({
                 payout: _payout,
+                cryptoIntitialPrice: _fetchedPrice,
+                cryptoClosingPrice: 0,
                 created: uint48(block.timestamp),
                 matured: _expiry,
                 redeemed: 0,
+                exercised: 0,
                 marketID: _marketID
             })
         );
@@ -69,43 +67,6 @@ abstract contract UserTermsKeeper is IUserTermsKeeper, FrontEndRewarder {
 
         // mint payout and rewards
         treasury.mint(address(this), _payout + rewards);
-
-    }
-
-    /* ========== REDEEM ========== */
-
-    /**
-     * @notice             redeem userTerms for user
-     * @param _user        the user to redeem for
-     * @param _indexes     the note indexes to redeem
-     * @return payout_     sum of payout sent, in REQ
-     */
-    function redeem(
-        address _user,
-        uint256[] memory _indexes
-    ) public override returns (uint256 payout_) {
-        uint48 time = uint48(block.timestamp);
-
-        for (uint256 i = 0; i < _indexes.length; i++) {
-            (uint256 pay, bool matured) = pendingFor(_user, _indexes[i]);
-
-            if (matured) {
-                userTerms[_user][_indexes[i]].redeemed = time; // mark as redeemed
-                payout_ += pay;
-            }
-        }
-
-        req.transfer(_user, payout_);
-    }
-
-    /**
-     * @notice             redeem all redeemable markets for user
-     * @dev                if possible, query indexesFor() off-chain and input in redeem() to save gas
-     * @param _user        user to redeem all userTerms for
-     * @return             sum of payout sent, in REQ
-     */
-    function redeemAll(address _user) external override returns (uint256) {
-        return redeem(_user, indexesFor(_user));
     }
 
     /* ========== TRANSFER ========== */
@@ -165,17 +126,14 @@ abstract contract UserTermsKeeper is IUserTermsKeeper, FrontEndRewarder {
         return indexes;
     }
 
-    /**
-     * @notice             calculate amount available for claim for a single note
-     * @param _user        the user that the note belongs to
-     * @param _index       the index of the note in the user's array
-     * @return payout_     the payout due, in gREQ
-     * @return matured_    if the payout can be redeemed
-     */
-    function pendingFor(address _user, uint256 _index) public view override returns (uint256 payout_, bool matured_) {
-        UserTerms memory note = userTerms[_user][_index];
+    function _fetchAndValidate(
+        address _underlying,
+        uint256 _now,
+        uint256 _timeSlippage
+    ) internal view returns (int256) {
+        (, int256 _fetchedPrice, , uint256 _time, ) = getLatestPriceData(_underlying);
 
-        payout_ = note.payout;
-        matured_ = note.redeemed == 0 && note.matured <= block.timestamp && note.payout != 0;
+        require(_now - _time <= _timeSlippage, "Depository: Undelying Price too delayed");
+        return _fetchedPrice;
     }
 }

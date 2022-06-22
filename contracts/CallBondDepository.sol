@@ -1,16 +1,16 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 pragma solidity ^0.8.15;
 
-import "./libraries/types/UserTermsKeeper.sol";
+import "./libraries/types/CallUserTermsKeeper.sol";
 import "./libraries/SafeERC20.sol";
-import "./interfaces/Base/IBondDepository.sol";
+import "./interfaces/Call/ICallBondDepository.sol";
 
 // solhint-disable  max-line-length
 
 /// @title Requiem Bond Depository
 /// @author Requiem: Achthar; Olympus DAO: Zeus, Indigo
 
-contract BondDepository is IBondDepository, UserTermsKeeper {
+contract CallBondDepository is ICallBondDepository, CallUserTermsKeeper {
     /* ======== DEPENDENCIES ======== */
 
     using SafeERC20 for IERC20;
@@ -19,7 +19,7 @@ contract BondDepository is IBondDepository, UserTermsKeeper {
 
     event CreateMarket(uint256 indexed id, address indexed baseToken, address indexed asset, uint256 initialPrice);
     event CloseMarket(uint256 indexed id);
-    event Bond(uint256 indexed id, uint256 amount, uint256 price);
+    event Bond(uint256 indexed id, uint256 amount, uint256 price, int256 underlyingReference);
     event Tuned(uint256 indexed id, uint256 oldControlVariable, uint256 newControlVariable);
 
     /* ======== STATE VARIABLES ======== */
@@ -35,8 +35,7 @@ contract BondDepository is IBondDepository, UserTermsKeeper {
 
     /* ======== CONSTRUCTOR ======== */
 
-    constructor(IERC20 _req, address _treasury) UserTermsKeeper(_req, _treasury) {}
-
+    constructor(IERC20 _req, address _treasury) CallUserTermsKeeper(_req, _treasury) {}
 
     /* ======== CREATE ======== */
 
@@ -52,9 +51,10 @@ contract BondDepository is IBondDepository, UserTermsKeeper {
      */
     function create(
         IERC20 _asset,
-        uint256[3] memory _market,
+        address _underlying,
+        uint256[5] memory _market,
         bool[2] memory _booleans,
-        uint256[2] memory _terms,
+        uint256[3] memory _terms,
         uint32[2] memory _intervals
     ) external override onlyPolicy returns (uint256 id_) {
         // the length of the program, in seconds
@@ -106,6 +106,7 @@ contract BondDepository is IBondDepository, UserTermsKeeper {
         markets.push(
             Market({
                 asset: _asset,
+                underlying: _underlying,
                 capacityInQuote: _booleans[0],
                 capacity: _market[0],
                 totalDebt: targetDebt,
@@ -118,8 +119,11 @@ contract BondDepository is IBondDepository, UserTermsKeeper {
         terms.push(
             Terms({
                 fixedTerm: _booleans[1],
+                thresholdPercentage: int256(_market[3]),
+                maxPayoffPercentage: _market[4],
                 vesting: uint48(_terms[0]),
                 conclusion: uint48(_terms[1]),
+                exerciseDuration: uint48(_terms[2]),
                 controlVariable: controlVariable,
                 maxDebt: maxDebt
             })
@@ -190,26 +194,9 @@ contract BondDepository is IBondDepository, UserTermsKeeper {
         // Debt and the control variable decay over time
         _decay(_id, currentTime);
 
-        // Users input a maximum price, which protects them from price changes after
-        // entering the mempool. max price is a slippage mitigation measure
-        uint256 price = _marketPrice(_id);
-        require(price <= _maxPrice, "Depository: more than max price");
+        expiry_ = term.fixedTerm ? term.vesting + currentTime : term.vesting;
 
-        /**
-         * payout for the deposit = value / price
-         *
-         * where
-         * payout = REQ out
-         * value = value of deposited asset amount in quote provided by treasury (always 18 dec)
-         * price = quote tokens : req (i.e. 42069 DAI : REQ)
-         *
-         * REQ decimals is supposed to match price decimals (18)
-         */
-        payout_ = (treasury.assetValue(address(market.asset), _amount) * 1e18) / price;
-
-        // markets have a max payout amount, capping size because deposits
-        // do not experience slippage. max payout is recalculated upon tuning
-        require(payout_ <= market.maxPayout, "Depository: max size exceeded");
+        (index_, payout_) = _bondAsset(_user, _maxPrice, market, _id, _amount, uint48(expiry_), _referral);
 
         /*
          * each market is initialized with a capacity
@@ -237,7 +224,6 @@ contract BondDepository is IBondDepository, UserTermsKeeper {
          * i.e. expiration = day 10. when alice deposits on day 1, her term
          * is 9 days. when bob deposits on day 2, his term is 8 days.
          */
-        expiry_ = term.fixedTerm ? term.vesting + currentTime : term.vesting;
 
         // markets keep track of how many quote tokens have been
         // purchased, and how much REQ has been sold
@@ -246,16 +232,6 @@ contract BondDepository is IBondDepository, UserTermsKeeper {
 
         // incrementing total debt raises the price of the next bond
         market.totalDebt += payout_;
-
-        emit Bond(_id, _amount, price);
-
-        /**
-         * user data is stored as Termss. these are isolated array entries
-         * storing the amount due, the time created, the time when payout
-         * is redeemable, the time when payout was redeemed, and the ID
-         * of the market deposited into
-         */
-        index_ = addTerms(_user, payout_, uint48(expiry_), uint48(_id), _referral);
 
         // transfer payment to treasury
         market.asset.safeTransferFrom(msg.sender, address(treasury), _amount);
@@ -269,6 +245,59 @@ contract BondDepository is IBondDepository, UserTermsKeeper {
             // if market will continue, the control variable is tuned to hit targets on time
             _tune(_id, currentTime);
         }
+    }
+
+    /* ========== REDEEM ========== */
+
+    /**
+     * @notice             redeem userTerms for user
+     * @param _user        the user to redeem for
+     * @param _indexes     the note indexes to redeem
+     * @return payout_     sum of payout sent, in REQ
+     */
+    function redeem(address _user, uint256[] memory _indexes) public override returns (uint256 payout_) {
+        uint48 time = uint48(block.timestamp);
+
+        for (uint256 i = 0; i < _indexes.length; i++) {
+            (uint256 pay, bool matured, bool payoffClaimable) = pendingFor(_user, _indexes[i]);
+            uint256 marketId = userTerms[_user][_indexes[i]].marketID;
+
+            // check whether notional can be claimed
+            if (matured) {
+                userTerms[_user][_indexes[i]].redeemed = time; // mark as claimed
+                payout_ += pay;
+            }
+
+            // check whether option can be exercised
+            (, int256 _fetchedPrice, , , ) = getLatestPriceData(markets[marketId].underlying);
+            if (payoffClaimable) {
+                userTerms[_user][_indexes[i]].exercised = time; // mark as exercised
+                uint256 payoff = _calculatePayoff(
+                    userTerms[_user][_indexes[i]].cryptoIntitialPrice,
+                    _fetchedPrice,
+                    terms[marketId].thresholdPercentage
+                );
+                if (payoff > 0) {
+                    uint256 maxPayoff = (userTerms[_user][_indexes[i]].payout * terms[_indexes[i]].maxPayoffPercentage) / 1e18;
+                    uint256 cappedPayoff = payoff > maxPayoff ? maxPayoff : payoff;
+                    // add digital payoff
+                    payout_ += cappedPayoff;
+                }
+            }
+        }
+
+        // transfer notionals and digital payoffs
+        req.transfer(_user, payout_);
+    }
+
+    /**
+     * @notice             redeem all redeemable markets for user
+     * @dev                if possible, query indexesFor() off-chain and input in redeem() to save gas
+     * @param _user        user to redeem all userTerms for
+     * @return             sum of payout sent, in REQ
+     */
+    function redeemAll(address _user) external override returns (uint256) {
+        return redeem(_user, indexesFor(_user));
     }
 
     /**
@@ -365,7 +394,65 @@ contract BondDepository is IBondDepository, UserTermsKeeper {
         }
     }
 
+    /**
+     * @notice             adds a new Terms for a user, stores the front end & DAO rewards, and mints & stakes payout & rewards
+     * @param _user        the user that owns the Terms
+     */
+    function _bondAsset(
+        address _user,
+        uint256 _maxPrice,
+        Market memory _market,
+        uint256 _marketId,
+        uint256 _amount,
+        uint48 _expiry,
+        address _referral
+    ) internal returns (uint256, uint256) {
+        // entering the mempool. max price is a slippage mitigation measure
+        uint256 _price = _marketPrice(_marketId);
+        require(_price <= _maxPrice, "Depository: more than max price");
+
+        /**
+         * payout for the deposit = value / price
+         */
+        uint256 _payout = (treasury.assetValue(address(_market.asset), _amount) * 1e18) / _price;
+
+        require(_payout <= _market.maxPayout, "Depository: max size exceeded");
+
+        // the new note is pushed to the user's array
+        (uint256 _index, int256 _fetchedPrice) = addTerms(_user, _market.underlying, _payout, _expiry, uint48(_marketId), _referral);
+        // mint payout and rewards
+        treasury.mint(address(this), _payout);
+
+        emit Bond(_marketId, _amount, _price, _fetchedPrice);
+
+        return (_index, _payout);
+    }
+
     /* ======== EXTERNAL VIEW ======== */
+
+    /**
+     * @notice             calculate amount available for claim for a single note
+     * @param _user        the user that the note belongs to
+     * @param _index       the index of the note in the user's array
+     * @return payout_     the payout due, in gREQ
+     * @return matured_    if the payout can be redeemed
+     */
+    function pendingFor(address _user, uint256 _index)
+        public
+        view
+        returns (
+            uint256 payout_,
+            bool matured_,
+            bool payoffClaimable_
+        )
+    {
+        UserTerms memory note = userTerms[_user][_index];
+
+        payout_ = note.payout;
+        matured_ = note.redeemed == 0 && note.matured <= block.timestamp && note.payout != 0;
+        // notional can already have been claimed
+        payoffClaimable_ = note.exercised == 0 && note.matured <= block.timestamp && note.matured + terms[_index].exerciseDuration >= block.timestamp;
+    }
 
     /**
      * @notice             calculate current market price of quote token in base token
@@ -509,6 +596,15 @@ contract BondDepository is IBondDepository, UserTermsKeeper {
     }
 
     /* ======== INTERNAL VIEW ======== */
+
+    function _calculatePayoff(
+        int256 _initialPrice,
+        int256 _priceNow,
+        int256 _strike
+    ) internal pure returns (uint256) {
+        int256 _kMinusS = _priceNow * 1e18 - (1e18 + _strike) * _initialPrice;
+        return _kMinusS > 0 ? uint256(_kMinusS / 1e18) : 0;
+    }
 
     /**
      * @notice                  calculate current market price of quote token in base token

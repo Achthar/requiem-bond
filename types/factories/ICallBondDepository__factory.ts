@@ -246,6 +246,30 @@ const _abi = [
   {
     inputs: [
       {
+        internalType: "address",
+        name: "_user",
+        type: "address",
+      },
+      {
+        internalType: "uint256",
+        name: "_index",
+        type: "uint256",
+      },
+    ],
+    name: "optionPayoutFor",
+    outputs: [
+      {
+        internalType: "uint256",
+        name: "",
+        type: "uint256",
+      },
+    ],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [
+      {
         internalType: "uint256",
         name: "_amount",
         type: "uint256",

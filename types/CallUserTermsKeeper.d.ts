@@ -27,7 +27,6 @@ interface CallUserTermsKeeperInterface extends ethers.utils.Interface {
     "getReward()": FunctionFragment;
     "indexesFor(address)": FunctionFragment;
     "pendingFor(address,uint256)": FunctionFragment;
-    "perf(int256,int256)": FunctionFragment;
     "pullTerms(address,uint256)": FunctionFragment;
     "pushTerms(address,uint256)": FunctionFragment;
     "refReward()": FunctionFragment;
@@ -52,10 +51,6 @@ interface CallUserTermsKeeperInterface extends ethers.utils.Interface {
   encodeFunctionData(
     functionFragment: "pendingFor",
     values: [string, BigNumberish]
-  ): string;
-  encodeFunctionData(
-    functionFragment: "perf",
-    values: [BigNumberish, BigNumberish]
   ): string;
   encodeFunctionData(
     functionFragment: "pullTerms",
@@ -96,7 +91,6 @@ interface CallUserTermsKeeperInterface extends ethers.utils.Interface {
   decodeFunctionResult(functionFragment: "getReward", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "indexesFor", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "pendingFor", data: BytesLike): Result;
-  decodeFunctionResult(functionFragment: "perf", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "pullTerms", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "pushTerms", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "refReward", data: BytesLike): Result;
@@ -211,12 +205,6 @@ export class CallUserTermsKeeper extends BaseContract {
       }
     >;
 
-    perf(
-      _newPrice: BigNumberish,
-      _oldPrice: BigNumberish,
-      overrides?: CallOverrides
-    ): Promise<[BigNumber]>;
-
     pullTerms(
       _from: string,
       _index: BigNumberish,
@@ -319,12 +307,6 @@ export class CallUserTermsKeeper extends BaseContract {
     }
   >;
 
-  perf(
-    _newPrice: BigNumberish,
-    _oldPrice: BigNumberish,
-    overrides?: CallOverrides
-  ): Promise<BigNumber>;
-
   pullTerms(
     _from: string,
     _index: BigNumberish,
@@ -425,12 +407,6 @@ export class CallUserTermsKeeper extends BaseContract {
       }
     >;
 
-    perf(
-      _newPrice: BigNumberish,
-      _oldPrice: BigNumberish,
-      overrides?: CallOverrides
-    ): Promise<BigNumber>;
-
     pullTerms(
       _from: string,
       _index: BigNumberish,
@@ -525,12 +501,6 @@ export class CallUserTermsKeeper extends BaseContract {
       overrides?: CallOverrides
     ): Promise<BigNumber>;
 
-    perf(
-      _newPrice: BigNumberish,
-      _oldPrice: BigNumberish,
-      overrides?: CallOverrides
-    ): Promise<BigNumber>;
-
     pullTerms(
       _from: string,
       _index: BigNumberish,
@@ -600,12 +570,6 @@ export class CallUserTermsKeeper extends BaseContract {
     pendingFor(
       _user: string,
       _index: BigNumberish,
-      overrides?: CallOverrides
-    ): Promise<PopulatedTransaction>;
-
-    perf(
-      _newPrice: BigNumberish,
-      _oldPrice: BigNumberish,
       overrides?: CallOverrides
     ): Promise<PopulatedTransaction>;
 

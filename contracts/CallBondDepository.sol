@@ -42,10 +42,11 @@ contract CallBondDepository is ICallBondDepository, CallUserTermsKeeper {
     /**
      * @notice             creates a new market type
      * @dev                current price should be in 9 decimals.
-     * @param _asset  token used to deposit
-     * @param _market      [capacity (in REQ or quote), initial price / REQ (18 decimals), debt buffer (3 decimals)]
+     * @param _asset       token used to deposit
+     * @param _underlying  oracle to povede price data for option component
+     * @param _market      [capacity (in REQ or quote), initial price / REQ (18 decimals), debt buffer (3 decimals), threshold (percent), option cap (percent)]
      * @param _booleans    [capacity in quote, fixed term]
-     * @param _terms       [vesting length (if fixed term) or vested timestamp, conclusion timestamp]
+     * @param _terms       [vesting length (if fixed term) or vested timestamp, conclusion timestamp, exercise duration]
      * @param _intervals   [deposit interval (seconds), tune interval (seconds)]
      * @return id_         ID of new bond market
      */
@@ -196,6 +197,7 @@ contract CallBondDepository is ICallBondDepository, CallUserTermsKeeper {
 
         expiry_ = term.fixedTerm ? term.vesting + currentTime : term.vesting;
 
+        // use one function for multiple checks to avoid stack-to-deep issues
         (index_, payout_) = _bondAsset(_user, _maxPrice, market, _id, _amount, uint48(expiry_), _referral);
 
         /*
@@ -277,9 +279,10 @@ contract CallBondDepository is ICallBondDepository, CallUserTermsKeeper {
                     _fetchedPrice,
                     terms[marketId].thresholdPercentage
                 );
+                userTerms[_user][_indexes[i]].cryptoClosingPrice = _fetchedPrice;
                 if (payoff > 0) {
-                    uint256 maxPayoff = (userTerms[_user][_indexes[i]].payout * terms[_indexes[i]].maxPayoffPercentage) / 1e18;
-                    uint256 cappedPayoff = payoff > maxPayoff ? maxPayoff : payoff;
+                    uint256 cappedPayoff = ((payoff > terms[_indexes[i]].maxPayoffPercentage ? terms[_indexes[i]].maxPayoffPercentage : payoff) *
+                        userTerms[_user][_indexes[i]].payout) / 1e18;
                     // add digital payoff
                     payout_ += cappedPayoff;
                 }
@@ -395,8 +398,7 @@ contract CallBondDepository is ICallBondDepository, CallUserTermsKeeper {
     }
 
     /**
-     * @notice             adds a new Terms for a user, stores the front end & DAO rewards, and mints & stakes payout & rewards
-     * @param _user        the user that owns the Terms
+     * @notice  fetches prices from oracle and adds a new Terms for a user
      */
     function _bondAsset(
         address _user,
@@ -497,6 +499,27 @@ contract CallBondDepository is ICallBondDepository, CallUserTermsKeeper {
     function payoutFor(uint256 _amount, uint256 _id) external view override returns (uint256) {
         Market memory market = markets[_id];
         return (treasury.assetValue(address(market.asset), _amount) * 1e18) / marketPrice(_id);
+    }
+
+    /**
+     * @notice             calculates the intrinsic option value for a specific userTerm
+     * @param _user        user to fetch data for
+     * @param _index       index of userTerm
+     * @return payoff_     amount of REQ to be paid in REQ decimals if option could be exercised now
+     *
+     * @dev we assume that the market price decimals and req decimals match (that is why we use 2 * req decimals)
+     */
+    function optionPayoutFor(address _user, uint256 _index) external view override returns (uint256 payoff_) {
+        UserTerms memory userTerm = userTerms[_user][_index];
+        uint256 _id = userTerms[_user][_index].marketID;
+
+        (, int256 _fetchedPrice, , , ) = getLatestPriceData(markets[_id].underlying);
+
+        uint256 rawPayoff = _calculatePayoff(userTerm.cryptoIntitialPrice, _fetchedPrice, terms[_id].thresholdPercentage);
+        if (rawPayoff > 0) {
+            uint256 maxPercentage = terms[_index].maxPayoffPercentage;
+            payoff_ = ((rawPayoff > maxPercentage ? maxPercentage : rawPayoff) * userTerm.payout) / 1e18;
+        }
     }
 
     /**
@@ -603,7 +626,7 @@ contract CallBondDepository is ICallBondDepository, CallUserTermsKeeper {
         int256 _strike
     ) internal pure returns (uint256) {
         int256 _kMinusS = _priceNow * 1e18 - (1e18 + _strike) * _initialPrice;
-        return _kMinusS > 0 ? uint256(_kMinusS / 1e18) : 0;
+        return _kMinusS > 0 ? uint256(_kMinusS / _initialPrice) : 0;
     }
 
     /**

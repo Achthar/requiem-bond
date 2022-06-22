@@ -31,6 +31,7 @@ interface ICallBondDepositoryInterface extends ethers.utils.Interface {
     "liveMarkets()": FunctionFragment;
     "liveMarketsFor(address)": FunctionFragment;
     "marketPrice(uint256)": FunctionFragment;
+    "optionPayoutFor(address,uint256)": FunctionFragment;
     "payoutFor(uint256,uint256)": FunctionFragment;
     "redeem(address,uint256[])": FunctionFragment;
     "redeemAll(address)": FunctionFragment;
@@ -81,6 +82,10 @@ interface ICallBondDepositoryInterface extends ethers.utils.Interface {
     values: [BigNumberish]
   ): string;
   encodeFunctionData(
+    functionFragment: "optionPayoutFor",
+    values: [string, BigNumberish]
+  ): string;
+  encodeFunctionData(
     functionFragment: "payoutFor",
     values: [BigNumberish, BigNumberish]
   ): string;
@@ -110,6 +115,10 @@ interface ICallBondDepositoryInterface extends ethers.utils.Interface {
   ): Result;
   decodeFunctionResult(
     functionFragment: "marketPrice",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "optionPayoutFor",
     data: BytesLike
   ): Result;
   decodeFunctionResult(functionFragment: "payoutFor", data: BytesLike): Result;
@@ -222,6 +231,12 @@ export class ICallBondDepository extends BaseContract {
       overrides?: CallOverrides
     ): Promise<[BigNumber]>;
 
+    optionPayoutFor(
+      _user: string,
+      _index: BigNumberish,
+      overrides?: CallOverrides
+    ): Promise<[BigNumber]>;
+
     payoutFor(
       _amount: BigNumberish,
       _bid: BigNumberish,
@@ -290,6 +305,12 @@ export class ICallBondDepository extends BaseContract {
 
   marketPrice(
     _bid: BigNumberish,
+    overrides?: CallOverrides
+  ): Promise<BigNumber>;
+
+  optionPayoutFor(
+    _user: string,
+    _index: BigNumberish,
     overrides?: CallOverrides
   ): Promise<BigNumber>;
 
@@ -373,6 +394,12 @@ export class ICallBondDepository extends BaseContract {
       overrides?: CallOverrides
     ): Promise<BigNumber>;
 
+    optionPayoutFor(
+      _user: string,
+      _index: BigNumberish,
+      overrides?: CallOverrides
+    ): Promise<BigNumber>;
+
     payoutFor(
       _amount: BigNumberish,
       _bid: BigNumberish,
@@ -447,6 +474,12 @@ export class ICallBondDepository extends BaseContract {
 
     marketPrice(
       _bid: BigNumberish,
+      overrides?: CallOverrides
+    ): Promise<BigNumber>;
+
+    optionPayoutFor(
+      _user: string,
+      _index: BigNumberish,
       overrides?: CallOverrides
     ): Promise<BigNumber>;
 
@@ -528,6 +561,12 @@ export class ICallBondDepository extends BaseContract {
 
     marketPrice(
       _bid: BigNumberish,
+      overrides?: CallOverrides
+    ): Promise<PopulatedTransaction>;
+
+    optionPayoutFor(
+      _user: string,
+      _index: BigNumberish,
       overrides?: CallOverrides
     ): Promise<PopulatedTransaction>;
 

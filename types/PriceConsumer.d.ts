@@ -21,23 +21,17 @@ import type { TypedEventFilter, TypedEvent, TypedListener } from "./common";
 interface PriceConsumerInterface extends ethers.utils.Interface {
   functions: {
     "getLatestPriceData(address)": FunctionFragment;
-    "perf(int256,int256)": FunctionFragment;
   };
 
   encodeFunctionData(
     functionFragment: "getLatestPriceData",
     values: [string]
   ): string;
-  encodeFunctionData(
-    functionFragment: "perf",
-    values: [BigNumberish, BigNumberish]
-  ): string;
 
   decodeFunctionResult(
     functionFragment: "getLatestPriceData",
     data: BytesLike
   ): Result;
-  decodeFunctionResult(functionFragment: "perf", data: BytesLike): Result;
 
   events: {};
 }
@@ -98,12 +92,6 @@ export class PriceConsumer extends BaseContract {
         answeredInRound: BigNumber;
       }
     >;
-
-    perf(
-      _newPrice: BigNumberish,
-      _oldPrice: BigNumberish,
-      overrides?: CallOverrides
-    ): Promise<[BigNumber]>;
   };
 
   getLatestPriceData(
@@ -119,12 +107,6 @@ export class PriceConsumer extends BaseContract {
     }
   >;
 
-  perf(
-    _newPrice: BigNumberish,
-    _oldPrice: BigNumberish,
-    overrides?: CallOverrides
-  ): Promise<BigNumber>;
-
   callStatic: {
     getLatestPriceData(
       _feed: string,
@@ -138,12 +120,6 @@ export class PriceConsumer extends BaseContract {
         answeredInRound: BigNumber;
       }
     >;
-
-    perf(
-      _newPrice: BigNumberish,
-      _oldPrice: BigNumberish,
-      overrides?: CallOverrides
-    ): Promise<BigNumber>;
   };
 
   filters: {};
@@ -153,23 +129,11 @@ export class PriceConsumer extends BaseContract {
       _feed: string,
       overrides?: CallOverrides
     ): Promise<BigNumber>;
-
-    perf(
-      _newPrice: BigNumberish,
-      _oldPrice: BigNumberish,
-      overrides?: CallOverrides
-    ): Promise<BigNumber>;
   };
 
   populateTransaction: {
     getLatestPriceData(
       _feed: string,
-      overrides?: CallOverrides
-    ): Promise<PopulatedTransaction>;
-
-    perf(
-      _newPrice: BigNumberish,
-      _oldPrice: BigNumberish,
       overrides?: CallOverrides
     ): Promise<PopulatedTransaction>;
   };

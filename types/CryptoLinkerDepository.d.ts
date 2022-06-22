@@ -46,7 +46,6 @@ interface CryptoLinkerDepositoryInterface extends ethers.utils.Interface {
     "metadata(uint256)": FunctionFragment;
     "payoutFor(uint256,uint256)": FunctionFragment;
     "pendingFor(address,uint256)": FunctionFragment;
-    "perf(int256,int256)": FunctionFragment;
     "pullTerms(address,uint256)": FunctionFragment;
     "pushTerms(address,uint256)": FunctionFragment;
     "refReward()": FunctionFragment;
@@ -159,10 +158,6 @@ interface CryptoLinkerDepositoryInterface extends ethers.utils.Interface {
     values: [string, BigNumberish]
   ): string;
   encodeFunctionData(
-    functionFragment: "perf",
-    values: [BigNumberish, BigNumberish]
-  ): string;
-  encodeFunctionData(
     functionFragment: "pullTerms",
     values: [string, BigNumberish]
   ): string;
@@ -254,7 +249,6 @@ interface CryptoLinkerDepositoryInterface extends ethers.utils.Interface {
   decodeFunctionResult(functionFragment: "metadata", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "payoutFor", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "pendingFor", data: BytesLike): Result;
-  decodeFunctionResult(functionFragment: "perf", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "pullTerms", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "pushTerms", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "refReward", data: BytesLike): Result;
@@ -559,12 +553,6 @@ export class CryptoLinkerDepository extends BaseContract {
       }
     >;
 
-    perf(
-      _newPrice: BigNumberish,
-      _oldPrice: BigNumberish,
-      overrides?: CallOverrides
-    ): Promise<[BigNumber]>;
-
     pullTerms(
       _from: string,
       _index: BigNumberish,
@@ -847,12 +835,6 @@ export class CryptoLinkerDepository extends BaseContract {
     }
   >;
 
-  perf(
-    _newPrice: BigNumberish,
-    _oldPrice: BigNumberish,
-    overrides?: CallOverrides
-  ): Promise<BigNumber>;
-
   pullTerms(
     _from: string,
     _index: BigNumberish,
@@ -1129,12 +1111,6 @@ export class CryptoLinkerDepository extends BaseContract {
         payoffClaimable_: boolean;
       }
     >;
-
-    perf(
-      _newPrice: BigNumberish,
-      _oldPrice: BigNumberish,
-      overrides?: CallOverrides
-    ): Promise<BigNumber>;
 
     pullTerms(
       _from: string,
@@ -1440,12 +1416,6 @@ export class CryptoLinkerDepository extends BaseContract {
       overrides?: CallOverrides
     ): Promise<BigNumber>;
 
-    perf(
-      _newPrice: BigNumberish,
-      _oldPrice: BigNumberish,
-      overrides?: CallOverrides
-    ): Promise<BigNumber>;
-
     pullTerms(
       _from: string,
       _index: BigNumberish,
@@ -1633,12 +1603,6 @@ export class CryptoLinkerDepository extends BaseContract {
     pendingFor(
       _user: string,
       _index: BigNumberish,
-      overrides?: CallOverrides
-    ): Promise<PopulatedTransaction>;
-
-    perf(
-      _newPrice: BigNumberish,
-      _oldPrice: BigNumberish,
       overrides?: CallOverrides
     ): Promise<PopulatedTransaction>;
 

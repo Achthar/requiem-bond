@@ -90,7 +90,14 @@ interface ICallBondDepository {
 
     function liveMarketsFor(address _asset) external view returns (uint256[] memory);
 
+    // notional payout
     function payoutFor(uint256 _amount, uint256 _bid) external view returns (uint256);
+
+    // option payout
+    function optionPayoutFor(
+        address _user,
+        uint256 _index
+    ) external view returns (uint256);
 
     function marketPrice(uint256 _bid) external view returns (uint256);
 

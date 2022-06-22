@@ -41,9 +41,9 @@ interface CallBondDepositoryInterface extends ethers.utils.Interface {
     "markets(uint256)": FunctionFragment;
     "marketsForQuote(address,uint256)": FunctionFragment;
     "metadata(uint256)": FunctionFragment;
+    "optionPayoutFor(address,uint256)": FunctionFragment;
     "payoutFor(uint256,uint256)": FunctionFragment;
     "pendingFor(address,uint256)": FunctionFragment;
-    "perf(int256,int256)": FunctionFragment;
     "pullTerms(address,uint256)": FunctionFragment;
     "pushTerms(address,uint256)": FunctionFragment;
     "redeem(address,uint256[])": FunctionFragment;
@@ -133,16 +133,16 @@ interface CallBondDepositoryInterface extends ethers.utils.Interface {
     values: [BigNumberish]
   ): string;
   encodeFunctionData(
+    functionFragment: "optionPayoutFor",
+    values: [string, BigNumberish]
+  ): string;
+  encodeFunctionData(
     functionFragment: "payoutFor",
     values: [BigNumberish, BigNumberish]
   ): string;
   encodeFunctionData(
     functionFragment: "pendingFor",
     values: [string, BigNumberish]
-  ): string;
-  encodeFunctionData(
-    functionFragment: "perf",
-    values: [BigNumberish, BigNumberish]
   ): string;
   encodeFunctionData(
     functionFragment: "pullTerms",
@@ -224,9 +224,12 @@ interface CallBondDepositoryInterface extends ethers.utils.Interface {
     data: BytesLike
   ): Result;
   decodeFunctionResult(functionFragment: "metadata", data: BytesLike): Result;
+  decodeFunctionResult(
+    functionFragment: "optionPayoutFor",
+    data: BytesLike
+  ): Result;
   decodeFunctionResult(functionFragment: "payoutFor", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "pendingFor", data: BytesLike): Result;
-  decodeFunctionResult(functionFragment: "perf", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "pullTerms", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "pushTerms", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "redeem", data: BytesLike): Result;
@@ -489,6 +492,12 @@ export class CallBondDepository extends BaseContract {
       }
     >;
 
+    optionPayoutFor(
+      _user: string,
+      _index: BigNumberish,
+      overrides?: CallOverrides
+    ): Promise<[BigNumber] & { payoff_: BigNumber }>;
+
     payoutFor(
       _amount: BigNumberish,
       _id: BigNumberish,
@@ -506,12 +515,6 @@ export class CallBondDepository extends BaseContract {
         payoffClaimable_: boolean;
       }
     >;
-
-    perf(
-      _newPrice: BigNumberish,
-      _oldPrice: BigNumberish,
-      overrides?: CallOverrides
-    ): Promise<[BigNumber]>;
 
     pullTerms(
       _from: string,
@@ -748,6 +751,12 @@ export class CallBondDepository extends BaseContract {
     }
   >;
 
+  optionPayoutFor(
+    _user: string,
+    _index: BigNumberish,
+    overrides?: CallOverrides
+  ): Promise<BigNumber>;
+
   payoutFor(
     _amount: BigNumberish,
     _id: BigNumberish,
@@ -765,12 +774,6 @@ export class CallBondDepository extends BaseContract {
       payoffClaimable_: boolean;
     }
   >;
-
-  perf(
-    _newPrice: BigNumberish,
-    _oldPrice: BigNumberish,
-    overrides?: CallOverrides
-  ): Promise<BigNumber>;
 
   pullTerms(
     _from: string,
@@ -1014,6 +1017,12 @@ export class CallBondDepository extends BaseContract {
       }
     >;
 
+    optionPayoutFor(
+      _user: string,
+      _index: BigNumberish,
+      overrides?: CallOverrides
+    ): Promise<BigNumber>;
+
     payoutFor(
       _amount: BigNumberish,
       _id: BigNumberish,
@@ -1031,12 +1040,6 @@ export class CallBondDepository extends BaseContract {
         payoffClaimable_: boolean;
       }
     >;
-
-    perf(
-      _newPrice: BigNumberish,
-      _oldPrice: BigNumberish,
-      overrides?: CallOverrides
-    ): Promise<BigNumber>;
 
     pullTerms(
       _from: string,
@@ -1326,6 +1329,12 @@ export class CallBondDepository extends BaseContract {
 
     metadata(arg0: BigNumberish, overrides?: CallOverrides): Promise<BigNumber>;
 
+    optionPayoutFor(
+      _user: string,
+      _index: BigNumberish,
+      overrides?: CallOverrides
+    ): Promise<BigNumber>;
+
     payoutFor(
       _amount: BigNumberish,
       _id: BigNumberish,
@@ -1335,12 +1344,6 @@ export class CallBondDepository extends BaseContract {
     pendingFor(
       _user: string,
       _index: BigNumberish,
-      overrides?: CallOverrides
-    ): Promise<BigNumber>;
-
-    perf(
-      _newPrice: BigNumberish,
-      _oldPrice: BigNumberish,
       overrides?: CallOverrides
     ): Promise<BigNumber>;
 
@@ -1511,6 +1514,12 @@ export class CallBondDepository extends BaseContract {
       overrides?: CallOverrides
     ): Promise<PopulatedTransaction>;
 
+    optionPayoutFor(
+      _user: string,
+      _index: BigNumberish,
+      overrides?: CallOverrides
+    ): Promise<PopulatedTransaction>;
+
     payoutFor(
       _amount: BigNumberish,
       _id: BigNumberish,
@@ -1520,12 +1529,6 @@ export class CallBondDepository extends BaseContract {
     pendingFor(
       _user: string,
       _index: BigNumberish,
-      overrides?: CallOverrides
-    ): Promise<PopulatedTransaction>;
-
-    perf(
-      _newPrice: BigNumberish,
-      _oldPrice: BigNumberish,
       overrides?: CallOverrides
     ): Promise<PopulatedTransaction>;
 

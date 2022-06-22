@@ -151,30 +151,6 @@ const _abi = [
   {
     inputs: [
       {
-        internalType: "int256",
-        name: "_newPrice",
-        type: "int256",
-      },
-      {
-        internalType: "int256",
-        name: "_oldPrice",
-        type: "int256",
-      },
-    ],
-    name: "perf",
-    outputs: [
-      {
-        internalType: "int256",
-        name: "",
-        type: "int256",
-      },
-    ],
-    stateMutability: "pure",
-    type: "function",
-  },
-  {
-    inputs: [
-      {
         internalType: "address",
         name: "_from",
         type: "address",

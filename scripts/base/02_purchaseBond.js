@@ -3,9 +3,9 @@
 
 const { ethers } = require('hardhat')
 
-const BondDepositoryArtifact = require('../artifacts/contracts/BondDepository.sol/BondDepository.json')
-const ERC20Artifact = require('../artifacts/contracts/mocks/ERC20.sol/ERC20.json')
-const { addresses } = require('../deployments/addresses')
+const BondDepositoryArtifact = require('../../artifacts/contracts/BondDepository.sol/BondDepository.json')
+const ERC20Artifact = require('../../artifacts/contracts/mocks/ERC20.sol/ERC20.json')
+const { addresses } = require('../../deployments/addresses')
 
 const one18 = ethers.BigNumber.from(10).pow(18)
 

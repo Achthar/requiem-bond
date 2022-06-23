@@ -3,8 +3,8 @@
 
 const { ethers } = require('hardhat')
 
-const BondDepositoryABI = require('../artifacts/contracts/BondDepository.sol/BondDepository.json')
-const { addresses } = require('../deployments/addresses')
+const BondDepositoryABI = require('../../artifacts/contracts/BondDepository.sol/BondDepository.json')
+const { addresses } = require('../../deployments/addresses')
 const one18 = ethers.BigNumber.from(10).pow(18)
 
 // script for creating a bond using the depository contract

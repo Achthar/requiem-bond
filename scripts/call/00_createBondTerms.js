@@ -3,8 +3,8 @@
 
 const { ethers } = require('hardhat')
 
-const BondDepositoryABI = require('../artifacts/contracts/BondDepository.sol/BondDepository.json')
-const { addresses } = require('../deployments/addresses')
+const BondDepositoryABI = require('../../artifacts/contracts/CallBondDepository.sol/CallBondDepository.json')
+const { addresses } = require('../../deployments/addresses')
 
 const one18 = ethers.BigNumber.from(10).pow(18)
 
@@ -17,16 +17,15 @@ async function main() {
 
     const assetAddress = addresses.assets.STABLELP[chainId]
 
-    const bondDepositoryContract = new ethers.Contract(addresses.bondDepo[chainId], new ethers.utils.Interface(BondDepositoryABI.abi), operator)
-
+    const bondDepositoryContract = new ethers.Contract(addresses.callBondDepo[chainId], new ethers.utils.Interface(BondDepositoryABI.abi), operator)
 
     // parameters
-    const capacity = ethers.BigNumber.from(100000).mul(one18);
+    const capacity = ethers.BigNumber.from(50000).mul(one18);
     const initialPrice = ethers.BigNumber.from(1175).mul(one18).div(100);
     const buffer = 2e5;
 
-    const vesting = 60 * 60 * 24 * 21;
-    const timeToConclusion = 60 * 60 * 24 * 6;
+    const vesting = 60 * 60 * 24 * 3;
+    const timeToConclusion = 60 * 60 * 24 * 7;
     const block = await ethers.provider.getBlock("latest");
     const conclusion = block.timestamp + timeToConclusion;
     const capacityInQuote = false
@@ -34,14 +33,22 @@ async function main() {
     const depositInterval = 60 * 60 * 24;
     const tuneInterval = 60 * 60 * 24;
 
-    console.log("Create market for", assetAddress)
+    // option parameters
+    const oracle = '0x86d67c3D38D2bCeE722E601025C25a575021c6EA'
+    const strike = one18.mul(3).div(100)
+    const exerciseDuration = 60 * 60 * 24
+    const cap = one18.mul(20).div(100)
+
+
+    console.log("Create Call Bond Market for", assetAddress)
 
     // create Bond
     const tx = await bondDepositoryContract.create(
         assetAddress,
-        [capacity, initialPrice, buffer],
+        oracle,
+        [capacity, initialPrice, buffer, strike, cap],
         [capacityInQuote, fixedTerm],
-        [vesting, conclusion],
+        [vesting, conclusion, exerciseDuration],
         [depositInterval, tuneInterval]
     )
 
@@ -49,9 +56,9 @@ async function main() {
 
     // throw error in case of a failure
     if (!receipt.status) {
-        throw Error(`Creation of bond failed: ${tx.hash}`)
+        throw Error(`Creation of call bond failed: ${tx.hash}`)
     } else {
-        console.log("Creation succeeded")
+        console.log("Creation of Call Bond Market succeeded")
     }
 }
 

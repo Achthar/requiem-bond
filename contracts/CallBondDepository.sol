@@ -8,7 +8,7 @@ import "./interfaces/Call/ICallBondDepository.sol";
 // solhint-disable  max-line-length
 
 /// @title Requiem Bond Depository
-/// @author Requiem: Achthar; Olympus DAO: Zeus, Indigo
+/// @author Achthar
 
 contract CallBondDepository is ICallBondDepository, CallUserTermsKeeper {
     /* ======== DEPENDENCIES ======== */

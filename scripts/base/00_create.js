@@ -15,24 +15,24 @@ async function main() {
     const [operator] = await ethers.getSigners();
     const chainId = await operator.getChainId()
 
-    const assetAddress = addresses.assets.STABLELP[chainId]
+    const assetAddress = addresses.assets.PAIR_ABREQ_DAI[chainId]
 
     const bondDepositoryContract = new ethers.Contract(addresses.bondDepo[chainId], new ethers.utils.Interface(BondDepositoryABI.abi), operator)
 
 
     // parameters
-    const capacity = ethers.BigNumber.from(100000).mul(one18);
+    const capacity = ethers.BigNumber.from(10000).mul(one18);
     const initialPrice = ethers.BigNumber.from(1175).mul(one18).div(100);
     const buffer = 2e5;
 
-    const vesting = 60 * 60 * 24 * 21;
-    const timeToConclusion = 60 * 60 * 24 * 6;
+    const vesting = 60 * 60 * 24 * 7;
+    const timeToConclusion = 60 * 60 * 24 * 14;
     const block = await ethers.provider.getBlock("latest");
     const conclusion = block.timestamp + timeToConclusion;
     const capacityInQuote = false
     const fixedTerm = true
     const depositInterval = 60 * 60 * 24;
-    const tuneInterval = 60 * 60 * 24;
+    const tuneInterval = 60 * 60;
 
     console.log("Create Base Market for", assetAddress)
 

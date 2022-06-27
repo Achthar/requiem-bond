@@ -41,6 +41,10 @@ const addresses = {
         }
 
     },
+    "oracles": {
+        "ETHUSD": { 43113: "0x86d67c3D38D2bCeE722E601025C25a575021c6EA" },
+        "AVAXUSD": { 43113: "0x5498BB86BC934c8D34FDA08E81D444153d0D06aD" }
+    },
     "facets": {
         "DiamondCutFacet": {
             43113: "0xb443854fE3EC4e165Fd9C9b254874A04f8A961fB"

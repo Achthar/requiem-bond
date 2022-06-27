@@ -3,11 +3,13 @@
 /* eslint-disable */
 export type { Authority } from "./Authority";
 export type { BondDepository } from "./BondDepository";
+export type { CallableBondDepository } from "./CallableBondDepository";
 export type { CallBondDepository } from "./CallBondDepository";
 export type { CryptoLinkerDepository } from "./CryptoLinkerDepository";
 export type { IBondDepository } from "./IBondDepository";
 export type { IUserTermsKeeper } from "./IUserTermsKeeper";
 export type { ICallBondDepository } from "./ICallBondDepository";
+export type { ICallableBondDepository } from "./ICallableBondDepository";
 export type { ICryptoLinkerDepository } from "./ICryptoLinkerDepository";
 export type { ICryptoLinkerUserTermsKeeper } from "./ICryptoLinkerUserTermsKeeper";
 export type { IERC20 } from "./IERC20";
@@ -64,11 +66,13 @@ export type { WeightedPoolPricer } from "./WeightedPoolPricer";
 
 export { Authority__factory } from "./factories/Authority__factory";
 export { BondDepository__factory } from "./factories/BondDepository__factory";
+export { CallableBondDepository__factory } from "./factories/CallableBondDepository__factory";
 export { CallBondDepository__factory } from "./factories/CallBondDepository__factory";
 export { CryptoLinkerDepository__factory } from "./factories/CryptoLinkerDepository__factory";
 export { IBondDepository__factory } from "./factories/IBondDepository__factory";
 export { IUserTermsKeeper__factory } from "./factories/IUserTermsKeeper__factory";
 export { ICallBondDepository__factory } from "./factories/ICallBondDepository__factory";
+export { ICallableBondDepository__factory } from "./factories/ICallableBondDepository__factory";
 export { ICryptoLinkerDepository__factory } from "./factories/ICryptoLinkerDepository__factory";
 export { ICryptoLinkerUserTermsKeeper__factory } from "./factories/ICryptoLinkerUserTermsKeeper__factory";
 export { IERC20__factory } from "./factories/IERC20__factory";

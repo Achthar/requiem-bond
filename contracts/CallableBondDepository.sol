@@ -3,14 +3,14 @@ pragma solidity ^0.8.15;
 
 import "./libraries/types/CallUserTermsKeeper.sol";
 import "./libraries/SafeERC20.sol";
-import "./interfaces/Call/ICallBondDepository.sol";
+import "./interfaces/Callable/ICallableBondDepository.sol";
 
 // solhint-disable  max-line-length
 
 /// @title Requiem Bond Depository
 /// @author Achthar
 
-contract CallBondDepository is ICallBondDepository, CallUserTermsKeeper {
+contract CallableBondDepository is ICallableBondDepository, CallUserTermsKeeper {
     /* ======== DEPENDENCIES ======== */
 
     using SafeERC20 for IERC20;
@@ -252,28 +252,28 @@ contract CallBondDepository is ICallBondDepository, CallUserTermsKeeper {
     /* ========== REDEEM ========== */
 
     /**
-     * @notice             redeem userTerms for user
+     * @notice             call ABREQ for redeem userTerms fro user
      * @param _user        the user to redeem for
      * @param _indexes     the note indexes to redeem
      * @return payout_     sum of payout sent, in REQ
      */
-    function redeem(address _user, uint256[] memory _indexes) public override returns (uint256 payout_) {
+    function call(address _user, uint256[] memory _indexes) public override returns (uint256 payout_) {
         uint48 time = uint48(block.timestamp);
 
         for (uint256 i = 0; i < _indexes.length; i++) {
             (uint256 pay, bool matured, bool payoffClaimable) = pendingFor(_user, _indexes[i]);
             uint256 marketId = userTerms[_user][_indexes[i]].marketID;
 
-            // check whether notional can be claimed
-            if (matured) {
+            // if matured and no payoff is claimable, only the notional is paid out
+            if (matured && !payoffClaimable) {
                 userTerms[_user][_indexes[i]].redeemed = time; // mark as claimed
+                // just add the notional
                 payout_ += pay;
             }
 
             // check whether option can be exercised
             (, int256 _fetchedPrice, , , ) = getLatestPriceData(markets[marketId].underlying);
             if (payoffClaimable) {
-                userTerms[_user][_indexes[i]].exercised = time; // mark as exercised
                 uint256 payoff = _calculatePayoff(
                     userTerms[_user][_indexes[i]].cryptoIntitialPrice,
                     _fetchedPrice,
@@ -281,10 +281,12 @@ contract CallBondDepository is ICallBondDepository, CallUserTermsKeeper {
                 );
                 userTerms[_user][_indexes[i]].cryptoClosingPrice = _fetchedPrice;
                 if (payoff > 0) {
+                    userTerms[_user][_indexes[i]].redeemed = time; // mark as claimed
+                    userTerms[_user][_indexes[i]].exercised = time; // mark as exercised
                     uint256 cappedPayoff = ((payoff > terms[_indexes[i]].maxPayoffPercentage ? terms[_indexes[i]].maxPayoffPercentage : payoff) *
                         pay) / 1e18;
-                    // add digital payoff
-                    payout_ += cappedPayoff;
+                    // add payoff plus notional
+                    payout_ += cappedPayoff + pay;
                 }
             }
         }
@@ -299,8 +301,8 @@ contract CallBondDepository is ICallBondDepository, CallUserTermsKeeper {
      * @param _user        user to redeem all userTerms for
      * @return             sum of payout sent, in REQ
      */
-    function redeemAll(address _user) external override returns (uint256) {
-        return redeem(_user, indexesFor(_user));
+    function callAll(address _user) external override returns (uint256) {
+        return call(_user, indexesFor(_user));
     }
 
     /**
@@ -452,8 +454,7 @@ contract CallBondDepository is ICallBondDepository, CallUserTermsKeeper {
 
         payout_ = note.payout;
         matured_ = note.redeemed == 0 && note.matured <= block.timestamp && note.payout != 0;
-        // notional can already have been claimed
-        payoffClaimable_ = note.exercised == 0 && note.matured <= block.timestamp && note.matured + terms[_index].exerciseDuration >= block.timestamp;
+        payoffClaimable_ = note.exercised == 0 && note.matured + terms[_index].exerciseDuration >= block.timestamp;
     }
 
     /**

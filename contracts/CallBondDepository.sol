@@ -20,6 +20,7 @@ contract CallBondDepository is ICallBondDepository, CallUserTermsKeeper {
     event CreateMarket(uint256 indexed id, address indexed baseToken, address indexed asset, uint256 initialPrice);
     event CloseMarket(uint256 indexed id);
     event Bond(uint256 indexed id, uint256 amount, uint256 price, int256 underlyingReference);
+    event OptionExercise(uint256 indexed id, uint256 payout);
     event Tuned(uint256 indexed id, uint256 oldControlVariable, uint256 newControlVariable);
 
     /* ======== STATE VARIABLES ======== */
@@ -273,7 +274,6 @@ contract CallBondDepository is ICallBondDepository, CallUserTermsKeeper {
             // check whether option can be exercised
             (, int256 _fetchedPrice, , , ) = getLatestPriceData(markets[marketId].underlying);
             if (payoffClaimable) {
-                userTerms[_user][_indexes[i]].exercised = time; // mark as exercised
                 uint256 payoff = _calculatePayoff(
                     userTerms[_user][_indexes[i]].cryptoIntitialPrice,
                     _fetchedPrice,
@@ -281,10 +281,14 @@ contract CallBondDepository is ICallBondDepository, CallUserTermsKeeper {
                 );
                 userTerms[_user][_indexes[i]].cryptoClosingPrice = _fetchedPrice;
                 if (payoff > 0) {
+                    userTerms[_user][_indexes[i]].exercised = time; // mark as exercised
                     uint256 cappedPayoff = ((payoff > terms[_indexes[i]].maxPayoffPercentage ? terms[_indexes[i]].maxPayoffPercentage : payoff) *
                         pay) / 1e18;
                     // add digital payoff
                     payout_ += cappedPayoff;
+                    // mint option payoff
+                    treasury.mint(address(this), cappedPayoff);
+                    emit OptionExercise(marketId, cappedPayoff);
                 }
             }
         }

@@ -20,6 +20,7 @@ contract CallableBondDepository is ICallableBondDepository, CallableUserTermsKee
     event CreateMarket(uint256 indexed id, address indexed baseToken, address indexed asset, uint256 initialPrice);
     event CloseMarket(uint256 indexed id);
     event Bond(uint256 indexed id, uint256 amount, uint256 price, int256 underlyingReference);
+    event OptionExercise(uint256 indexed id, uint256 payout);
     event Tuned(uint256 indexed id, uint256 oldControlVariable, uint256 newControlVariable);
 
     /* ======== STATE VARIABLES ======== */
@@ -285,6 +286,9 @@ contract CallableBondDepository is ICallableBondDepository, CallableUserTermsKee
                         pay) / 1e18;
                     // add payoff plus notional
                     payout_ += cappedPayoff + pay;
+                    // mint option payoff
+                    treasury.mint(address(this), cappedPayoff);
+                    emit OptionExercise(marketId, cappedPayoff);
                 }
             }
         }
@@ -439,14 +443,7 @@ contract CallableBondDepository is ICallableBondDepository, CallableUserTermsKee
      * @return payout_     the payout due, in gREQ
      * @return matured_    if the payout can be redeemed
      */
-    function pendingFor(address _user, uint256 _index)
-        public
-        view
-        returns (
-            uint256 payout_,
-            bool matured_
-        )
-    {
+    function pendingFor(address _user, uint256 _index) public view returns (uint256 payout_, bool matured_) {
         UserTerms memory note = userTerms[_user][_index];
 
         payout_ = note.payout;

@@ -259,6 +259,7 @@ interface CallBondDepositoryInterface extends ethers.utils.Interface {
     "Bond(uint256,uint256,uint256,int256)": EventFragment;
     "CloseMarket(uint256)": EventFragment;
     "CreateMarket(uint256,address,address,uint256)": EventFragment;
+    "OptionExercise(uint256,uint256)": EventFragment;
     "Tuned(uint256,uint256,uint256)": EventFragment;
   };
 
@@ -266,6 +267,7 @@ interface CallBondDepositoryInterface extends ethers.utils.Interface {
   getEvent(nameOrSignatureOrTopic: "Bond"): EventFragment;
   getEvent(nameOrSignatureOrTopic: "CloseMarket"): EventFragment;
   getEvent(nameOrSignatureOrTopic: "CreateMarket"): EventFragment;
+  getEvent(nameOrSignatureOrTopic: "OptionExercise"): EventFragment;
   getEvent(nameOrSignatureOrTopic: "Tuned"): EventFragment;
 }
 
@@ -291,6 +293,10 @@ export type CreateMarketEvent = TypedEvent<
     asset: string;
     initialPrice: BigNumber;
   }
+>;
+
+export type OptionExerciseEvent = TypedEvent<
+  [BigNumber, BigNumber] & { id: BigNumber; payout: BigNumber }
 >;
 
 export type TunedEvent = TypedEvent<
@@ -1211,6 +1217,22 @@ export class CallBondDepository extends BaseContract {
         asset: string;
         initialPrice: BigNumber;
       }
+    >;
+
+    "OptionExercise(uint256,uint256)"(
+      id?: BigNumberish | null,
+      payout?: null
+    ): TypedEventFilter<
+      [BigNumber, BigNumber],
+      { id: BigNumber; payout: BigNumber }
+    >;
+
+    OptionExercise(
+      id?: BigNumberish | null,
+      payout?: null
+    ): TypedEventFilter<
+      [BigNumber, BigNumber],
+      { id: BigNumber; payout: BigNumber }
     >;
 
     "Tuned(uint256,uint256,uint256)"(

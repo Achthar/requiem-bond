@@ -458,6 +458,56 @@ describe("Call Bond Depository", async () => {
         expect(balance).to.equal(optionPayoff.add(userTerm.payout));
     });
 
+    it("can exercise after maturity before exercise duration expired", async () => {
+        // define oracleprices
+        let underlyingPrice = one18
+        await mockOracle.setPrice(underlyingPrice)
+
+        // set amount and valuation
+        let amount = "10000000000000000000000"; // 10,000
+        await treasury.assetValue.returns(amount)
+
+        // deposit
+        await depository.connect(bob).deposit(
+            bid,
+            amount, // amount for max payout
+            initialPrice,
+            bob.address,
+            carol.address
+        );
+
+        // increase time
+        await network.provider.send("evm_increaseTime", [vesting]);
+
+
+        // fetch payout data
+        userTerm = await depository.userTerms(bob.address, bid);
+
+        // redeem
+        await depository.connect(bob).redeem(bob.address, [0])
+
+
+        let balance = await req.balanceOf(bob.address)
+        // expect only notional to be received
+        expect(balance).to.equal(userTerm.payout);
+
+        // increase time
+        await network.provider.send("evm_increaseTime", [exerciseDuration / 2]);
+
+        // set oracle price
+        let newUnderlyingPrice = one18.mul(109).div(100)
+        await mockOracle.setPrice(newUnderlyingPrice)
+
+        let optionPayoff = await depository.optionPayoutFor(bob.address, 0)
+        
+        // redeem
+        await depository.connect(bob).redeem(bob.address, [0])
+
+        balance = await req.balanceOf(bob.address)
+        // expect balance plus option payoff
+        expect(balance).to.equal(optionPayoff.add(userTerm.payout));
+    });
+
     it("should provide no option payout after exercise period", async () => {
         // define oracleprices
         let underlyingPrice = one18
@@ -495,7 +545,7 @@ describe("Call Bond Depository", async () => {
         await depository.connect(bob).redeem(bob.address, [0])
 
         let balance = await req.balanceOf(bob.address)
-        
+
         // expect balance to match payout
         expect(balance).to.equal(userTerm.payout);
     });

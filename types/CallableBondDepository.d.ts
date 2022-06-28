@@ -520,11 +520,7 @@ export class CallableBondDepository extends BaseContract {
       _index: BigNumberish,
       overrides?: CallOverrides
     ): Promise<
-      [BigNumber, boolean, boolean] & {
-        payout_: BigNumber;
-        matured_: boolean;
-        payoffClaimable_: boolean;
-      }
+      [BigNumber, boolean] & { payout_: BigNumber; matured_: boolean }
     >;
 
     pullTerms(
@@ -590,22 +586,12 @@ export class CallableBondDepository extends BaseContract {
       arg1: BigNumberish,
       overrides?: CallOverrides
     ): Promise<
-      [
-        BigNumber,
-        BigNumber,
-        BigNumber,
-        number,
-        number,
-        number,
-        number,
-        number
-      ] & {
+      [BigNumber, BigNumber, BigNumber, number, number, number, number] & {
         cryptoIntitialPrice: BigNumber;
         cryptoClosingPrice: BigNumber;
         payout: BigNumber;
         created: number;
         matured: number;
-        redeemed: number;
         exercised: number;
         marketID: number;
       }
@@ -778,13 +764,7 @@ export class CallableBondDepository extends BaseContract {
     _user: string,
     _index: BigNumberish,
     overrides?: CallOverrides
-  ): Promise<
-    [BigNumber, boolean, boolean] & {
-      payout_: BigNumber;
-      matured_: boolean;
-      payoffClaimable_: boolean;
-    }
-  >;
+  ): Promise<[BigNumber, boolean] & { payout_: BigNumber; matured_: boolean }>;
 
   pullTerms(
     _from: string,
@@ -849,22 +829,12 @@ export class CallableBondDepository extends BaseContract {
     arg1: BigNumberish,
     overrides?: CallOverrides
   ): Promise<
-    [
-      BigNumber,
-      BigNumber,
-      BigNumber,
-      number,
-      number,
-      number,
-      number,
-      number
-    ] & {
+    [BigNumber, BigNumber, BigNumber, number, number, number, number] & {
       cryptoIntitialPrice: BigNumber;
       cryptoClosingPrice: BigNumber;
       payout: BigNumber;
       created: number;
       matured: number;
-      redeemed: number;
       exercised: number;
       marketID: number;
     }
@@ -1042,11 +1012,7 @@ export class CallableBondDepository extends BaseContract {
       _index: BigNumberish,
       overrides?: CallOverrides
     ): Promise<
-      [BigNumber, boolean, boolean] & {
-        payout_: BigNumber;
-        matured_: boolean;
-        payoffClaimable_: boolean;
-      }
+      [BigNumber, boolean] & { payout_: BigNumber; matured_: boolean }
     >;
 
     pullTerms(
@@ -1110,22 +1076,12 @@ export class CallableBondDepository extends BaseContract {
       arg1: BigNumberish,
       overrides?: CallOverrides
     ): Promise<
-      [
-        BigNumber,
-        BigNumber,
-        BigNumber,
-        number,
-        number,
-        number,
-        number,
-        number
-      ] & {
+      [BigNumber, BigNumber, BigNumber, number, number, number, number] & {
         cryptoIntitialPrice: BigNumber;
         cryptoClosingPrice: BigNumber;
         payout: BigNumber;
         created: number;
         matured: number;
-        redeemed: number;
         exercised: number;
         marketID: number;
       }

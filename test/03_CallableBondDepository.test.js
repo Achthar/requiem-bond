@@ -380,7 +380,7 @@ describe("Callable Bond Depository", async () => {
         expect(newPrice.lt(initialPrice)).to.equal(true);
     });
 
-    it("should provide option payout when threshold crossed", async () => {
+    it("should provide option payout when matured", async () => {
         // define oracleprices
         let underlyingPrice = one18
         await mockOracle.setPrice(underlyingPrice)
@@ -408,24 +408,12 @@ describe("Callable Bond Depository", async () => {
         // fetch payout data
         userTerm = await depository.userTerms(bob.address, bid);
 
-        let optionPayoff = await depository.optionPayoutFor(bob.address, 0)
-
         // call
         await depository.connect(bob).call(bob.address, [0])
 
-        // calculate chek parameters manually
-        let strikePrice = underlyingPrice.mul(strike.add(one18)).div(one18)
-        let manualOptionPayoff = newUnderlyingPrice.sub(strikePrice).mul(one18).div(underlyingPrice)
-
-        // acutal obtained opetion percentage (rounding up)
-        let optionPercent = optionPayoff.mul(one18).div(userTerm.payout).add(1)
-
-        // check that the payout percentage matches the expectation
-        expect(optionPercent).to.equal(manualOptionPayoff)
-
         let balance = await req.balanceOf(bob.address)
         // expect balance plus option payoff
-        expect(balance).to.equal(optionPayoff.add(userTerm.payout));
+        expect(balance).to.equal(userTerm.payout);
     });
 
     it("should allow early exercise", async () => {
@@ -575,7 +563,7 @@ describe("Callable Bond Depository", async () => {
         );
 
         // increase time
-        await network.provider.send("evm_increaseTime", [vesting]);
+        await network.provider.send("evm_increaseTime", [vesting * 0.75]);
 
         // set oracle price
         let newUnderlyingPrice = one18.mul(130).div(100)

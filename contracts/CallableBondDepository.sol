@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 pragma solidity ^0.8.15;
 
-import "./libraries/types/CallUserTermsKeeper.sol";
+import "./libraries/types/CallableUserTermsKeeper.sol";
 import "./libraries/SafeERC20.sol";
 import "./interfaces/Callable/ICallableBondDepository.sol";
 
@@ -10,7 +10,7 @@ import "./interfaces/Callable/ICallableBondDepository.sol";
 /// @title Requiem Bond Depository
 /// @author Achthar
 
-contract CallableBondDepository is ICallableBondDepository, CallUserTermsKeeper {
+contract CallableBondDepository is ICallableBondDepository, CallableUserTermsKeeper {
     /* ======== DEPENDENCIES ======== */
 
     using SafeERC20 for IERC20;
@@ -35,7 +35,7 @@ contract CallableBondDepository is ICallableBondDepository, CallUserTermsKeeper 
 
     /* ======== CONSTRUCTOR ======== */
 
-    constructor(IERC20 _req, address _treasury) CallUserTermsKeeper(_req, _treasury) {}
+    constructor(IERC20 _req, address _treasury) CallableUserTermsKeeper(_req, _treasury) {}
 
     /* ======== CREATE ======== */
 
@@ -261,19 +261,19 @@ contract CallableBondDepository is ICallableBondDepository, CallUserTermsKeeper 
         uint48 time = uint48(block.timestamp);
 
         for (uint256 i = 0; i < _indexes.length; i++) {
-            (uint256 pay, bool matured, bool payoffClaimable) = pendingFor(_user, _indexes[i]);
+            (uint256 pay, bool matured) = pendingFor(_user, _indexes[i]);
             uint256 marketId = userTerms[_user][_indexes[i]].marketID;
 
+            (, int256 _fetchedPrice, , , ) = getLatestPriceData(markets[marketId].underlying);
             // if matured and no payoff is claimable, only the notional is paid out
-            if (matured && !payoffClaimable) {
-                userTerms[_user][_indexes[i]].redeemed = time; // mark as claimed
+            if (matured) {
+                userTerms[_user][_indexes[i]].exercised = time; // mark as exercised
+                userTerms[_user][_indexes[i]].cryptoClosingPrice = _fetchedPrice;
                 // just add the notional
                 payout_ += pay;
             }
-
             // check whether option can be exercised
-            (, int256 _fetchedPrice, , , ) = getLatestPriceData(markets[marketId].underlying);
-            if (payoffClaimable) {
+            else {
                 uint256 payoff = _calculatePayoff(
                     userTerms[_user][_indexes[i]].cryptoIntitialPrice,
                     _fetchedPrice,
@@ -281,7 +281,6 @@ contract CallableBondDepository is ICallableBondDepository, CallUserTermsKeeper 
                 );
                 userTerms[_user][_indexes[i]].cryptoClosingPrice = _fetchedPrice;
                 if (payoff > 0) {
-                    userTerms[_user][_indexes[i]].redeemed = time; // mark as claimed
                     userTerms[_user][_indexes[i]].exercised = time; // mark as exercised
                     uint256 cappedPayoff = ((payoff > terms[_indexes[i]].maxPayoffPercentage ? terms[_indexes[i]].maxPayoffPercentage : payoff) *
                         pay) / 1e18;
@@ -446,15 +445,13 @@ contract CallableBondDepository is ICallableBondDepository, CallUserTermsKeeper 
         view
         returns (
             uint256 payout_,
-            bool matured_,
-            bool payoffClaimable_
+            bool matured_
         )
     {
         UserTerms memory note = userTerms[_user][_index];
 
         payout_ = note.payout;
-        matured_ = note.redeemed == 0 && note.matured <= block.timestamp && note.payout != 0;
-        payoffClaimable_ = note.exercised == 0 && note.matured + terms[_index].exerciseDuration >= block.timestamp;
+        matured_ = note.exercised == 0 && note.matured <= block.timestamp && payout_ != 0;
     }
 
     /**

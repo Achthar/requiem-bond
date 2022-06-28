@@ -9,7 +9,6 @@ interface IUserTermsKeeper {
         uint256 payout; // REQ remaining to be paid
         uint48 created; // time market was created
         uint48 matured; // time of instrument maturity
-        uint48 redeemed; // time notional was redeemed
         uint48 exercised; // time instrument was exercised
         uint48 marketID; // market ID of deposit. uint48 to avoid adding a slot.
     }
@@ -25,7 +24,6 @@ interface IUserTermsKeeper {
         view
         returns (
             uint256 payout_,
-            bool matured_,
-            bool payoffClaimable_
+            bool matured_
         );
 }

@@ -451,7 +451,7 @@ contract CallBondDepository is ICallBondDepository, CallUserTermsKeeper {
         UserTerms memory note = userTerms[_user][_index];
 
         payout_ = note.payout;
-        matured_ = note.redeemed == 0 && note.matured <= block.timestamp && note.payout != 0;
+        matured_ = note.redeemed == 0 && note.matured <= block.timestamp && payout_ != 0;
         // notional can already have been claimed
         payoffClaimable_ = note.exercised == 0 && note.matured <= block.timestamp && note.matured + terms[_index].exerciseDuration >= block.timestamp;
     }

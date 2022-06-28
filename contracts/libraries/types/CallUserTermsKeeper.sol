@@ -125,15 +125,4 @@ abstract contract CallUserTermsKeeper is IUserTermsKeeper, FrontEndRewarder, Pri
 
         return indexes;
     }
-
-    function _fetchAndValidate(
-        address _underlying,
-        uint256 _now,
-        uint256 _timeSlippage
-    ) internal view returns (int256) {
-        (, int256 _fetchedPrice, , uint256 _time, ) = getLatestPriceData(_underlying);
-
-        require(_now - _time <= _timeSlippage, "Depository: Undelying Price too delayed");
-        return _fetchedPrice;
-    }
 }

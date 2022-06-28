@@ -46,7 +46,7 @@ contract CallableBondDepository is ICallableBondDepository, CallableUserTermsKee
      * @param _underlying  oracle to povede price data for option component
      * @param _market      [capacity (in REQ or quote), initial price / REQ (18 decimals), debt buffer (3 decimals), threshold (percent), option cap (percent)]
      * @param _booleans    [capacity in quote, fixed term]
-     * @param _terms       [vesting length (if fixed term) or vested timestamp, conclusion timestamp, exercise duration]
+     * @param _terms       [vesting length (if fixed term) or vested timestamp, conclusion timestamp]
      * @param _intervals   [deposit interval (seconds), tune interval (seconds)]
      * @return id_         ID of new bond market
      */
@@ -55,7 +55,7 @@ contract CallableBondDepository is ICallableBondDepository, CallableUserTermsKee
         address _underlying,
         uint256[5] memory _market,
         bool[2] memory _booleans,
-        uint256[3] memory _terms,
+        uint256[2] memory _terms,
         uint32[2] memory _intervals
     ) external override onlyPolicy returns (uint256 id_) {
         // the length of the program, in seconds
@@ -124,7 +124,6 @@ contract CallableBondDepository is ICallableBondDepository, CallableUserTermsKee
                 maxPayoffPercentage: _market[4],
                 vesting: uint48(_terms[0]),
                 conclusion: uint48(_terms[1]),
-                exerciseDuration: uint48(_terms[2]),
                 controlVariable: controlVariable,
                 maxDebt: maxDebt
             })

@@ -25,7 +25,6 @@ interface ICallableBondDepository {
         uint256 maxPayoffPercentage;
         uint256 controlVariable; // scaling variable for price
         uint48 vesting; // length of time from deposit to maturity if fixed-term
-        uint48 exerciseDuration;
         uint48 conclusion; // timestamp when market no longer offered (doubles as time when market matures if fixed-expiry)
         uint256 maxDebt; // 18 decimal debt maximum in REQ
     }
@@ -78,7 +77,7 @@ interface ICallableBondDepository {
         address _underlying,
         uint256[5] memory _market, // [capacity, initial price, buffer, threshold percentage, digital payoff]
         bool[2] memory _booleans, // [capacity in quote, fixed term]
-        uint256[3] memory _terms, // [vesting, conclusion]
+        uint256[2] memory _terms, // [vesting, conclusion]
         uint32[2] memory _intervals // [deposit interval, tune interval]
     ) external returns (uint256 id_);
 

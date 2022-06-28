@@ -89,9 +89,9 @@ const _abi = [
         type: "bool[2]",
       },
       {
-        internalType: "uint256[3]",
+        internalType: "uint256[2]",
         name: "_terms",
-        type: "uint256[3]",
+        type: "uint256[2]",
       },
       {
         internalType: "uint32[2]",

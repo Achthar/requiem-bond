@@ -26,7 +26,7 @@ interface CallableBondDepositoryInterface extends ethers.utils.Interface {
     "call(address,uint256[])": FunctionFragment;
     "callAll(address)": FunctionFragment;
     "close(uint256)": FunctionFragment;
-    "create(address,address,uint256[5],bool[2],uint256[3],uint32[2])": FunctionFragment;
+    "create(address,address,uint256[5],bool[2],uint256[2],uint32[2])": FunctionFragment;
     "currentControlVariable(uint256)": FunctionFragment;
     "currentDebt(uint256)": FunctionFragment;
     "daoReward()": FunctionFragment;
@@ -78,7 +78,7 @@ interface CallableBondDepositoryInterface extends ethers.utils.Interface {
       string,
       [BigNumberish, BigNumberish, BigNumberish, BigNumberish, BigNumberish],
       [boolean, boolean],
-      [BigNumberish, BigNumberish, BigNumberish],
+      [BigNumberish, BigNumberish],
       [BigNumberish, BigNumberish]
     ]
   ): string;
@@ -386,7 +386,7 @@ export class CallableBondDepository extends BaseContract {
         BigNumberish
       ],
       _booleans: [boolean, boolean],
-      _terms: [BigNumberish, BigNumberish, BigNumberish],
+      _terms: [BigNumberish, BigNumberish],
       _intervals: [BigNumberish, BigNumberish],
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
@@ -556,22 +556,12 @@ export class CallableBondDepository extends BaseContract {
       arg0: BigNumberish,
       overrides?: CallOverrides
     ): Promise<
-      [
-        boolean,
-        BigNumber,
-        BigNumber,
-        BigNumber,
-        number,
-        number,
-        number,
-        BigNumber
-      ] & {
+      [boolean, BigNumber, BigNumber, BigNumber, number, number, BigNumber] & {
         fixedTerm: boolean;
         thresholdPercentage: BigNumber;
         maxPayoffPercentage: BigNumber;
         controlVariable: BigNumber;
         vesting: number;
-        exerciseDuration: number;
         conclusion: number;
         maxDebt: BigNumber;
       }
@@ -646,7 +636,7 @@ export class CallableBondDepository extends BaseContract {
       BigNumberish
     ],
     _booleans: [boolean, boolean],
-    _terms: [BigNumberish, BigNumberish, BigNumberish],
+    _terms: [BigNumberish, BigNumberish],
     _intervals: [BigNumberish, BigNumberish],
     overrides?: Overrides & { from?: string | Promise<string> }
   ): Promise<ContractTransaction>;
@@ -799,22 +789,12 @@ export class CallableBondDepository extends BaseContract {
     arg0: BigNumberish,
     overrides?: CallOverrides
   ): Promise<
-    [
-      boolean,
-      BigNumber,
-      BigNumber,
-      BigNumber,
-      number,
-      number,
-      number,
-      BigNumber
-    ] & {
+    [boolean, BigNumber, BigNumber, BigNumber, number, number, BigNumber] & {
       fixedTerm: boolean;
       thresholdPercentage: BigNumber;
       maxPayoffPercentage: BigNumber;
       controlVariable: BigNumber;
       vesting: number;
-      exerciseDuration: number;
       conclusion: number;
       maxDebt: BigNumber;
     }
@@ -883,7 +863,7 @@ export class CallableBondDepository extends BaseContract {
         BigNumberish
       ],
       _booleans: [boolean, boolean],
-      _terms: [BigNumberish, BigNumberish, BigNumberish],
+      _terms: [BigNumberish, BigNumberish],
       _intervals: [BigNumberish, BigNumberish],
       overrides?: CallOverrides
     ): Promise<BigNumber>;
@@ -1048,22 +1028,12 @@ export class CallableBondDepository extends BaseContract {
       arg0: BigNumberish,
       overrides?: CallOverrides
     ): Promise<
-      [
-        boolean,
-        BigNumber,
-        BigNumber,
-        BigNumber,
-        number,
-        number,
-        number,
-        BigNumber
-      ] & {
+      [boolean, BigNumber, BigNumber, BigNumber, number, number, BigNumber] & {
         fixedTerm: boolean;
         thresholdPercentage: BigNumber;
         maxPayoffPercentage: BigNumber;
         controlVariable: BigNumber;
         vesting: number;
-        exerciseDuration: number;
         conclusion: number;
         maxDebt: BigNumber;
       }
@@ -1231,7 +1201,7 @@ export class CallableBondDepository extends BaseContract {
         BigNumberish
       ],
       _booleans: [boolean, boolean],
-      _terms: [BigNumberish, BigNumberish, BigNumberish],
+      _terms: [BigNumberish, BigNumberish],
       _intervals: [BigNumberish, BigNumberish],
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<BigNumber>;
@@ -1398,7 +1368,7 @@ export class CallableBondDepository extends BaseContract {
         BigNumberish
       ],
       _booleans: [boolean, boolean],
-      _terms: [BigNumberish, BigNumberish, BigNumberish],
+      _terms: [BigNumberish, BigNumberish],
       _intervals: [BigNumberish, BigNumberish],
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<PopulatedTransaction>;

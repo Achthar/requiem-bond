@@ -37,7 +37,6 @@ describe("Callable Bond Depository", async () => {
     // option params
     let maxPayoffPercentage = one18.div(10) // 10%
     let strike = one18.div(20) // 5%
-    let exerciseDuration = 60 * 60 * 24;
 
     let vesting = 100;
     let timeToConclusion = 60 * 60 * 24;
@@ -135,7 +134,7 @@ describe("Callable Bond Depository", async () => {
             mockOracle.address,
             [capacity, initialPrice, buffer, strike, maxPayoffPercentage],
             [false, true],
-            [vesting, conclusion, exerciseDuration],
+            [vesting, conclusion],
             [depositInterval, tuneInterval]
         );
     });
@@ -172,7 +171,7 @@ describe("Callable Bond Depository", async () => {
             mockOracle.address,
             [capacity, initialPrice, buffer, strike, maxPayoffPercentage],
             [false, true],
-            [vesting, conclusion, exerciseDuration],
+            [vesting, conclusion],
             [depositInterval, tuneInterval]
         );
         let [first, second] = await depository.liveMarkets();
@@ -187,7 +186,7 @@ describe("Callable Bond Depository", async () => {
             mockOracle.address,
             [capacity, initialPrice, buffer, strike, maxPayoffPercentage],
             [false, true],
-            [vesting, conclusion, exerciseDuration],
+            [vesting, conclusion],
             [depositInterval, tuneInterval]
         );
         // close the first bond
@@ -380,7 +379,7 @@ describe("Callable Bond Depository", async () => {
         expect(newPrice.lt(initialPrice)).to.equal(true);
     });
 
-    it("should provide option payout when matured", async () => {
+    it("should provide no option payout when matured", async () => {
         // define oracleprices
         let underlyingPrice = one18
         await mockOracle.setPrice(underlyingPrice)
@@ -492,7 +491,7 @@ describe("Callable Bond Depository", async () => {
         await mockOracle.setPrice(newUnderlyingPrice)
 
         // increase time so that exercising should not be possible anymore
-        await network.provider.send("evm_increaseTime", [exerciseDuration + 5]);
+        await network.provider.send("evm_increaseTime", [5]);
 
 
         // fetch payout data

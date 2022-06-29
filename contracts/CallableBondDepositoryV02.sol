@@ -1,16 +1,16 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 pragma solidity ^0.8.15;
 
-import "./libraries/types/CallableUserTermsKeeper.sol";
+import "./libraries/types/CallableBondUserTermsKeeper.sol";
 import "./libraries/SafeERC20.sol";
-import "./interfaces/Callable/ICallableBondDepository.sol";
+import "./interfaces/CallableBond/ICallableBondDepository.sol";
 
 // solhint-disable  max-line-length
 
 /// @title Callable Bond Depository
 /// @author Achthar
 
-contract CallableBondDepositoryV02 is ICallableBondDepository, CallableUserTermsKeeper {
+contract CallableBondDepositoryV02 is ICallableBondDepository, CallableBondUserTermsKeeper {
     /* ======== DEPENDENCIES ======== */
 
     using SafeERC20 for IERC20;
@@ -36,7 +36,7 @@ contract CallableBondDepositoryV02 is ICallableBondDepository, CallableUserTerms
 
     /* ======== CONSTRUCTOR ======== */
 
-    constructor(IERC20 _req, address _treasury) CallableUserTermsKeeper(_req, _treasury) {}
+    constructor(IERC20 _req, address _treasury) CallableBondUserTermsKeeper(_req, _treasury) {}
 
     /* ======== CREATE ======== */
 
@@ -61,9 +61,6 @@ contract CallableBondDepositoryV02 is ICallableBondDepository, CallableUserTerms
     ) external override onlyPolicy returns (uint256 id_) {
         // the length of the program, in seconds
         uint256 secondsToConclusion = _terms[1] - block.timestamp;
-
-        // the decimal count of the quote token
-        uint256 decimals = _asset.decimals();
 
         /*
          * initial target debt is equal to capacity (this is the amount of debt
@@ -136,8 +133,7 @@ contract CallableBondDepositoryV02 is ICallableBondDepository, CallableUserTerms
                 lastDecay: uint48(block.timestamp),
                 length: uint48(secondsToConclusion),
                 depositInterval: _intervals[0],
-                tuneInterval: _intervals[1],
-                assetDecimals: uint8(decimals)
+                tuneInterval: _intervals[1]
             })
         );
 
@@ -282,8 +278,8 @@ contract CallableBondDepositoryV02 is ICallableBondDepository, CallableUserTerms
                 userTerms[_user][_indexes[i]].cryptoClosingPrice = _fetchedPrice;
                 if (payoff > 0) {
                     userTerms[_user][_indexes[i]].exercised = time; // mark as exercised
-                    uint256 cappedPayoff = ((payoff > terms[marketId].maxPayoffPercentage ? terms[marketId].maxPayoffPercentage : payoff) *
-                        pay) / 1e18;
+                    uint256 cappedPayoff = ((payoff > terms[marketId].maxPayoffPercentage ? terms[marketId].maxPayoffPercentage : payoff) * pay) /
+                        1e18;
                     // add payoff plus notional
                     payout_ += cappedPayoff + pay;
                     // mint option payoff
@@ -478,7 +474,7 @@ contract CallableBondDepositoryV02 is ICallableBondDepository, CallableUserTerms
      * l = length of program
      */
     function marketPrice(uint256 _id) public view override returns (uint256) {
-        return (currentControlVariable(_id) * debtRatio(_id)) / (10**metadata[_id].assetDecimals);
+        return (currentControlVariable(_id) * debtRatio(_id)) / 1e18;
     }
 
     /**
@@ -523,7 +519,7 @@ contract CallableBondDepositoryV02 is ICallableBondDepository, CallableUserTerms
      * @return             debt ratio for market in quote decimals
      */
     function debtRatio(uint256 _id) public view override returns (uint256) {
-        return (currentDebt(_id) * (10**metadata[_id].assetDecimals)) / treasury.baseSupply();
+        return (currentDebt(_id) * 1e18) / treasury.baseSupply();
     }
 
     /**
@@ -631,7 +627,7 @@ contract CallableBondDepositoryV02 is ICallableBondDepository, CallableUserTerms
      * @return                  price for market in REQ decimals
      */
     function _marketPrice(uint256 _id) internal view returns (uint256) {
-        return (terms[_id].controlVariable * _debtRatio(_id)) / (10**metadata[_id].assetDecimals);
+        return (terms[_id].controlVariable * _debtRatio(_id)) / 1e18;
     }
 
     /**
@@ -641,7 +637,7 @@ contract CallableBondDepositoryV02 is ICallableBondDepository, CallableUserTerms
      * @return                  current debt for market in quote decimals
      */
     function _debtRatio(uint256 _id) internal view returns (uint256) {
-        return (markets[_id].totalDebt * (10**metadata[_id].assetDecimals)) / treasury.baseSupply();
+        return (markets[_id].totalDebt * 1e18) / treasury.baseSupply();
     }
 
     /**

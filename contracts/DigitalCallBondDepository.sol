@@ -62,9 +62,6 @@ contract DigitalCallBondDepository is ICallBondDepository, CallUserTermsKeeper {
         // the length of the program, in seconds
         uint256 secondsToConclusion = _terms[1] - block.timestamp;
 
-        // the decimal count of the quote token
-        uint256 decimals = _asset.decimals();
-
         /*
          * initial target debt is equal to capacity (this is the amount of debt
          * that will decay over in the length of the program if price remains the same).
@@ -137,8 +134,7 @@ contract DigitalCallBondDepository is ICallBondDepository, CallUserTermsKeeper {
                 lastDecay: uint48(block.timestamp),
                 length: uint48(secondsToConclusion),
                 depositInterval: _intervals[0],
-                tuneInterval: _intervals[1],
-                assetDecimals: uint8(decimals)
+                tuneInterval: _intervals[1]
             })
         );
 
@@ -490,7 +486,7 @@ contract DigitalCallBondDepository is ICallBondDepository, CallUserTermsKeeper {
      * l = length of program
      */
     function marketPrice(uint256 _id) public view override returns (uint256) {
-        return (currentControlVariable(_id) * debtRatio(_id)) / (10**metadata[_id].assetDecimals);
+        return (currentControlVariable(_id) * debtRatio(_id)) / 1e18;
     }
 
     /**
@@ -534,7 +530,7 @@ contract DigitalCallBondDepository is ICallBondDepository, CallUserTermsKeeper {
      * @return             debt ratio for market in quote decimals
      */
     function debtRatio(uint256 _id) public view override returns (uint256) {
-        return (currentDebt(_id) * (10**metadata[_id].assetDecimals)) / treasury.baseSupply();
+        return (currentDebt(_id) * 1e18) / treasury.baseSupply();
     }
 
     /**
@@ -642,7 +638,7 @@ contract DigitalCallBondDepository is ICallBondDepository, CallUserTermsKeeper {
      * @return                  price for market in REQ decimals
      */
     function _marketPrice(uint256 _id) internal view returns (uint256) {
-        return (terms[_id].controlVariable * _debtRatio(_id)) / (10**metadata[_id].assetDecimals);
+        return (terms[_id].controlVariable * _debtRatio(_id)) / 1e18;
     }
 
     /**
@@ -652,7 +648,7 @@ contract DigitalCallBondDepository is ICallBondDepository, CallUserTermsKeeper {
      * @return                  current debt for market in quote decimals
      */
     function _debtRatio(uint256 _id) internal view returns (uint256) {
-        return (markets[_id].totalDebt * (10**metadata[_id].assetDecimals)) / treasury.baseSupply();
+        return (markets[_id].totalDebt * 1e18) / treasury.baseSupply();
     }
 
     /**

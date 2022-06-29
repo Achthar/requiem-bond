@@ -488,13 +488,12 @@ export class DigitalCallBondDepository extends BaseContract {
       arg0: BigNumberish,
       overrides?: CallOverrides
     ): Promise<
-      [number, number, number, number, number, number] & {
+      [number, number, number, number, number] & {
         lastTune: number;
         lastDecay: number;
         length: number;
         depositInterval: number;
         tuneInterval: number;
-        assetDecimals: number;
       }
     >;
 
@@ -747,13 +746,12 @@ export class DigitalCallBondDepository extends BaseContract {
     arg0: BigNumberish,
     overrides?: CallOverrides
   ): Promise<
-    [number, number, number, number, number, number] & {
+    [number, number, number, number, number] & {
       lastTune: number;
       lastDecay: number;
       length: number;
       depositInterval: number;
       tuneInterval: number;
-      assetDecimals: number;
     }
   >;
 
@@ -1013,13 +1011,12 @@ export class DigitalCallBondDepository extends BaseContract {
       arg0: BigNumberish,
       overrides?: CallOverrides
     ): Promise<
-      [number, number, number, number, number, number] & {
+      [number, number, number, number, number] & {
         lastTune: number;
         lastDecay: number;
         length: number;
         depositInterval: number;
         tuneInterval: number;
-        assetDecimals: number;
       }
     >;
 

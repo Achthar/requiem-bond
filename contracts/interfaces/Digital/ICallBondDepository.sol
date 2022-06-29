@@ -37,7 +37,6 @@ interface ICallBondDepository {
         uint48 length; // time from creation to conclusion. used as speed to decay debt.
         uint48 depositInterval; // target frequency of deposits
         uint48 tuneInterval; // frequency of tuning
-        uint8 assetDecimals; // decimals of quote token
     }
 
     // Control variable adjustment data

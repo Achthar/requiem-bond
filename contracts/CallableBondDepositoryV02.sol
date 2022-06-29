@@ -10,7 +10,7 @@ import "./interfaces/Callable/ICallableBondDepository.sol";
 /// @title Callable Bond Depository
 /// @author Achthar
 
-contract CallableBondDepository is ICallableBondDepository, CallableUserTermsKeeper {
+contract CallableBondDepositoryV02 is ICallableBondDepository, CallableUserTermsKeeper {
     /* ======== DEPENDENCIES ======== */
 
     using SafeERC20 for IERC20;
@@ -282,8 +282,8 @@ contract CallableBondDepository is ICallableBondDepository, CallableUserTermsKee
                 userTerms[_user][_indexes[i]].cryptoClosingPrice = _fetchedPrice;
                 if (payoff > 0) {
                     userTerms[_user][_indexes[i]].exercised = time; // mark as exercised
-                    uint256 cappedPayoff = ((payoff > terms[marketId].maxPayoffPercentage ? terms[marketId].maxPayoffPercentage : payoff) * pay) /
-                        1e18;
+                    uint256 cappedPayoff = ((payoff > terms[marketId].maxPayoffPercentage ? terms[marketId].maxPayoffPercentage : payoff) *
+                        pay) / 1e18;
                     // add payoff plus notional
                     payout_ += cappedPayoff + pay;
                     // mint option payoff

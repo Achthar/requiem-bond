@@ -1,16 +1,16 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 pragma solidity ^0.8.15;
 
-import "./libraries/types/CallableUserTermsKeeper.sol";
+import "./libraries/types/CallUserTermsKeeper.sol";
 import "./libraries/SafeERC20.sol";
-import "./interfaces/Callable/ICallableBondDepository.sol";
+import "./interfaces/Digital/ICallBondDepository.sol";
 
 // solhint-disable  max-line-length
 
-/// @title Callable Bond Depository
+/// @title Digital Call Bond Depository
 /// @author Achthar
 
-contract CallableBondDepository is ICallableBondDepository, CallableUserTermsKeeper {
+contract DigitalCallBondDepository is ICallBondDepository, CallUserTermsKeeper {
     /* ======== DEPENDENCIES ======== */
 
     using SafeERC20 for IERC20;
@@ -36,7 +36,7 @@ contract CallableBondDepository is ICallableBondDepository, CallableUserTermsKee
 
     /* ======== CONSTRUCTOR ======== */
 
-    constructor(IERC20 _req, address _treasury) CallableUserTermsKeeper(_req, _treasury) {}
+    constructor(IERC20 _req, address _treasury) CallUserTermsKeeper(_req, _treasury) {}
 
     /* ======== CREATE ======== */
 
@@ -47,7 +47,7 @@ contract CallableBondDepository is ICallableBondDepository, CallableUserTermsKee
      * @param _underlying  oracle to povede price data for option component
      * @param _market      [capacity (in REQ or quote), initial price / REQ (18 decimals), debt buffer (3 decimals), threshold (percent), option cap (percent)]
      * @param _booleans    [capacity in quote, fixed term]
-     * @param _terms       [vesting length (if fixed term) or vested timestamp, conclusion timestamp]
+     * @param _terms       [vesting length (if fixed term) or vested timestamp, conclusion timestamp, exercise duration]
      * @param _intervals   [deposit interval (seconds), tune interval (seconds)]
      * @return id_         ID of new bond market
      */
@@ -56,7 +56,7 @@ contract CallableBondDepository is ICallableBondDepository, CallableUserTermsKee
         address _underlying,
         uint256[5] memory _market,
         bool[2] memory _booleans,
-        uint256[2] memory _terms,
+        uint256[3] memory _terms,
         uint32[2] memory _intervals
     ) external override onlyPolicy returns (uint256 id_) {
         // the length of the program, in seconds
@@ -122,9 +122,10 @@ contract CallableBondDepository is ICallableBondDepository, CallableUserTermsKee
             Terms({
                 fixedTerm: _booleans[1],
                 thresholdPercentage: int256(_market[3]),
-                maxPayoffPercentage: _market[4],
+                payoffPercentage: _market[4],
                 vesting: uint48(_terms[0]),
                 conclusion: uint48(_terms[1]),
+                exerciseDuration: uint48(_terms[2]),
                 controlVariable: controlVariable,
                 maxDebt: maxDebt
             })
@@ -252,43 +253,41 @@ contract CallableBondDepository is ICallableBondDepository, CallableUserTermsKee
     /* ========== REDEEM ========== */
 
     /**
-     * @notice             call ABREQ for redeem userTerms fro user
+     * @notice             redeem userTerms for user
      * @param _user        the user to redeem for
      * @param _indexes     the note indexes to redeem
      * @return payout_     sum of payout sent, in REQ
      */
-    function call(address _user, uint256[] memory _indexes) public override returns (uint256 payout_) {
+    function redeem(address _user, uint256[] memory _indexes) public override returns (uint256 payout_) {
         uint48 time = uint48(block.timestamp);
 
         for (uint256 i = 0; i < _indexes.length; i++) {
-            (uint256 pay, bool matured) = pendingFor(_user, _indexes[i]);
+            (uint256 pay, bool matured, bool payoffClaimable) = pendingFor(_user, _indexes[i]);
             uint256 marketId = userTerms[_user][_indexes[i]].marketID;
 
-            (, int256 _fetchedPrice, , , ) = getLatestPriceData(markets[marketId].underlying);
-            // if matured and no payoff is claimable, only the notional is paid out
+            // check whether notional can be claimed
             if (matured) {
-                userTerms[_user][_indexes[i]].exercised = time; // mark as exercised
-                userTerms[_user][_indexes[i]].cryptoClosingPrice = _fetchedPrice;
-                // just add the notional
+                userTerms[_user][_indexes[i]].redeemed = time; // mark as claimed
                 payout_ += pay;
             }
+
             // check whether option can be exercised
-            else {
-                uint256 payoff = _calculatePayoff(
+            (, int256 _fetchedPrice, , , ) = getLatestPriceData(markets[marketId].underlying);
+            if (payoffClaimable) {
+                bool exercisable = _calculatePayoff(
                     userTerms[_user][_indexes[i]].cryptoIntitialPrice,
                     _fetchedPrice,
                     terms[marketId].thresholdPercentage
                 );
                 userTerms[_user][_indexes[i]].cryptoClosingPrice = _fetchedPrice;
-                if (payoff > 0) {
+                if (exercisable) {
                     userTerms[_user][_indexes[i]].exercised = time; // mark as exercised
-                    uint256 cappedPayoff = ((payoff > terms[marketId].maxPayoffPercentage ? terms[marketId].maxPayoffPercentage : payoff) * pay) /
-                        1e18;
-                    // add payoff plus notional
-                    payout_ += cappedPayoff + pay;
+                    uint256 digitalPayoff = (terms[marketId].payoffPercentage * pay) / 1e18;
+                    // add digital payoff
+                    payout_ += digitalPayoff;
                     // mint option payoff
-                    treasury.mint(address(this), cappedPayoff);
-                    emit OptionExercise(marketId, cappedPayoff);
+                    treasury.mint(address(this), digitalPayoff);
+                    emit OptionExercise(marketId, digitalPayoff);
                 }
             }
         }
@@ -303,8 +302,8 @@ contract CallableBondDepository is ICallableBondDepository, CallableUserTermsKee
      * @param _user        user to redeem all userTerms for
      * @return             sum of payout sent, in REQ
      */
-    function callAll(address _user) external override returns (uint256) {
-        return call(_user, indexesFor(_user));
+    function redeemAll(address _user) external override returns (uint256) {
+        return redeem(_user, indexesFor(_user));
     }
 
     /**
@@ -443,11 +442,24 @@ contract CallableBondDepository is ICallableBondDepository, CallableUserTermsKee
      * @return payout_     the payout due, in gREQ
      * @return matured_    if the payout can be redeemed
      */
-    function pendingFor(address _user, uint256 _index) public view returns (uint256 payout_, bool matured_) {
+    function pendingFor(address _user, uint256 _index)
+        public
+        view
+        returns (
+            uint256 payout_,
+            bool matured_,
+            bool payoffClaimable_
+        )
+    {
         UserTerms memory note = userTerms[_user][_index];
 
         payout_ = note.payout;
-        matured_ = note.exercised == 0 && note.matured <= block.timestamp && payout_ != 0;
+        matured_ = note.redeemed == 0 && note.matured <= block.timestamp && payout_ != 0;
+        // notional can already have been claimed
+        payoffClaimable_ =
+            note.exercised == 0 &&
+            note.matured <= block.timestamp &&
+            note.matured + terms[note.marketID].exerciseDuration >= block.timestamp;
     }
 
     /**
@@ -509,10 +521,9 @@ contract CallableBondDepository is ICallableBondDepository, CallableUserTermsKee
 
         (, int256 _fetchedPrice, , , ) = getLatestPriceData(markets[_id].underlying);
 
-        uint256 rawPayoff = _calculatePayoff(userTerm.cryptoIntitialPrice, _fetchedPrice, terms[_id].thresholdPercentage);
-        if (rawPayoff > 0) {
-            uint256 maxPercentage = terms[_id].maxPayoffPercentage;
-            payoff_ = ((rawPayoff > maxPercentage ? maxPercentage : rawPayoff) * userTerm.payout) / 1e18;
+        bool exercisable = _calculatePayoff(userTerm.cryptoIntitialPrice, _fetchedPrice, terms[_id].thresholdPercentage);
+        if (exercisable) {
+            payoff_ = (terms[_id].payoffPercentage * userTerm.payout) / 1e18;
         }
     }
 
@@ -618,9 +629,9 @@ contract CallableBondDepository is ICallableBondDepository, CallableUserTermsKee
         int256 _initialPrice,
         int256 _priceNow,
         int256 _strike
-    ) internal pure returns (uint256) {
+    ) internal pure returns (bool) {
         int256 _kMinusS = _priceNow * 1e18 - (1e18 + _strike) * _initialPrice;
-        return _kMinusS > 0 ? uint256(_kMinusS / _initialPrice) : 0;
+        return _kMinusS / 1e18 >= 0;
     }
 
     /**

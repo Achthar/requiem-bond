@@ -3,7 +3,7 @@
 
 const { ethers } = require('hardhat')
 
-const BondDepositoryABI = require('../../artifacts/contracts/BondDepository.sol/BondDepository.json')
+const BondDepositoryABI = require('../../artifacts/contracts/CallableBondDepository.sol/CallableBondDepository.json')
 const { addresses } = require('../../deployments/addresses')
 
 const one18 = ethers.BigNumber.from(10).pow(18)
@@ -17,13 +17,13 @@ async function main() {
 
     const assetAddress = addresses.assets.STABLELP[chainId]
 
-    const bondDepositoryContract = new ethers.Contract(addresses.bondDepo[chainId], new ethers.utils.Interface(BondDepositoryABI.abi), operator)
+    const bondDepositoryContract = new ethers.Contract(addresses.callableBondDepo[chainId], new ethers.utils.Interface(BondDepositoryABI.abi), operator)
     console.log("============= Data ===============")
     const markets = await bondDepositoryContract.liveMarkets()
-    console.log("liveMarkets: ", markets.map(x => x.toString()))
+    console.log("liveMarkets: ", markets)
     for (let i = 0; i < markets.length; i++) {
         const price = await bondDepositoryContract.marketPrice(markets[i])
-        console.log("marketPrice", markets[i].toString(), ":", ethers.utils.formatEther(price))
+        console.log("marketPrice", i, ":", ethers.utils.formatEther(price))
 
     }
 

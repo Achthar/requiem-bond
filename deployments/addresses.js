@@ -8,6 +8,9 @@ const addresses = {
     "callBondDepo": {
         43113: "0x37bb1Aa8A339B65aeD51B6354a2518011F668A9B"
     },
+    "callableBondDepo": {
+        43113: "0xb7879d3bbE48838a0436AE9CE75bEE1F6eb7282E"
+    },
     "diamondInitAddress": {
         43113: "0xdb409149AA3C2f2Bb3580994e1637f3e918D5413"
     },
@@ -42,8 +45,12 @@ const addresses = {
 
     },
     "oracles": {
-        "ETHUSD": { 43113: "0x86d67c3D38D2bCeE722E601025C25a575021c6EA" },
-        "AVAXUSD": { 43113: "0x5498BB86BC934c8D34FDA08E81D444153d0D06aD" }
+        "ETHUSD": {
+            43113: "0x86d67c3D38D2bCeE722E601025C25a575021c6EA"
+        },
+        "AVAXUSD": {
+            43113: "0x5498BB86BC934c8D34FDA08E81D444153d0D06aD"
+        }
     },
     "facets": {
         "DiamondCutFacet": {

@@ -1,13 +1,867 @@
-// SPDX-License-Identifier: AGPL-3.0-or-later
-pragma solidity ^0.8.15;
 
-import "./libraries/types/CallableUserTermsKeeper.sol";
-import "./libraries/SafeERC20.sol";
-import "./interfaces/Callable/ICallableBondDepository.sol";
+// File: contracts/libraries/Address.sol
+
+
+pragma solidity 0.8.15;
+
+library Address {
+  function isContract(address account) internal view returns (bool) {
+    uint256 size;
+    // solhint-disable-next-line no-inline-assembly
+    assembly {
+      size := extcodesize(account)
+    }
+    return size > 0;
+  }
+
+  function sendValue(address payable recipient, uint256 amount) internal {
+    require(address(this).balance >= amount, "Address: insufficient balance");
+
+    // solhint-disable-next-line avoid-low-level-calls, avoid-call-value
+    (bool success, ) = recipient.call{value: amount}("");
+    require(
+      success,
+      "Address: unable to send value, recipient may have reverted"
+    );
+  }
+
+  function functionCall(address target, bytes memory data)
+    internal
+    returns (bytes memory)
+  {
+    return functionCall(target, data, "Address: low-level call failed");
+  }
+
+  function functionCall(
+    address target,
+    bytes memory data,
+    string memory errorMessage
+  ) internal returns (bytes memory) {
+    return _functionCallWithValue(target, data, 0, errorMessage);
+  }
+
+  function functionCallWithValue(
+    address target,
+    bytes memory data,
+    uint256 value
+  ) internal returns (bytes memory) {
+    return
+      functionCallWithValue(
+        target,
+        data,
+        value,
+        "Address: low-level call with value failed"
+      );
+  }
+
+  function functionCallWithValue(
+    address target,
+    bytes memory data,
+    uint256 value,
+    string memory errorMessage
+  ) internal returns (bytes memory) {
+    require(
+      address(this).balance >= value,
+      "Address: insufficient balance for call"
+    );
+    require(isContract(target), "Address: call to non-contract");
+
+    // solhint-disable-next-line avoid-low-level-calls
+    (bool success, bytes memory returndata) = target.call{value: value}(data);
+    return _verifyCallResult(success, returndata, errorMessage);
+  }
+
+  function _functionCallWithValue(
+    address target,
+    bytes memory data,
+    uint256 weiValue,
+    string memory errorMessage
+  ) private returns (bytes memory) {
+    require(isContract(target), "Address: call to non-contract");
+
+    // solhint-disable-next-line avoid-low-level-calls
+    (bool success, bytes memory returndata) = target.call{value: weiValue}(
+      data
+    );
+    if (success) {
+      return returndata;
+    } else {
+      // Look for revert reason and bubble it up if present
+      if (returndata.length > 0) {
+        // The easiest way to bubble the revert reason is using memory via assembly
+
+        // solhint-disable-next-line no-inline-assembly
+        assembly {
+          let returndata_size := mload(returndata)
+          revert(add(32, returndata), returndata_size)
+        }
+      } else {
+        revert(errorMessage);
+      }
+    }
+  }
+
+  function functionStaticCall(address target, bytes memory data)
+    internal
+    view
+    returns (bytes memory)
+  {
+    return
+      functionStaticCall(target, data, "Address: low-level static call failed");
+  }
+
+  function functionStaticCall(
+    address target,
+    bytes memory data,
+    string memory errorMessage
+  ) internal view returns (bytes memory) {
+    require(isContract(target), "Address: static call to non-contract");
+
+    // solhint-disable-next-line avoid-low-level-calls
+    (bool success, bytes memory returndata) = target.staticcall(data);
+    return _verifyCallResult(success, returndata, errorMessage);
+  }
+
+  function functionDelegateCall(address target, bytes memory data)
+    internal
+    returns (bytes memory)
+  {
+    return
+      functionDelegateCall(
+        target,
+        data,
+        "Address: low-level delegate call failed"
+      );
+  }
+
+  function functionDelegateCall(
+    address target,
+    bytes memory data,
+    string memory errorMessage
+  ) internal returns (bytes memory) {
+    require(isContract(target), "Address: delegate call to non-contract");
+
+    // solhint-disable-next-line avoid-low-level-calls
+    (bool success, bytes memory returndata) = target.delegatecall(data);
+    return _verifyCallResult(success, returndata, errorMessage);
+  }
+
+  function _verifyCallResult(
+    bool success,
+    bytes memory returndata,
+    string memory errorMessage
+  ) private pure returns (bytes memory) {
+    if (success) {
+      return returndata;
+    } else {
+      if (returndata.length > 0) {
+        assembly {
+          let returndata_size := mload(returndata)
+          revert(add(32, returndata), returndata_size)
+        }
+      } else {
+        revert(errorMessage);
+      }
+    }
+  }
+
+  function toBytes32(address a) internal pure returns (bytes32 b) {
+    assembly {
+      let m := mload(0x40)
+      a := and(a, 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF)
+      mstore(add(m, 20), xor(0x140000000000000000000000000000000000000000, a))
+      mstore(0x40, add(m, 52))
+      b := m
+    }
+  }
+
+  function addressToString(address _address)
+    internal
+    pure
+    returns (string memory)
+  {
+    bytes32 _bytes = toBytes32(_address);
+    bytes memory HEX = "0123456789abcdef";
+    bytes memory _addr = new bytes(42);
+
+    _addr[0] = "0";
+    _addr[1] = "x";
+
+    for (uint256 i = 0; i < 20; i++) {
+      _addr[2 + i * 2] = HEX[uint8(_bytes[i + 12] >> 4)];
+      _addr[3 + i * 2] = HEX[uint8(_bytes[i + 12] & 0x0f)];
+    }
+
+    return string(_addr);
+  }
+}
+
+// File: contracts/interfaces/Callable/IUserTermsKeeper.sol
+
+
+pragma solidity >=0.8.15;
+
+interface IUserTermsKeeper {
+    // Info for market note
+    struct UserTerms {
+        int256 cryptoIntitialPrice; // reference price at opening
+        int256 cryptoClosingPrice; // closing price of position
+        uint256 payout; // REQ remaining to be paid
+        uint48 created; // time market was created
+        uint48 matured; // time of instrument maturity
+        uint48 exercised; // time instrument was exercised
+        uint48 marketID; // market ID of deposit. uint48 to avoid adding a slot.
+    }
+
+    function pushTerms(address to, uint256 index) external;
+
+    function pullTerms(address from, uint256 index) external returns (uint256 newIndex_);
+
+    function indexesFor(address _user) external view returns (uint256[] memory);
+
+    function pendingFor(address _user, uint256 _index)
+        external
+        view
+        returns (
+            uint256 payout_,
+            bool matured_
+        );
+}
+
+// File: contracts/interfaces/ITreasury.sol
+
+
+pragma solidity >=0.8.15;
+
+interface ITreasury {
+    function deposit(
+        uint256 _amount,
+        address _token,
+        uint256 _profit
+    ) external returns (uint256);
+
+    function withdraw(uint256 _amount, address _token) external;
+
+    function assetValue(address _token, uint256 _amount) external view returns (uint256 value_);
+
+    function mint(address _recipient, uint256 _amount) external;
+
+    function manage(address _token, uint256 _amount) external;
+
+    function incurDebt(uint256 amount_, address token_) external;
+
+    function repayDebtWithReserve(uint256 amount_, address token_) external;
+
+    function excessReserves() external view returns (int256);
+
+    function baseSupply() external view returns (uint256);
+}
+
+// File: contracts/interfaces/IAggragatorV3.sol
+
+
+pragma solidity ^0.8.0;
+
+interface IAggregatorV3 {
+    function decimals() external view returns (uint8);
+
+    function description() external view returns (string memory);
+
+    function version() external view returns (uint256);
+
+    // getRoundData and latestRoundData should both raise "No data present"
+    // if they do not have data to report, instead of returning unset values
+    // which could be misinterpreted as actual reported values.
+    function getRoundData(uint80 _roundId)
+        external
+        view
+        returns (
+            uint80 roundId,
+            int256 answer,
+            uint256 startedAt,
+            uint256 updatedAt,
+            uint80 answeredInRound
+        );
+
+    function latestRoundData()
+        external
+        view
+        returns (
+            uint80 roundId,
+            int256 answer,
+            uint256 startedAt,
+            uint256 updatedAt,
+            uint80 answeredInRound
+        );
+}
+
+// File: contracts/libraries/types/PriceConsumer.sol
+
+
+pragma solidity ^0.8.7;
+
+
+contract PriceConsumer {
+    /**
+     * Returns the latest price
+     */
+    function getLatestPriceData(address _feed)
+        public
+        view
+        returns (
+            uint80 roundId,
+            int256 answer,
+            uint256 startedAt,
+            uint256 updatedAt, // relevant timestamp
+            uint80 answeredInRound
+        )
+    {
+        return IAggregatorV3(_feed).latestRoundData();
+    }
+
+    function calculatePerformance(int256 _newPrice, int256 _oldPrice) internal pure returns (int256 _pricePerformance) {
+        _pricePerformance = ((_newPrice - _oldPrice) * 1e18) / _oldPrice;
+    }
+}
+
+// File: contracts/interfaces/ERC20/IERC20.sol
+
+
+pragma solidity 0.8.15;
+
+interface IERC20 {
+    function decimals() external view returns (uint8);
+
+    function totalSupply() external view returns (uint256);
+
+    function balanceOf(address account) external view returns (uint256);
+
+    function transfer(address recipient, uint256 amount) external returns (bool);
+
+    function allowance(address owner, address spender) external view returns (uint256);
+
+    function approve(address spender, uint256 amount) external returns (bool);
+
+    function transferFrom(address sender, address recipient, uint256 amount) external returns (bool);
+
+    event Transfer(address indexed from, address indexed to, uint256 value);
+
+    event Approval(address indexed owner, address indexed spender, uint256 value);
+}
+// File: contracts/interfaces/Callable/ICallableBondDepository.sol
+
+
+pragma solidity >=0.8.15;
+
+
+// solhint-disable max-line-length
+
+interface ICallableBondDepository {
+    // Info about each type of market
+    struct Market {
+        uint256 capacity; // capacity remaining
+        IERC20 asset; // token to accept as payment
+        address underlying;
+        bool capacityInQuote; // capacity limit is in payment token (true) or in REQ (false, default)
+        uint256 totalDebt; // total debt from market
+        uint256 maxPayout; // max tokens in/out (determined by capacityInQuote false/true, respectively)
+        uint256 sold; // base tokens out
+        uint256 purchased; // quote tokens in
+    }
+
+    // Info for creating new markets
+    struct Terms {
+        bool fixedTerm; // fixed term or fixed expiration
+        int256 thresholdPercentage;
+        uint256 maxPayoffPercentage;
+        uint256 controlVariable; // scaling variable for price
+        uint48 vesting; // length of time from deposit to maturity if fixed-term
+        uint48 conclusion; // timestamp when market no longer offered (doubles as time when market matures if fixed-expiry)
+        uint256 maxDebt; // 18 decimal debt maximum in REQ
+    }
+
+    // Additional info about market.
+    struct Metadata {
+        uint48 lastTune; // last timestamp when control variable was tuned
+        uint48 lastDecay; // last timestamp when market was created and debt was decayed
+        uint48 length; // time from creation to conclusion. used as speed to decay debt.
+        uint48 depositInterval; // target frequency of deposits
+        uint48 tuneInterval; // frequency of tuning
+        uint8 assetDecimals; // decimals of quote token
+    }
+
+    // Control variable adjustment data
+    struct Adjustment {
+        uint256 change;
+        uint48 lastAdjustment;
+        uint48 timeToAdjusted;
+        bool active;
+    }
+
+    /**
+     * @notice deposit market
+     * @param _bid uint256
+     * @param _amount uint256
+     * @param _maxPrice uint256
+     * @param _user address
+     * @param _referral address
+     * @return payout_ uint256
+     * @return expiry_ uint256
+     * @return index_ uint256
+     */
+    function deposit(
+        uint256 _bid,
+        uint256 _amount,
+        uint256 _maxPrice,
+        address _user,
+        address _referral
+    )
+        external
+        returns (
+            uint256 payout_,
+            uint256 expiry_,
+            uint256 index_
+        );
+
+    function create(
+        IERC20 _asset, // token used to deposit
+        address _underlying,
+        uint256[5] memory _market, // [capacity, initial price, buffer, threshold percentage, digital payoff]
+        bool[2] memory _booleans, // [capacity in quote, fixed term]
+        uint256[2] memory _terms, // [vesting, conclusion]
+        uint32[2] memory _intervals // [deposit interval, tune interval]
+    ) external returns (uint256 id_);
+
+    function close(uint256 _id) external;
+
+    function isLive(uint256 _bid) external view returns (bool);
+
+    function liveMarkets() external view returns (uint256[] memory);
+
+    function liveMarketsFor(address _asset) external view returns (uint256[] memory);
+
+    // notional payout
+    function payoutFor(uint256 _amount, uint256 _bid) external view returns (uint256);
+
+    // option payout
+    function optionPayoutFor(
+        address _user,
+        uint256 _index
+    ) external view returns (uint256);
+
+    function marketPrice(uint256 _bid) external view returns (uint256);
+
+    function currentDebt(uint256 _bid) external view returns (uint256);
+
+    function debtRatio(uint256 _bid) external view returns (uint256);
+
+    function debtDecay(uint256 _bid) external view returns (uint256);
+
+    // redemtion and exercise
+    function call(address _user, uint256[] memory _indexes) external returns (uint256);
+
+    function callAll(address _user) external returns (uint256);
+}
+
+// File: contracts/libraries/SafeERC20.sol
+
+
+// OpenZeppelin Contracts v4.4.1 (token/ERC20/utils/SafeERC20.sol)
+
+pragma solidity ^0.8.0;
+
+
 
 // solhint-disable  max-line-length
 
-/// @title Callable Bond Depository
+/**
+ * @title SafeERC20
+ * @dev Wrappers around ERC20 operations that throw on failure (when the token
+ * contract returns false). Tokens that return no value (and instead revert or
+ * throw on failure) are also supported, non-reverting calls are assumed to be
+ * successful.
+ * To use this library you can add a `using SafeERC20 for IERC20;` statement to your contract,
+ * which allows you to call the safe operations as `token.safeTransfer(...)`, etc.
+ */
+library SafeERC20 {
+    using Address for address;
+
+    function safeTransfer(
+        IERC20 token,
+        address to,
+        uint256 value
+    ) internal {
+        _callOptionalReturn(token, abi.encodeWithSelector(token.transfer.selector, to, value));
+    }
+
+    function safeTransferFrom(
+        IERC20 token,
+        address from,
+        address to,
+        uint256 value
+    ) internal {
+        _callOptionalReturn(token, abi.encodeWithSelector(token.transferFrom.selector, from, to, value));
+    }
+
+    /**
+     * @dev Deprecated. This function has issues similar to the ones found in
+     * {IERC20-approve}, and its usage is discouraged.
+     *
+     * Whenever possible, use {safeIncreaseAllowance} and
+     * {safeDecreaseAllowance} instead.
+     */
+    function safeApprove(
+        IERC20 token,
+        address spender,
+        uint256 value
+    ) internal {
+        // safeApprove should only be called when setting an initial allowance,
+        // or when resetting it to zero. To increase and decrease it, use
+        // 'safeIncreaseAllowance' and 'safeDecreaseAllowance'
+        require((value == 0) || (token.allowance(address(this), spender) == 0), "SafeERC20: approve from non-zero to non-zero allowance");
+        _callOptionalReturn(token, abi.encodeWithSelector(token.approve.selector, spender, value));
+    }
+
+    function safeIncreaseAllowance(
+        IERC20 token,
+        address spender,
+        uint256 value
+    ) internal {
+        uint256 newAllowance = token.allowance(address(this), spender) + value;
+        _callOptionalReturn(token, abi.encodeWithSelector(token.approve.selector, spender, newAllowance));
+    }
+
+    function safeDecreaseAllowance(
+        IERC20 token,
+        address spender,
+        uint256 value
+    ) internal {
+        unchecked {
+            uint256 oldAllowance = token.allowance(address(this), spender);
+            require(oldAllowance >= value, "SafeERC20: decreased allowance below zero");
+            uint256 newAllowance = oldAllowance - value;
+            _callOptionalReturn(token, abi.encodeWithSelector(token.approve.selector, spender, newAllowance));
+        }
+    }
+
+    /**
+     * @dev Imitates a Solidity high-level call (i.e. a regular function call to a contract), relaxing the requirement
+     * on the return value: the return value is optional (but if data is returned, it must not be false).
+     * @param token The token targeted by the call.
+     * @param data The call data (encoded using abi.encode or one of its variants).
+     */
+    function _callOptionalReturn(IERC20 token, bytes memory data) private {
+        // We need to perform a low level call here, to bypass Solidity's return data size checking mechanism, since
+        // we're implementing it ourselves. We use {Address.functionCall} to perform this call, which verifies that
+        // the target address contains contract code and also asserts for success in the low-level call.
+
+        bytes memory returndata = address(token).functionCall(data, "SafeERC20: low-level call failed");
+        if (returndata.length > 0) {
+            // Return data is optional
+            require(abi.decode(returndata, (bool)), "SafeERC20: ERC20 operation did not succeed");
+        }
+    }
+}
+
+// File: contracts/interfaces/IAuthority.sol
+
+
+pragma solidity >=0.8.15;
+
+interface IAuthority {
+    /* ========== EVENTS ========== */
+
+    event GovernorPushed(address indexed from, address indexed to, bool _effectiveImmediately);
+    event GuardianPushed(address indexed from, address indexed to, bool _effectiveImmediately);
+    event PolicyPushed(address indexed from, address indexed to, bool _effectiveImmediately);
+    event VaultPushed(address indexed from, address indexed to, bool _effectiveImmediately);
+
+    event GovernorPulled(address indexed from, address indexed to);
+    event GuardianPulled(address indexed from, address indexed to);
+    event PolicyPulled(address indexed from, address indexed to);
+    event VaultPulled(address indexed from, address indexed to);
+
+    /* ========== VIEW ========== */
+
+    function governor() external view returns (address);
+
+    function guardian() external view returns (address);
+
+    function policy() external view returns (address);
+
+    function vault() external view returns (address);
+}
+
+// File: contracts/libraries/types/AccessControlled.sol
+
+
+
+pragma solidity >=0.8.15;
+
+
+abstract contract AccessControlled {
+  /* ========== EVENTS ========== */
+
+  event AuthorityUpdated(IAuthority indexed authority);
+
+  string UNAUTHORIZED = "UNAUTHORIZED"; // save gas
+
+  /* ========== STATE VARIABLES ========== */
+
+  IAuthority public authority;
+
+  /* ========== Constructor ========== */
+
+  function intitalizeAuthority(IAuthority _authority) internal {
+    authority = _authority;
+  }
+
+  /* ========== MODIFIERS ========== */
+
+  modifier onlyGovernor() {
+    require(msg.sender == authority.governor(), UNAUTHORIZED);
+    _;
+  }
+
+  modifier onlyGuardian() {
+    require(msg.sender == authority.guardian(), UNAUTHORIZED);
+    _;
+  }
+
+  modifier onlyPolicy() {
+    require(msg.sender == authority.policy(), UNAUTHORIZED);
+    _;
+  }
+
+  modifier onlyVault() {
+    require(msg.sender == authority.vault(), UNAUTHORIZED);
+    _;
+  }
+
+  /* ========== GOV ONLY ========== */
+
+  function setAuthority(IAuthority _newAuthority) external onlyGovernor {
+    authority = _newAuthority;
+    emit AuthorityUpdated(_newAuthority);
+  }
+}
+
+// File: contracts/libraries/types/FrontEndRewarder.sol
+
+
+
+pragma solidity ^0.8.10;
+
+
+
+abstract contract FrontEndRewarder is AccessControlled {
+  /* ========= STATE VARIABLES ========== */
+
+  uint256 public daoReward; // % reward for dao (3 decimals: 100 = 1%)
+  uint256 public refReward; // % reward for referrer (3 decimals: 100 = 1%)
+  mapping(address => uint256) public rewards; // front end operator rewards
+  mapping(address => bool) public whitelisted; // whitelisted status for operators
+
+  IERC20 public immutable req; // reward token
+
+  constructor(IAuthority _authority, IERC20 _req) {
+    intitalizeAuthority(IAuthority(_authority));
+    req = _req;
+  }
+
+  /* ========= EXTERNAL FUNCTIONS ========== */
+
+  // pay reward to front end operator
+  function getReward() external {
+    uint256 reward = rewards[msg.sender];
+
+    rewards[msg.sender] = 0;
+    req.transfer(msg.sender, reward);
+  }
+
+  /* ========= INTERNAL ========== */
+
+  /**
+   * @notice add new market payout to user data
+   */
+  function _giveRewards(uint256 _payout, address _referral)
+    internal
+    returns (uint256)
+  {
+    // first we calculate rewards paid to the DAO and to the front end operator (referrer)
+    uint256 toDAO = (_payout * daoReward) / 1e4;
+    uint256 toRef = (_payout * refReward) / 1e4;
+
+    // and store them in our rewards mapping
+    if (whitelisted[_referral]) {
+      rewards[_referral] += toRef;
+      rewards[authority.guardian()] += toDAO;
+    } else {
+      // the DAO receives both rewards if referrer is not whitelisted
+      rewards[authority.guardian()] += toDAO + toRef;
+    }
+    return toDAO + toRef;
+  }
+
+  /**
+   * @notice set rewards for front end operators and DAO
+   */
+  function setRewards(uint256 _toFrontEnd, uint256 _toDAO)
+    external
+    onlyGovernor
+  {
+    refReward = _toFrontEnd;
+    daoReward = _toDAO;
+  }
+
+  /**
+   * @notice add or remove addresses from the reward whitelist
+   */
+  function whitelist(address _operator) external onlyPolicy {
+    whitelisted[_operator] = !whitelisted[_operator];
+  }
+}
+
+// File: contracts/libraries/types/CallableUserTermsKeeper.sol
+
+
+
+pragma solidity ^0.8.10;
+
+
+
+
+
+// solhint-disable max-line-length
+
+abstract contract CallableUserTermsKeeper is IUserTermsKeeper, FrontEndRewarder, PriceConsumer {
+    mapping(address => UserTerms[]) public userTerms; // user deposit data
+    mapping(address => mapping(uint256 => address)) private noteTransfers; // change note ownership
+
+    ITreasury internal treasury;
+
+    constructor(IERC20 _req, address _treasury) FrontEndRewarder(IAuthority(_treasury), _req) {
+        treasury = ITreasury(_treasury);
+    }
+
+    // if treasury address changes on authority, update it
+    function updateTreasury() external {
+        require(msg.sender == authority.governor() || msg.sender == authority.guardian() || msg.sender == authority.policy(), "Only authorized");
+        treasury = ITreasury(authority.vault());
+    }
+
+    /* ========== ADD ========== */
+
+    /**
+     * @notice             adds a new Terms for a user, stores the front end & DAO rewards, and mints & stakes payout & rewards
+     * @param _user        the user that owns the Terms
+     * @param _payout      the amount of REQ due to the user
+     * @param _expiry      the timestamp when the Terms is redeemable
+     * @param _marketID    the ID of the market deposited into
+     * @return index_      the index of the Terms in the user's array
+     */
+    function addTerms(
+        address _user,
+        address _underlying,
+        uint256 _payout,
+        uint48 _expiry,
+        uint48 _marketID,
+        address _referral
+    ) internal returns (uint256 index_, int256 _fetchedPrice) {
+        // the index of the note is the next in the user's array
+        index_ = userTerms[_user].length;
+
+        (, _fetchedPrice, , , ) = getLatestPriceData(_underlying);
+
+        // the new note is pushed to the user's array
+        userTerms[_user].push(
+            UserTerms({
+                payout: _payout,
+                cryptoIntitialPrice: _fetchedPrice,
+                cryptoClosingPrice: 0,
+                created: uint48(block.timestamp),
+                matured: _expiry,
+                exercised: 0,
+                marketID: _marketID
+            })
+        );
+
+        // front end operators can earn rewards by referring users
+        uint256 rewards = _giveRewards(_payout, _referral);
+
+        // mint payout and rewards
+        treasury.mint(address(this), _payout + rewards);
+    }
+
+    /* ========== TRANSFER ========== */
+
+    /**
+     * @notice             approve an address to transfer a note
+     * @param _to          address to approve note transfer for
+     * @param _index       index of note to approve transfer for
+     */
+    function pushTerms(address _to, uint256 _index) external override {
+        require(userTerms[msg.sender][_index].created != 0, "Depository: note not found");
+        noteTransfers[msg.sender][_index] = _to;
+    }
+
+    /**
+     * @notice             transfer a note that has been approved by an address
+     * @param _from        the address that approved the note transfer
+     * @param _index       the index of the note to transfer (in the sender's array)
+     */
+    function pullTerms(address _from, uint256 _index) external override returns (uint256 newIndex_) {
+        require(noteTransfers[_from][_index] == msg.sender, "Depository: transfer not found");
+        require(userTerms[_from][_index].exercised == 0, "Depository: note exercised");
+
+        newIndex_ = userTerms[msg.sender].length;
+        userTerms[msg.sender].push(userTerms[_from][_index]);
+
+        delete userTerms[_from][_index];
+    }
+
+    /* ========== VIEW ========== */
+
+    // Terms info
+
+    /**
+     * @notice             all pending userTerms for user
+     * @param _user        the user to query userTerms for
+     * @return             the pending userTerms for the user
+     */
+    function indexesFor(address _user) public view override returns (uint256[] memory) {
+        UserTerms[] memory info = userTerms[_user];
+
+        uint256 length;
+        for (uint256 i = 0; i < info.length; i++) {
+            if (info[i].exercised == 0 && info[i].payout != 0) length++;
+        }
+
+        uint256[] memory indexes = new uint256[](length);
+        uint256 position;
+
+        for (uint256 i = 0; i < info.length; i++) {
+            if (info[i].exercised == 0 && info[i].payout != 0) {
+                indexes[position] = i;
+                position++;
+            }
+        }
+
+        return indexes;
+    }
+}
+
+// File: contracts/CallableBondDepository.sol
+
+
+pragma solidity ^0.8.15;
+
+
+
+
+// solhint-disable  max-line-length
+
+/// @title Requiem Bond Depository
 /// @author Achthar
 
 contract CallableBondDepository is ICallableBondDepository, CallableUserTermsKeeper {

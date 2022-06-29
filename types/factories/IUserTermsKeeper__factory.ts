@@ -54,6 +54,11 @@ const _abi = [
         name: "matured_",
         type: "bool",
       },
+      {
+        internalType: "bool",
+        name: "payoffClaimable_",
+        type: "bool",
+      },
     ],
     stateMutability: "view",
     type: "function",
@@ -97,49 +102,6 @@ const _abi = [
     ],
     name: "pushTerms",
     outputs: [],
-    stateMutability: "nonpayable",
-    type: "function",
-  },
-  {
-    inputs: [
-      {
-        internalType: "address",
-        name: "_user",
-        type: "address",
-      },
-      {
-        internalType: "uint256[]",
-        name: "_indexes",
-        type: "uint256[]",
-      },
-    ],
-    name: "redeem",
-    outputs: [
-      {
-        internalType: "uint256",
-        name: "",
-        type: "uint256",
-      },
-    ],
-    stateMutability: "nonpayable",
-    type: "function",
-  },
-  {
-    inputs: [
-      {
-        internalType: "address",
-        name: "_user",
-        type: "address",
-      },
-    ],
-    name: "redeemAll",
-    outputs: [
-      {
-        internalType: "uint256",
-        name: "",
-        type: "uint256",
-      },
-    ],
     stateMutability: "nonpayable",
     type: "function",
   },

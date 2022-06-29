@@ -7,7 +7,7 @@ import "./interfaces/Call/ICallBondDepository.sol";
 
 // solhint-disable  max-line-length
 
-/// @title Requiem Bond Depository
+/// @title Call Bond Depository
 /// @author Achthar
 
 contract CallBondDepository is ICallBondDepository, CallUserTermsKeeper {
@@ -282,7 +282,7 @@ contract CallBondDepository is ICallBondDepository, CallUserTermsKeeper {
                 userTerms[_user][_indexes[i]].cryptoClosingPrice = _fetchedPrice;
                 if (payoff > 0) {
                     userTerms[_user][_indexes[i]].exercised = time; // mark as exercised
-                    uint256 cappedPayoff = ((payoff > terms[_indexes[i]].maxPayoffPercentage ? terms[_indexes[i]].maxPayoffPercentage : payoff) *
+                    uint256 cappedPayoff = ((payoff > terms[marketId].maxPayoffPercentage ? terms[marketId].maxPayoffPercentage : payoff) *
                         pay) / 1e18;
                     // add digital payoff
                     payout_ += cappedPayoff;
@@ -457,7 +457,7 @@ contract CallBondDepository is ICallBondDepository, CallUserTermsKeeper {
         payout_ = note.payout;
         matured_ = note.redeemed == 0 && note.matured <= block.timestamp && payout_ != 0;
         // notional can already have been claimed
-        payoffClaimable_ = note.exercised == 0 && note.matured <= block.timestamp && note.matured + terms[_index].exerciseDuration >= block.timestamp;
+        payoffClaimable_ = note.exercised == 0 && note.matured <= block.timestamp && note.matured + terms[note.marketID].exerciseDuration >= block.timestamp;
     }
 
     /**
@@ -521,7 +521,7 @@ contract CallBondDepository is ICallBondDepository, CallUserTermsKeeper {
 
         uint256 rawPayoff = _calculatePayoff(userTerm.cryptoIntitialPrice, _fetchedPrice, terms[_id].thresholdPercentage);
         if (rawPayoff > 0) {
-            uint256 maxPercentage = terms[_index].maxPayoffPercentage;
+            uint256 maxPercentage = terms[_id].maxPayoffPercentage;
             payoff_ = ((rawPayoff > maxPercentage ? maxPercentage : rawPayoff) * userTerm.payout) / 1e18;
         }
     }

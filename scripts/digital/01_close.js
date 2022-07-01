@@ -3,7 +3,7 @@
 
 const { ethers } = require('hardhat')
 
-const BondDepositoryABI = require('../../artifacts/contracts/CallBondDepository.sol/CallBondDepository.json')
+const BondDepositoryABI = require('../../artifacts/contracts/DigitalCallBondDepository.sol/DigitalCallBondDepository.json')
 const { addresses } = require('../../deployments/addresses')
 const one18 = ethers.BigNumber.from(10).pow(18)
 
@@ -15,10 +15,10 @@ async function main() {
     const chainId = await operator.getChainId()
 
     // address of Diamon to upgrade
-    const depoAddress = addresses.callBondDepo[chainId]
+    const depoAddress = addresses.digitalCallBondDepo[chainId]
 
     const bondDepositoryContract = new ethers.Contract(depoAddress, new ethers.utils.Interface(BondDepositoryABI.abi), operator)
-    const markets = [0]
+    const markets = [2]
 
     for (let i = 0; i < markets.length; i++) {
         const market = markets[i]

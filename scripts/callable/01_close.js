@@ -18,7 +18,7 @@ async function main() {
     const depoAddress = addresses.callableBondDepo[chainId]
 
     const bondDepositoryContract = new ethers.Contract(depoAddress, new ethers.utils.Interface(BondDepositoryABI.abi), operator)
-    const markets = [1]
+    const markets = [3]
 
     for (let i = 0; i < markets.length; i++) {
         const market = markets[i]

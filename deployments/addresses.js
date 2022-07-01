@@ -40,7 +40,7 @@ const addresses = {
             43113: "0x344aF4Fd88199F5167332ffe2438ABeC13d6061B"
         },
         "WEIGHTED_POOL_CLASSIC": {
-            43113: "0xa9767ba217ac2543799409e5b4970b7cb3df3ed5"
+            43113: "0xa63a39F656E0890857987Dfc0AEB90654Bc231B1"
         },
         "PAIR_ABREQ_DAI": {
             43113: "0x51991dfd191D15d7055c45f4DB849Fea0e8004CD"

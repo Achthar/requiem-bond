@@ -37,13 +37,13 @@ const addresses = {
             43113: ""
         },
         "PAIR_AVAX_USDC": {
-            43113: "0x344aF4Fd88199F5167332ffe2438ABeC13d6061B"
+            43113: "0xa89488b2Edb65e6F5600a57774371F5D4e6eD1eD"
         },
         "WEIGHTED_POOL_CLASSIC": {
             43113: "0xa63a39F656E0890857987Dfc0AEB90654Bc231B1"
         },
         "PAIR_ABREQ_DAI": {
-            43113: "0x51991dfd191D15d7055c45f4DB849Fea0e8004CD"
+            43113: "0x273C1825E3aEf331F2C490d5B70103Ec2A2e9283"
         }
 
     },

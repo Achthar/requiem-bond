@@ -15,17 +15,17 @@ async function main() {
     const [operator] = await ethers.getSigners();
     const chainId = await operator.getChainId()
 
-    const assetAddress = addresses.assets.WEIGHTED_POOL_CLASSIC[chainId]
+    const assetAddress = addresses.assets.PAIR_AVAX_USDC[chainId]
 
     const bondDepositoryContract = new ethers.Contract(addresses.callableBondDepo[chainId], new ethers.utils.Interface(BondDepositoryABI.abi), operator)
 
     // parameters
-    const capacity = ethers.BigNumber.from(10000).mul(one18);
+    const capacity = ethers.BigNumber.from(20000).mul(one18);
     const initialPrice = ethers.BigNumber.from(875).mul(one18).div(100);
     const buffer = 2e5;
 
-    const vesting = 60 * 60 * 24 * 3;
-    const timeToConclusion = 60 * 60 * 24 * 14;
+    const vesting = 60 * 60 * 24 * 14;
+    const timeToConclusion = 60 * 60 * 24 * 28;
     const block = await ethers.provider.getBlock("latest");
     const conclusion = block.timestamp + timeToConclusion;
     const capacityInQuote = false
@@ -34,8 +34,8 @@ async function main() {
     const tuneInterval = 60 * 60 * 24;
 
     // option parameters
-    const oracle = addresses.oracles.ETHUSD[chainId]
-    const strike = one18.mul(300).div(10000)
+    const oracle = addresses.oracles.AVAXUSD[chainId]
+    const strike = one18.mul(500).div(10000)
     const cap = one18.mul(20).div(100)
 
 

@@ -15,16 +15,16 @@ async function main() {
     const [operator] = await ethers.getSigners();
     const chainId = await operator.getChainId()
 
-    const assetAddress = addresses.assets.WEIGHTED_POOL_CLASSIC[chainId]
+    const assetAddress = addresses.assets.PAIR_AVAX_USDC[chainId]
 
     const bondDepositoryContract = new ethers.Contract(addresses.digitalCallBondDepo[chainId], new ethers.utils.Interface(BondDepositoryABI.abi), operator)
 
     // parameters
-    const capacity = ethers.BigNumber.from(100000).mul(one18);
-    const initialPrice = ethers.BigNumber.from(875).mul(one18).div(100);
+    const capacity = ethers.BigNumber.from(150000).mul(one18);
+    const initialPrice = ethers.BigNumber.from(735).mul(one18).div(100);
     const buffer = 2e5;
 
-    const vesting = 60 * 60 * 24 * 2;
+    const vesting = 60 * 60 * 24 * 5;
     const timeToConclusion = 60 * 60 * 24 * 14;
     const block = await ethers.provider.getBlock("latest");
     const conclusion = block.timestamp + timeToConclusion;
@@ -34,10 +34,10 @@ async function main() {
     const tuneInterval = 60 * 60 * 24;
 
     // option parameters
-    const oracle = addresses.oracles.ETHUSD[chainId]
-    const strike = one18.mul(200).div(10000)
+    const oracle = addresses.oracles.AVAXUSD[chainId]
+    const strike = one18.mul(500).div(10000)
     const exerciseDuration = 60 * 60 * 24
-    const cap = one18.mul(4).div(100) 
+    const cap = one18.mul(5).div(100) 
 
 
     console.log("Create Call Bond Market for", assetAddress)

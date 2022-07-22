@@ -289,7 +289,7 @@ contract CallableBondDepository is ICallableBondDepository, CallableUserTermsKee
             }
         }
 
-        // transfer notionals and digital payoffs
+        // transfer notionals
         req.transfer(_user, payout_);
     }
 

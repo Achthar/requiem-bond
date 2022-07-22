@@ -37,7 +37,6 @@ contract BondDepository is IBondDepository, UserTermsKeeper {
 
     constructor(IERC20 _req, address _treasury) UserTermsKeeper(_req, _treasury) {}
 
-
     /* ======== CREATE ======== */
 
     /**

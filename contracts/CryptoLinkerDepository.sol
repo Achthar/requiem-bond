@@ -5,7 +5,7 @@ import "./libraries/types/FrontEndRewarder.sol";
 import "./libraries/SafeERC20.sol";
 import "./interfaces/CryptoLinker//ICryptoLinkerDepository.sol";
 import "./interfaces/CryptoLinker/ICryptoLinkerUserTermsKeeper.sol";
-import "./interfaces/IAggragatorV3.sol";
+import "./interfaces/oracles/IAggragatorV3.sol";
 import "./interfaces/ITreasury.sol";
 import "./libraries/types/PriceConsumer.sol";
 

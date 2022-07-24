@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "../interfaces/IAggragatorV3.sol";
+import "../interfaces/oracles/IAggragatorV3.sol";
 
 contract MockOracle is IAggregatorV3 {
     int256 public refPice;

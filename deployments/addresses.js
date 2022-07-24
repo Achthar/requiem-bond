@@ -14,7 +14,8 @@ const addresses = {
         43113: "0xfBE3B3E624a00f9f7BB6bb13b3757848088a583F"
     },
     "callableBondDepo": {
-        43113: "0xb7879d3bbE48838a0436AE9CE75bEE1F6eb7282E"
+        43113: "0xb7879d3bbE48838a0436AE9CE75bEE1F6eb7282E",
+        42261: "0xA3Df8603e964611464297464c25A2815a341FB1D"
     },
     "diamondInitAddress": {
         43113: "0xdb409149AA3C2f2Bb3580994e1637f3e918D5413",
@@ -60,7 +61,7 @@ const addresses = {
         },
         "WEIGHTED_POOL_CLASSIC": {
             43113: "0xa63a39F656E0890857987Dfc0AEB90654Bc231B1",
-            42261: "0x33eae5C8D1c634387de8BDB7db1251Ae1B2497A9"
+            42261: "0x1FDc773CDeA6beb576AcF0CD58dd6f70732Fb098"
         },
         "PAIR_ABREQ_DAI": {
             43113: "0x273C1825E3aEf331F2C490d5B70103Ec2A2e9283"

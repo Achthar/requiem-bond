@@ -3,7 +3,7 @@ const { expect } = require("chai");
 const { smock } = require("@defi-wonderland/smock");
 const { formatEther } = require("ethers/lib/utils");
 
-describe("Callable Bond Depository Oasis variant", async () => {
+describe("Digital Call Bond Depository Oasis variant", async () => {
 
     const mulDiv = (val, mul, div) => {
         return ethers.BigNumber.from(val).mul(ethers.BigNumber.from(Math.round(mul * 1000000))).div(Math.round(div * 1000000))
@@ -35,8 +35,9 @@ describe("Callable Bond Depository Oasis variant", async () => {
     let buffer = 2e5;
 
     // option params
-    let maxPayoffPercentage = one18.div(10) // 10%
+    let payoffPercentage = one18.div(10) // 10%
     let strike = one18.div(20) // 5%
+    let exerciseDuration = 60 * 60 * 24;
 
     let vesting = 100;
     let timeToConclusion = 60 * 60 * 24;
@@ -68,7 +69,7 @@ describe("Callable Bond Depository Oasis variant", async () => {
         mockReqFactory = await smock.mock("MockREQ");
         mockOracleFactory = await smock.mock("MockOracleOasis")
 
-        depositoryFactory = await ethers.getContractFactory("CallableBondDepositoryOasis");
+        depositoryFactory = await ethers.getContractFactory("DigitalCallBondDepositoryOasis");
 
     });
 
@@ -96,7 +97,6 @@ describe("Callable Bond Depository Oasis variant", async () => {
             treasury.address,
             mockOracle.address
         );
-
 
         // Setup for each component
         await dai.mint(bob.address, initialMint);
@@ -133,10 +133,10 @@ describe("Callable Bond Depository Oasis variant", async () => {
         // create the first bond
         await depository.create(
             dai.address,
-            ["",""],
-            [capacity, initialPrice, buffer, strike, maxPayoffPercentage],
+            ["", ""],
+            [capacity, initialPrice, buffer, strike, payoffPercentage],
             [false, true],
-            [vesting, conclusion],
+            [vesting, conclusion, exerciseDuration],
             [depositInterval, tuneInterval]
         );
     });
@@ -170,10 +170,10 @@ describe("Callable Bond Depository Oasis variant", async () => {
         // create a second bond
         await depository.create(
             dai.address,
-            ["",""],
-            [capacity, initialPrice, buffer, strike, maxPayoffPercentage],
+            ["", ""],
+            [capacity, initialPrice, buffer, strike, payoffPercentage],
             [false, true],
-            [vesting, conclusion],
+            [vesting, conclusion, exerciseDuration],
             [depositInterval, tuneInterval]
         );
         let [first, second] = await depository.liveMarkets();
@@ -185,10 +185,10 @@ describe("Callable Bond Depository Oasis variant", async () => {
         // create a second bond
         await depository.create(
             dai.address,
-            ["",""],
-            [capacity, initialPrice, buffer, strike, maxPayoffPercentage],
+            ["", ""],
+            [capacity, initialPrice, buffer, strike, payoffPercentage],
             [false, true],
-            [vesting, conclusion],
+            [vesting, conclusion, exerciseDuration],
             [depositInterval, tuneInterval]
         );
         // close the first bond
@@ -335,6 +335,36 @@ describe("Callable Bond Depository Oasis variant", async () => {
         ).to.be.revertedWith("Depository: max size exceeded");
     });
 
+    it("should not redeem before vested", async () => {
+        let balance = await req.balanceOf(bob.address);
+        let amount = "10000000000000000000000"; // 10,000
+        await treasury.assetValue.returns(amount)
+        await depository
+            .connect(bob)
+            .deposit(bid, amount, initialPrice, bob.address, carol.address);
+        await depository.connect(bob).redeemAll(bob.address);
+        expect(await req.balanceOf(bob.address)).to.equal(balance);
+    });
+
+    it("should redeem after vested", async () => {
+        let amount = "10000000000000000000000"; // 10,000
+        await treasury.assetValue.returns(amount)
+        let [expectedPayout, expiry, index] = await depository
+            .connect(bob)
+            .callStatic.deposit(bid, amount, initialPrice, bob.address, carol.address);
+
+        await depository
+            .connect(bob)
+            .deposit(bid, amount, initialPrice, bob.address, carol.address);
+
+        await network.provider.send("evm_increaseTime", [1000]);
+        await depository.redeemAll(bob.address);
+
+        const bobBalance = await req.balanceOf(bob.address);
+        expect(bobBalance.gte(expectedPayout)).to.equal(true);
+        expect(bobBalance.lt(mulDiv(expectedPayout, 1.0001, 1))).to.equal(true);
+    });
+
     it("should give correct rewards to referrer and dao", async () => {
         let daoBalance = await req.balanceOf(deployer.address);
         let refBalance = await req.balanceOf(carol.address);
@@ -381,7 +411,43 @@ describe("Callable Bond Depository Oasis variant", async () => {
         expect(newPrice.lt(initialPrice)).to.equal(true);
     });
 
-    it("should provide no option payout when matured", async () => {
+    it("should allow multi redemption", async () => {
+        market = await depository.markets(bid);
+        let amount = "10000000000000000000000"; // 10,000
+        await depository.connect(bob).deposit(
+            bid,
+            amount, // amount for max payout
+            initialPrice,
+            bob.address,
+            carol.address
+        );
+        await depository.connect(bob).deposit(
+            bid,
+            amount, // amount for max payout
+            initialPrice,
+            bob.address,
+            carol.address
+        );
+        await depository.connect(bob).deposit(
+            bid,
+            amount, // amount for max payout
+            initialPrice,
+            bob.address,
+            carol.address
+        );
+        await depository.connect(bob).deposit(
+            bid,
+            amount, // amount for max payout
+            initialPrice,
+            bob.address,
+            carol.address
+        );
+        await network.provider.send("evm_increaseTime", [vesting]);
+        let userIndexes = await depository.indexesFor(bob.address);
+        await depository.connect(bob).redeem(bob.address, userIndexes)
+    });
+
+    it("should provide option payout when threshold crossed", async () => {
         // define oracleprices
         let underlyingPrice = one18
         await mockOracle.setPrice(underlyingPrice)
@@ -409,15 +475,23 @@ describe("Callable Bond Depository Oasis variant", async () => {
         // fetch payout data
         userTerm = await depository.userTerms(bob.address, bid);
 
-        // call
-        await depository.connect(bob).call(bob.address, [0])
+        let optionPayoff = await depository.optionPayoutFor(bob.address, 0)
+
+        // redeem
+        await depository.connect(bob).redeem(bob.address, [0])
+
+        // calculate check parameters manually - simply the digital payoff times notuional payout
+        let manualOptionPayoff = userTerm.payout.mul(payoffPercentage).div(one18)
+
+        // check that the payout percentage matches the expectation
+        expect(optionPayoff).to.equal(manualOptionPayoff)
 
         let balance = await req.balanceOf(bob.address)
         // expect balance plus option payoff
-        expect(balance).to.equal(userTerm.payout);
+        expect(balance).to.equal(optionPayoff.add(userTerm.payout));
     });
 
-    it("should allow early exercise", async () => {
+    it("can exercise after maturity before exercise duration expired", async () => {
         // define oracleprices
         let underlyingPrice = one18
         await mockOracle.setPrice(underlyingPrice)
@@ -436,35 +510,36 @@ describe("Callable Bond Depository Oasis variant", async () => {
         );
 
         // increase time
-        await network.provider.send("evm_increaseTime", [vesting / 2]);
+        await network.provider.send("evm_increaseTime", [vesting]);
+
+
+        // fetch payout data
+        userTerm = await depository.userTerms(bob.address, bid);
+
+        // redeem
+        await depository.connect(bob).redeem(bob.address, [0])
+
+
+        let balance = await req.balanceOf(bob.address)
+        // expect only notional to be received
+        expect(balance).to.equal(userTerm.payout);
+
+        // increase time
+        await network.provider.send("evm_increaseTime", [exerciseDuration / 2]);
 
         // set oracle price
         let newUnderlyingPrice = one18.mul(109).div(100)
         await mockOracle.setPrice(newUnderlyingPrice)
 
-        // fetch payout data
-        userTerm = await depository.userTerms(bob.address, bid);
-
         let optionPayoff = await depository.optionPayoutFor(bob.address, 0)
 
-        // call
-        await depository.connect(bob).call(bob.address, [0])
+        // redeem
+        await depository.connect(bob).redeem(bob.address, [0])
 
-        // calculate chek parameters manually
-        let strikePrice = underlyingPrice.mul(strike.add(one18)).div(one18)
-        let manualOptionPayoff = newUnderlyingPrice.sub(strikePrice).mul(one18).div(underlyingPrice)
-
-        // acutal obtained opetion percentage (rounding up)
-        let optionPercent = optionPayoff.mul(one18).div(userTerm.payout).add(1)
-
-        // check that the payout percentage matches the expectation
-        expect(optionPercent).to.equal(manualOptionPayoff)
-
-        let balance = await req.balanceOf(bob.address)
+        balance = await req.balanceOf(bob.address)
         // expect balance plus option payoff
         expect(balance).to.equal(optionPayoff.add(userTerm.payout));
     });
-
 
     it("should provide no option payout after exercise period", async () => {
         // define oracleprices
@@ -493,17 +568,17 @@ describe("Callable Bond Depository Oasis variant", async () => {
         await mockOracle.setPrice(newUnderlyingPrice)
 
         // increase time so that exercising should not be possible anymore
-        await network.provider.send("evm_increaseTime", [5]);
+        await network.provider.send("evm_increaseTime", [exerciseDuration + 5]);
 
 
         // fetch payout data
         userTerm = await depository.userTerms(bob.address, bid);
 
-        // call
-        await depository.connect(bob).call(bob.address, [0])
+        // redeem
+        await depository.connect(bob).redeem(bob.address, [0])
 
         let balance = await req.balanceOf(bob.address)
-        
+
         // expect balance to match payout
         expect(balance).to.equal(userTerm.payout);
     });
@@ -535,8 +610,8 @@ describe("Callable Bond Depository Oasis variant", async () => {
 
         let optionPayoff = await depository.optionPayoutFor(bob.address, 0)
 
-        // call
-        await depository.connect(bob).call(bob.address, [0])
+        // redeem
+        await depository.connect(bob).redeem(bob.address, [0])
 
         // option value is zero
         expect(optionPayoff).to.equal(ethers.constants.Zero)
@@ -547,7 +622,7 @@ describe("Callable Bond Depository Oasis variant", async () => {
         expect(balance).to.equal(userTerm.payout);
     });
 
-    it("should provide capped option payout", async () => {
+    it("should provide digital option payout", async () => {
         // define oracleprices
         let underlyingPrice = one18
         await mockOracle.setPrice(underlyingPrice)
@@ -564,7 +639,7 @@ describe("Callable Bond Depository Oasis variant", async () => {
         );
 
         // increase time
-        await network.provider.send("evm_increaseTime", [vesting * 0.75]);
+        await network.provider.send("evm_increaseTime", [vesting]);
 
         // set oracle price
         let newUnderlyingPrice = one18.mul(130).div(100)
@@ -573,11 +648,11 @@ describe("Callable Bond Depository Oasis variant", async () => {
         userTerm = await depository.userTerms(bob.address, bid);
 
         let optionPayoff = await depository.optionPayoutFor(bob.address, 0)
-        // call
-        await depository.connect(bob).call(bob.address, [0])
+        // redeem
+        await depository.connect(bob).redeem(bob.address, [0])
 
         // check that the percentage paid out is the maximum one
-        expect(optionPayoff).to.equal(userTerm.payout.mul(maxPayoffPercentage).div(one18))
+        expect(optionPayoff).to.equal(userTerm.payout.mul(payoffPercentage).div(one18))
 
         let balance = await req.balanceOf(bob.address)
 

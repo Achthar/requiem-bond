@@ -3,7 +3,7 @@ const { expect } = require("chai");
 const { smock } = require("@defi-wonderland/smock");
 const { formatEther } = require("ethers/lib/utils");
 
-describe("Call Bond Depository", async () => {
+describe("Digital Call Bond Depository", async () => {
 
     const mulDiv = (val, mul, div) => {
         return ethers.BigNumber.from(val).mul(ethers.BigNumber.from(Math.round(mul * 1000000))).div(Math.round(div * 1000000))

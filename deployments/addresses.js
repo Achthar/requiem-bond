@@ -11,7 +11,8 @@ const addresses = {
         43113: "0x37bb1Aa8A339B65aeD51B6354a2518011F668A9B"
     },
     "digitalCallBondDepo": {
-        43113: "0xfBE3B3E624a00f9f7BB6bb13b3757848088a583F"
+        43113: "0xfBE3B3E624a00f9f7BB6bb13b3757848088a583F",
+        42261: "0xA7b5c1Fb20B4886B6C2242f7b1E3D3b423406711"
     },
     "callableBondDepo": {
         43113: "0xb7879d3bbE48838a0436AE9CE75bEE1F6eb7282E",

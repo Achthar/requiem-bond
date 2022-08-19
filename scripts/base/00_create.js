@@ -21,7 +21,7 @@ async function main() {
 
 
     // parameters
-    const capacity = ethers.BigNumber.from(15000).mul(one18);
+    const capacity = ethers.BigNumber.from(1000).mul(one18);
     const initialPrice = ethers.BigNumber.from(1555).mul(one18).div(100);
     const buffer = 2e5;
 

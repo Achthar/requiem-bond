@@ -20,7 +20,7 @@ async function main() {
     const bondDepositoryContract = new ethers.Contract(addresses.digitalCallBondDepo[chainId], new ethers.utils.Interface(BondDepositoryABI.abi), operator)
 
     // parameters
-    const capacity = ethers.BigNumber.from(150000).mul(one18);
+    const capacity = ethers.BigNumber.from(1000).mul(one18);
     const initialPrice = ethers.BigNumber.from(1535).mul(one18).div(100);
     const buffer = 2e5;
 

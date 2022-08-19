@@ -31,6 +31,8 @@ contract StablePoolPricer is IAssetPricer {
             } else {
                 _value += reserves[i];
             }
+
+            _value *= 10**(18 - IERC20(_quote).decimals());
         }
     }
 

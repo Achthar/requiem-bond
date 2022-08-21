@@ -275,7 +275,7 @@ contract BondDepository is IBondDepository, UserTermsKeeper {
      * @param _id          ID of market
      * @param _time        uint48 timestamp (saves gas when passed in)
      */
-    function _decay(uint256 _id, uint48 _time) internal {
+    function _decay(uint256 _id, uint48 _time) private {
         // Debt decay
 
         /*
@@ -320,7 +320,7 @@ contract BondDepository is IBondDepository, UserTermsKeeper {
      * @param _id          ID of market
      * @param _time        uint48 timestamp (saves gas when passed in)
      */
-    function _tune(uint256 _id, uint48 _time) internal {
+    function _tune(uint256 _id, uint48 _time) private {
         Metadata memory meta = metadata[_id];
 
         if (_time >= meta.lastTune + meta.tuneInterval) {
@@ -507,7 +507,7 @@ contract BondDepository is IBondDepository, UserTermsKeeper {
         return ids;
     }
 
-    /* ======== INTERNAL VIEW ======== */
+    /* ======== INTERNAL / PRIVATE VIEW ======== */
 
     /**
      * @notice                  calculate current market price of quote token in base token
@@ -516,7 +516,7 @@ contract BondDepository is IBondDepository, UserTermsKeeper {
      * @param _id               market ID
      * @return                  price for market in REQ decimals
      */
-    function _marketPrice(uint256 _id) internal view returns (uint256) {
+    function _marketPrice(uint256 _id) private view returns (uint256) {
         return (terms[_id].controlVariable * _debtRatio(_id)) / (10**metadata[_id].assetDecimals);
     }
 
@@ -526,7 +526,7 @@ contract BondDepository is IBondDepository, UserTermsKeeper {
      * @param _id               market ID
      * @return                  current debt for market in quote decimals
      */
-    function _debtRatio(uint256 _id) internal view returns (uint256) {
+    function _debtRatio(uint256 _id) private view returns (uint256) {
         return (markets[_id].totalDebt * (10**metadata[_id].assetDecimals)) / treasury.baseSupply();
     }
 
@@ -538,7 +538,7 @@ contract BondDepository is IBondDepository, UserTermsKeeper {
      * @return active_          whether or not change remains active
      */
     function _controlDecay(uint256 _id)
-        internal
+        private
         view
         returns (
             uint256 decay_,

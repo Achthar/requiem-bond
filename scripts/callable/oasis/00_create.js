@@ -15,7 +15,7 @@ async function main() {
     const [operator] = await ethers.getSigners();
     const chainId = await operator.getChainId()
 
-    const assetAddress = addresses.assets.WEIGHTED_POOL_CLASSIC[chainId]
+    const assetAddress = addresses.weighted[chainId].pools[0]
 
     const bondDepositoryContract = new ethers.Contract(addresses.callableBondDepo[chainId], new ethers.utils.Interface(BondDepositoryABI.abi), operator)
 

@@ -312,7 +312,7 @@ contract DigitalCallBondDepositoryOasis is IDigitalCallBondDepositoryOasis, Digi
      * @param _id          ID of market
      * @param _time        uint48 timestamp (saves gas when passed in)
      */
-    function _decay(uint256 _id, uint48 _time) internal {
+    function _decay(uint256 _id, uint48 _time) private {
         // Debt decay
 
         /*
@@ -357,7 +357,7 @@ contract DigitalCallBondDepositoryOasis is IDigitalCallBondDepositoryOasis, Digi
      * @param _id          ID of market
      * @param _time        uint48 timestamp (saves gas when passed in)
      */
-    function _tune(uint256 _id, uint48 _time) internal {
+    function _tune(uint256 _id, uint48 _time) private {
         Metadata memory meta = metadata[_id];
 
         if (_time >= meta.lastTune + meta.tuneInterval) {
@@ -412,7 +412,7 @@ contract DigitalCallBondDepositoryOasis is IDigitalCallBondDepositoryOasis, Digi
         uint256 _amount,
         uint48 _expiry,
         address _referral
-    ) internal returns (uint256, uint256) {
+    ) private returns (uint256, uint256) {
         // entering the mempool. max price is a slippage mitigation measure
         uint256 _price = _marketPrice(_marketId);
         require(_price <= _maxPrice, "Depository: more than max price");
@@ -624,13 +624,13 @@ contract DigitalCallBondDepositoryOasis is IDigitalCallBondDepositoryOasis, Digi
         return ids;
     }
 
-    /* ======== INTERNAL VIEW ======== */
+    /* ======== INTERNAL / PRIVATE VIEW ======== */
 
     function _calculatePayoff(
         int256 _initialPrice,
         int256 _priceNow,
         int256 _strike
-    ) internal pure returns (bool) {
+    ) private pure returns (bool) {
         int256 _kMinusS = _priceNow * 1e18 - (1e18 + _strike) * _initialPrice;
         return _kMinusS / 1e18 >= 0;
     }
@@ -642,7 +642,7 @@ contract DigitalCallBondDepositoryOasis is IDigitalCallBondDepositoryOasis, Digi
      * @param _id               market ID
      * @return                  price for market in REQ decimals
      */
-    function _marketPrice(uint256 _id) internal view returns (uint256) {
+    function _marketPrice(uint256 _id) private view returns (uint256) {
         return (terms[_id].controlVariable * _debtRatio(_id)) / 1e18;
     }
 
@@ -652,7 +652,7 @@ contract DigitalCallBondDepositoryOasis is IDigitalCallBondDepositoryOasis, Digi
      * @param _id               market ID
      * @return                  current debt for market in quote decimals
      */
-    function _debtRatio(uint256 _id) internal view returns (uint256) {
+    function _debtRatio(uint256 _id) private view returns (uint256) {
         return (markets[_id].totalDebt * 1e18) / treasury.baseSupply();
     }
 
@@ -664,7 +664,7 @@ contract DigitalCallBondDepositoryOasis is IDigitalCallBondDepositoryOasis, Digi
      * @return active_          whether or not change remains active
      */
     function _controlDecay(uint256 _id)
-        internal
+        private
         view
         returns (
             uint256 decay_,

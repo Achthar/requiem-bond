@@ -3,7 +3,7 @@
 
 const { ethers } = require('hardhat')
 
-const BondDepositoryABI = require('../../artifacts/contracts/bonds/oasis/CallableBondDepositoryOasis.sol/CallableBondDepositoryOasis.json')
+const BondDepositoryABI = require('../../../artifacts/contracts/bonds/oasis/CallableBondDepository.sol/CallableBondDepositoryOasis.json')
 const { addresses } = require('../../../deployments/addresses')
 
 

@@ -196,7 +196,7 @@ library Address {
   }
 }
 
-// File: contracts/interfaces/Callable/IUserTermsKeeper.sol
+// File: contracts/interfaces/Call/IUserTermsKeeper.sol
 
 
 pragma solidity >=0.8.16;
@@ -209,6 +209,7 @@ interface IUserTermsKeeper {
         uint256 payout; // REQ remaining to be paid
         uint48 created; // time market was created
         uint48 matured; // time of instrument maturity
+        uint48 redeemed; // time notional was redeemed
         uint48 exercised; // time instrument was exercised
         uint48 marketID; // market ID of deposit. uint48 to avoid adding a slot.
     }
@@ -224,7 +225,8 @@ interface IUserTermsKeeper {
         view
         returns (
             uint256 payout_,
-            bool matured_
+            bool matured_,
+            bool payoffClaimable_
         );
 }
 
@@ -326,7 +328,7 @@ interface IERC20 {
 
     event Approval(address indexed owner, address indexed spender, uint256 value);
 }
-// File: contracts/interfaces/Callable/oasis/ICallableBondDepository.sol
+// File: contracts/interfaces/Digital/oasis/IDigitalCallBondDepositoryOasis.sol
 
 
 pragma solidity >=0.8.16;
@@ -334,7 +336,7 @@ pragma solidity >=0.8.16;
 
 // solhint-disable max-line-length
 
-interface ICallableBondDepositoryOasis {
+interface IDigitalCallBondDepositoryOasis {
     // Info about each type of market
     struct Market {
         uint256 capacity; // capacity remaining
@@ -352,9 +354,10 @@ interface ICallableBondDepositoryOasis {
     struct Terms {
         bool fixedTerm; // fixed term or fixed expiration
         int256 thresholdPercentage;
-        uint256 maxPayoffPercentage;
+        uint256 payoffPercentage; // percentage that is paid on top of the notional if exercised
         uint256 controlVariable; // scaling variable for price
         uint48 vesting; // length of time from deposit to maturity if fixed-term
+        uint48 exerciseDuration;
         uint48 conclusion; // timestamp when market no longer offered (doubles as time when market matures if fixed-expiry)
         uint256 maxDebt; // 18 decimal debt maximum in REQ
     }
@@ -403,10 +406,10 @@ interface ICallableBondDepositoryOasis {
 
     function create(
         IERC20 _asset, // token used to deposit
-        string[2] memory _underlying, // [asset, quote] 
+        string[2] memory _underlying,
         uint256[5] memory _market, // [capacity, initial price, buffer, threshold percentage, digital payoff]
         bool[2] memory _booleans, // [capacity in quote, fixed term]
-        uint256[2] memory _terms, // [vesting, conclusion]
+        uint256[3] memory _terms, // [vesting, conclusion]
         uint32[2] memory _intervals // [deposit interval, tune interval]
     ) external returns (uint256 id_);
 
@@ -422,10 +425,7 @@ interface ICallableBondDepositoryOasis {
     function payoutFor(uint256 _amount, uint256 _bid) external view returns (uint256);
 
     // option payout
-    function optionPayoutFor(
-        address _user,
-        uint256 _index
-    ) external view returns (uint256);
+    function optionPayoutFor(address _user, uint256 _index) external view returns (uint256);
 
     function marketPrice(uint256 _bid) external view returns (uint256);
 
@@ -436,9 +436,9 @@ interface ICallableBondDepositoryOasis {
     function debtDecay(uint256 _bid) external view returns (uint256);
 
     // redemtion and exercise
-    function call(address _user, uint256[] memory _indexes) external returns (uint256);
+    function redeem(address _user, uint256[] memory _indexes) external returns (uint256);
 
-    function callAll(address _user) external returns (uint256);
+    function redeemAll(address _user) external returns (uint256);
 }
 
 // File: contracts/libraries/SafeERC20.sol
@@ -574,7 +574,7 @@ interface IAuthority {
 
 
 
-pragma solidity >=0.8.16;
+pragma solidity >=0.8.15;
 
 
 abstract contract AccessControlled {
@@ -700,7 +700,7 @@ abstract contract FrontEndRewarder is AccessControlled {
   }
 }
 
-// File: contracts/bonds/oasis/CallableUserTermsKeeper.sol
+// File: contracts/bonds/oasis/DigitalCallUserTermsKeeper.sol
 
 
 
@@ -712,7 +712,7 @@ pragma solidity ^0.8.10;
 
 // solhint-disable max-line-length
 
-abstract contract CallableUserTermsKeeper is IUserTermsKeeper, FrontEndRewarder, BandPriceConsumer {
+abstract contract DigitalCallUserTermsKeeper is IUserTermsKeeper, FrontEndRewarder, BandPriceConsumer {
     mapping(address => UserTerms[]) public userTerms; // user deposit data
     mapping(address => mapping(uint256 => address)) private noteTransfers; // change note ownership
 
@@ -764,6 +764,7 @@ abstract contract CallableUserTermsKeeper is IUserTermsKeeper, FrontEndRewarder,
                 cryptoClosingPrice: 0,
                 created: uint48(block.timestamp),
                 matured: _expiry,
+                redeemed: 0,
                 exercised: 0,
                 marketID: _marketID
             })
@@ -795,7 +796,7 @@ abstract contract CallableUserTermsKeeper is IUserTermsKeeper, FrontEndRewarder,
      */
     function pullTerms(address _from, uint256 _index) external override returns (uint256 newIndex_) {
         require(noteTransfers[_from][_index] == msg.sender, "Depository: transfer not found");
-        require(userTerms[_from][_index].exercised == 0, "Depository: note exercised");
+        require(userTerms[_from][_index].redeemed == 0, "Depository: note redeemed");
 
         newIndex_ = userTerms[msg.sender].length;
         userTerms[msg.sender].push(userTerms[_from][_index]);
@@ -817,14 +818,14 @@ abstract contract CallableUserTermsKeeper is IUserTermsKeeper, FrontEndRewarder,
 
         uint256 length;
         for (uint256 i = 0; i < info.length; i++) {
-            if (info[i].exercised == 0 && info[i].payout != 0) length++;
+            if (info[i].redeemed == 0 && info[i].payout != 0) length++;
         }
 
         uint256[] memory indexes = new uint256[](length);
         uint256 position;
 
         for (uint256 i = 0; i < info.length; i++) {
-            if (info[i].exercised == 0 && info[i].payout != 0) {
+            if (info[i].redeemed == 0 && info[i].payout != 0) {
                 indexes[position] = i;
                 position++;
             }
@@ -834,7 +835,7 @@ abstract contract CallableUserTermsKeeper is IUserTermsKeeper, FrontEndRewarder,
     }
 }
 
-// File: contracts/bonds/oasis/CallableBondDepository.sol
+// File: contracts/bonds/oasis/DigitalCallBondDepository.sol
 
 
 pragma solidity ^0.8.16;
@@ -844,10 +845,10 @@ pragma solidity ^0.8.16;
 
 // solhint-disable  max-line-length
 
-/// @title Callable Bond Depository
+/// @title Digital Call Bond Depository
 /// @author Achthar
 
-contract CallableBondDepositoryOasis is ICallableBondDepositoryOasis, CallableUserTermsKeeper {
+contract DigitalCallBondDepositoryOasis is IDigitalCallBondDepositoryOasis, DigitalCallUserTermsKeeper {
     /* ======== DEPENDENCIES ======== */
 
     using SafeERC20 for IERC20;
@@ -877,7 +878,7 @@ contract CallableBondDepositoryOasis is ICallableBondDepositoryOasis, CallableUs
         IERC20 _req,
         address _treasury,
         address _oracle
-    ) CallableUserTermsKeeper(_req, _treasury, _oracle) {}
+    ) DigitalCallUserTermsKeeper(_req, _treasury, _oracle) {}
 
     /* ======== CREATE ======== */
 
@@ -885,10 +886,10 @@ contract CallableBondDepositoryOasis is ICallableBondDepositoryOasis, CallableUs
      * @notice             creates a new market type
      * @dev                current price should be in 9 decimals.
      * @param _asset       token used to deposit
-     * @param _underlying  [underlying asset, quote]
+     * @param _underlying  oracle to povede price data for option component
      * @param _market      [capacity (in REQ or quote), initial price / REQ (18 decimals), debt buffer (3 decimals), threshold (percent), option cap (percent)]
      * @param _booleans    [capacity in quote, fixed term]
-     * @param _terms       [vesting length (if fixed term) or vested timestamp, conclusion timestamp]
+     * @param _terms       [vesting length (if fixed term) or vested timestamp, conclusion timestamp, exercise duration]
      * @param _intervals   [deposit interval (seconds), tune interval (seconds)]
      * @return id_         ID of new bond market
      */
@@ -897,7 +898,7 @@ contract CallableBondDepositoryOasis is ICallableBondDepositoryOasis, CallableUs
         string[2] memory _underlying,
         uint256[5] memory _market,
         bool[2] memory _booleans,
-        uint256[2] memory _terms,
+        uint256[3] memory _terms,
         uint32[2] memory _intervals
     ) external override onlyPolicy returns (uint256 id_) {
         // the length of the program, in seconds
@@ -961,9 +962,10 @@ contract CallableBondDepositoryOasis is ICallableBondDepositoryOasis, CallableUs
             Terms({
                 fixedTerm: _booleans[1],
                 thresholdPercentage: int256(_market[3]),
-                maxPayoffPercentage: _market[4],
+                payoffPercentage: _market[4],
                 vesting: uint48(_terms[0]),
                 conclusion: uint48(_terms[1]),
+                exerciseDuration: uint48(_terms[2]),
                 controlVariable: controlVariable,
                 maxDebt: maxDebt
             })
@@ -1090,48 +1092,46 @@ contract CallableBondDepositoryOasis is ICallableBondDepositoryOasis, CallableUs
     /* ========== REDEEM ========== */
 
     /**
-     * @notice             call ABREQ for redeem userTerms fro user
+     * @notice             redeem userTerms for user
      * @param _user        the user to redeem for
      * @param _indexes     the note indexes to redeem
      * @return payout_     sum of payout sent, in REQ
      */
-    function call(address _user, uint256[] memory _indexes) public override returns (uint256 payout_) {
+    function redeem(address _user, uint256[] memory _indexes) public override returns (uint256 payout_) {
         uint48 time = uint48(block.timestamp);
 
         for (uint256 i = 0; i < _indexes.length; i++) {
-            (uint256 pay, bool matured) = pendingFor(_user, _indexes[i]);
+            (uint256 pay, bool matured, bool payoffClaimable) = pendingFor(_user, _indexes[i]);
             uint256 marketId = userTerms[_user][_indexes[i]].marketID;
 
-            int256 _fetchedPrice = int256(getPrice(markets[marketId].underlying, markets[marketId].quote).rate);
-            // if matured and no payoff is claimable, only the notional is paid out
+            // check whether notional can be claimed
             if (matured) {
-                userTerms[_user][_indexes[i]].exercised = time; // mark as exercised
-                userTerms[_user][_indexes[i]].cryptoClosingPrice = _fetchedPrice;
-                // just add the notional
+                userTerms[_user][_indexes[i]].redeemed = time; // mark as claimed
                 payout_ += pay;
             }
+
             // check whether option can be exercised
-            else {
-                uint256 payoff = _calculatePayoff(
+            int256 _fetchedPrice = int256(getPrice(markets[marketId].underlying, markets[marketId].quote).rate);
+            if (payoffClaimable) {
+                bool exercisable = _calculatePayoff(
                     userTerms[_user][_indexes[i]].cryptoIntitialPrice,
                     _fetchedPrice,
                     terms[marketId].thresholdPercentage
                 );
                 userTerms[_user][_indexes[i]].cryptoClosingPrice = _fetchedPrice;
-                if (payoff > 0) {
+                if (exercisable) {
                     userTerms[_user][_indexes[i]].exercised = time; // mark as exercised
-                    uint256 cappedPayoff = ((payoff > terms[marketId].maxPayoffPercentage ? terms[marketId].maxPayoffPercentage : payoff) * pay) /
-                        1e18;
-                    // add payoff plus notional
-                    payout_ += cappedPayoff + pay;
+                    uint256 digitalPayoff = (terms[marketId].payoffPercentage * pay) / 1e18;
+                    // add digital payoff
+                    payout_ += digitalPayoff;
                     // mint option payoff
-                    treasury.mint(address(this), cappedPayoff);
-                    emit OptionExercise(marketId, cappedPayoff);
+                    treasury.mint(address(this), digitalPayoff);
+                    emit OptionExercise(marketId, digitalPayoff);
                 }
             }
         }
 
-        // transfer notionals
+        // transfer notionals and digital payoffs
         req.transfer(_user, payout_);
     }
 
@@ -1141,8 +1141,8 @@ contract CallableBondDepositoryOasis is ICallableBondDepositoryOasis, CallableUs
      * @param _user        user to redeem all userTerms for
      * @return             sum of payout sent, in REQ
      */
-    function callAll(address _user) external override returns (uint256) {
-        return call(_user, indexesFor(_user));
+    function redeemAll(address _user) external override returns (uint256) {
+        return redeem(_user, indexesFor(_user));
     }
 
     /**
@@ -1150,7 +1150,7 @@ contract CallableBondDepositoryOasis is ICallableBondDepositoryOasis, CallableUs
      * @param _id          ID of market
      * @param _time        uint48 timestamp (saves gas when passed in)
      */
-    function _decay(uint256 _id, uint48 _time) internal {
+    function _decay(uint256 _id, uint48 _time) private {
         // Debt decay
 
         /*
@@ -1195,7 +1195,7 @@ contract CallableBondDepositoryOasis is ICallableBondDepositoryOasis, CallableUs
      * @param _id          ID of market
      * @param _time        uint48 timestamp (saves gas when passed in)
      */
-    function _tune(uint256 _id, uint48 _time) internal {
+    function _tune(uint256 _id, uint48 _time) private {
         Metadata memory meta = metadata[_id];
 
         if (_time >= meta.lastTune + meta.tuneInterval) {
@@ -1250,7 +1250,7 @@ contract CallableBondDepositoryOasis is ICallableBondDepositoryOasis, CallableUs
         uint256 _amount,
         uint48 _expiry,
         address _referral
-    ) internal returns (uint256, uint256) {
+    ) private returns (uint256, uint256) {
         // entering the mempool. max price is a slippage mitigation measure
         uint256 _price = _marketPrice(_marketId);
         require(_price <= _maxPrice, "Depository: more than max price");
@@ -1281,11 +1281,24 @@ contract CallableBondDepositoryOasis is ICallableBondDepositoryOasis, CallableUs
      * @return payout_     the payout due, in gREQ
      * @return matured_    if the payout can be redeemed
      */
-    function pendingFor(address _user, uint256 _index) public view returns (uint256 payout_, bool matured_) {
+    function pendingFor(address _user, uint256 _index)
+        public
+        view
+        returns (
+            uint256 payout_,
+            bool matured_,
+            bool payoffClaimable_
+        )
+    {
         UserTerms memory note = userTerms[_user][_index];
 
         payout_ = note.payout;
-        matured_ = note.exercised == 0 && note.matured <= block.timestamp && payout_ != 0;
+        matured_ = note.redeemed == 0 && note.matured <= block.timestamp && payout_ != 0;
+        // notional can already have been claimed
+        payoffClaimable_ =
+            note.exercised == 0 &&
+            note.matured <= block.timestamp &&
+            note.matured + terms[note.marketID].exerciseDuration >= block.timestamp;
     }
 
     /**
@@ -1347,10 +1360,9 @@ contract CallableBondDepositoryOasis is ICallableBondDepositoryOasis, CallableUs
 
         int256 _fetchedPrice = int256(getPrice(markets[_id].underlying, markets[_id].quote).rate);
 
-        uint256 rawPayoff = _calculatePayoff(userTerm.cryptoIntitialPrice, _fetchedPrice, terms[_id].thresholdPercentage);
-        if (rawPayoff > 0) {
-            uint256 maxPercentage = terms[_id].maxPayoffPercentage;
-            payoff_ = ((rawPayoff > maxPercentage ? maxPercentage : rawPayoff) * userTerm.payout) / 1e18;
+        bool exercisable = _calculatePayoff(userTerm.cryptoIntitialPrice, _fetchedPrice, terms[_id].thresholdPercentage);
+        if (exercisable) {
+            payoff_ = (terms[_id].payoffPercentage * userTerm.payout) / 1e18;
         }
     }
 
@@ -1450,15 +1462,15 @@ contract CallableBondDepositoryOasis is ICallableBondDepositoryOasis, CallableUs
         return ids;
     }
 
-    /* ======== INTERNAL VIEW ======== */
+    /* ======== INTERNAL / PRIVATE VIEW ======== */
 
     function _calculatePayoff(
         int256 _initialPrice,
         int256 _priceNow,
         int256 _strike
-    ) internal pure returns (uint256) {
+    ) private pure returns (bool) {
         int256 _kMinusS = _priceNow * 1e18 - (1e18 + _strike) * _initialPrice;
-        return _kMinusS > 0 ? uint256(_kMinusS / _initialPrice) : 0;
+        return _kMinusS / 1e18 >= 0;
     }
 
     /**
@@ -1468,7 +1480,7 @@ contract CallableBondDepositoryOasis is ICallableBondDepositoryOasis, CallableUs
      * @param _id               market ID
      * @return                  price for market in REQ decimals
      */
-    function _marketPrice(uint256 _id) internal view returns (uint256) {
+    function _marketPrice(uint256 _id) private view returns (uint256) {
         return (terms[_id].controlVariable * _debtRatio(_id)) / 1e18;
     }
 
@@ -1478,7 +1490,7 @@ contract CallableBondDepositoryOasis is ICallableBondDepositoryOasis, CallableUs
      * @param _id               market ID
      * @return                  current debt for market in quote decimals
      */
-    function _debtRatio(uint256 _id) internal view returns (uint256) {
+    function _debtRatio(uint256 _id) private view returns (uint256) {
         return (markets[_id].totalDebt * 1e18) / treasury.baseSupply();
     }
 
@@ -1490,7 +1502,7 @@ contract CallableBondDepositoryOasis is ICallableBondDepositoryOasis, CallableUs
      * @return active_          whether or not change remains active
      */
     function _controlDecay(uint256 _id)
-        internal
+        private
         view
         returns (
             uint256 decay_,

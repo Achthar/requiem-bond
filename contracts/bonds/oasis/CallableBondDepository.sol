@@ -413,7 +413,7 @@ contract CallableBondDepositoryOasis is ICallableBondDepositoryOasis, CallableUs
         uint256 _amount,
         uint48 _expiry,
         address _referral
-    ) internal returns (uint256, uint256) {
+    ) private returns (uint256, uint256) {
         // entering the mempool. max price is a slippage mitigation measure
         uint256 _price = _marketPrice(_marketId);
         require(_price <= _maxPrice, "Depository: more than max price");
@@ -613,13 +613,13 @@ contract CallableBondDepositoryOasis is ICallableBondDepositoryOasis, CallableUs
         return ids;
     }
 
-    /* ======== INTERNAL VIEW ======== */
+    /* ======== INTERNAL / PRIVATE VIEW ======== */
 
     function _calculatePayoff(
         int256 _initialPrice,
         int256 _priceNow,
         int256 _strike
-    ) internal pure returns (uint256) {
+    ) private pure returns (uint256) {
         int256 _kMinusS = _priceNow * 1e18 - (1e18 + _strike) * _initialPrice;
         return _kMinusS > 0 ? uint256(_kMinusS / _initialPrice) : 0;
     }
@@ -631,7 +631,7 @@ contract CallableBondDepositoryOasis is ICallableBondDepositoryOasis, CallableUs
      * @param _id               market ID
      * @return                  price for market in REQ decimals
      */
-    function _marketPrice(uint256 _id) internal view returns (uint256) {
+    function _marketPrice(uint256 _id) private view returns (uint256) {
         return (terms[_id].controlVariable * _debtRatio(_id)) / 1e18;
     }
 
@@ -641,7 +641,7 @@ contract CallableBondDepositoryOasis is ICallableBondDepositoryOasis, CallableUs
      * @param _id               market ID
      * @return                  current debt for market in quote decimals
      */
-    function _debtRatio(uint256 _id) internal view returns (uint256) {
+    function _debtRatio(uint256 _id) private view returns (uint256) {
         return (markets[_id].totalDebt * 1e18) / treasury.baseSupply();
     }
 
@@ -653,7 +653,7 @@ contract CallableBondDepositoryOasis is ICallableBondDepositoryOasis, CallableUs
      * @return active_          whether or not change remains active
      */
     function _controlDecay(uint256 _id)
-        internal
+        private
         view
         returns (
             uint256 decay_,

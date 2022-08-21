@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-pragma solidity ^0.8.15;
+pragma solidity ^0.8.16;
 
 import "./libraries/types/CallableBondUserTermsKeeper.sol";
 import "./libraries/SafeERC20.sol";

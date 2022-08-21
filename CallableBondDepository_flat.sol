@@ -2,7 +2,7 @@
 // File: contracts/libraries/Address.sol
 
 
-pragma solidity 0.8.15;
+pragma solidity 0.8.16;
 
 library Address {
   function isContract(address account) internal view returns (bool) {
@@ -199,7 +199,7 @@ library Address {
 // File: contracts/interfaces/Callable/IUserTermsKeeper.sol
 
 
-pragma solidity >=0.8.15;
+pragma solidity >=0.8.16;
 
 interface IUserTermsKeeper {
     // Info for market note
@@ -231,7 +231,7 @@ interface IUserTermsKeeper {
 // File: contracts/interfaces/ITreasury.sol
 
 
-pragma solidity >=0.8.15;
+pragma solidity >=0.8.16;
 
 interface ITreasury {
     function deposit(
@@ -261,7 +261,7 @@ interface ITreasury {
 
 
 
-pragma solidity 0.8.15;
+pragma solidity 0.8.16;
 
 // solhint-disable  max-line-length
 
@@ -284,7 +284,7 @@ interface IStdReference {
 
 
 
-pragma solidity 0.8.15;
+pragma solidity 0.8.16;
 
 
 // solhint-disable  max-line-length
@@ -305,7 +305,7 @@ contract BandPriceConsumer {
 // File: contracts/interfaces/ERC20/IERC20.sol
 
 
-pragma solidity 0.8.15;
+pragma solidity 0.8.16;
 
 interface IERC20 {
     function decimals() external view returns (uint8);
@@ -329,7 +329,7 @@ interface IERC20 {
 // File: contracts/interfaces/Callable/oasis/ICallableBondDepository.sol
 
 
-pragma solidity >=0.8.15;
+pragma solidity >=0.8.16;
 
 
 // solhint-disable max-line-length
@@ -544,7 +544,7 @@ library SafeERC20 {
 // File: contracts/interfaces/IAuthority.sol
 
 
-pragma solidity >=0.8.15;
+pragma solidity >=0.8.16;
 
 interface IAuthority {
     /* ========== EVENTS ========== */
@@ -574,7 +574,7 @@ interface IAuthority {
 
 
 
-pragma solidity >=0.8.15;
+pragma solidity >=0.8.16;
 
 
 abstract contract AccessControlled {
@@ -837,7 +837,7 @@ abstract contract CallableUserTermsKeeper is IUserTermsKeeper, FrontEndRewarder,
 // File: contracts/bonds/oasis/CallableBondDepository.sol
 
 
-pragma solidity ^0.8.15;
+pragma solidity ^0.8.16;
 
 
 

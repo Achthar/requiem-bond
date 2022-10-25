@@ -1,4 +1,7 @@
 const addresses = {
+    "proxyAdmin": {
+        18: "0xbf08A42EC083EFD9b9455CeA0b4D59C7C7995983"
+    },
     "diamondAddress": {
         43113: "0x95034449E6cD17330E62D8e33a75a39927Fb02cb",
         42261: "0x5121B5E7E076c16570A541C68549b4C0C76275BD"
@@ -24,38 +27,50 @@ const addresses = {
     },
     "reqImplementationAddress": {
         43113: "0xD27388BA6b3A44003A85E336e2Fd76d6e331EF87",
-        42261: "0xEB27293faE88Dd5AF0C29f598efa86aEF044A0A9"
+        42261: "0xEB27293faE88Dd5AF0C29f598efa86aEF044A0A9",
+        18: "0x323440F9eB9471A42b51d24217D8eC19C9B58159"
     },
     "reqAddress": {
         43113: "0x337AaE5Dd7e0b98d3F558E2eeeA6cE5b9A5b3E63",
-        42261: "0xe01a4418477d0Dce744Ee6aa3C2D89b48408fD0D"
+        42261: "0xe01a4418477d0Dce744Ee6aa3C2D89b48408fD0D",
+        18: "0xC657ba703D8CBBAD56DC2249c33FF88AB2ca578C"
     },
     "reqAdminAddress": {
         43113: "0x3FB5Dc8B6792943c6b6d42Bd0Aaec3bF539b31a9",
         42261: "0x940Da782D3a18a8deB36a3712F866d991b59794E"
     },
     "assets": {
+        "WNCCY": {
+            18: "0x0ed2776E65984933f1066f4904FC34D4c083952B",
+            43113: "0xd00ae08403B9bbb9124bB305C09058E32C39A48c",
+            42261: "0x792296e2a15e6ceb5f5039decae7a1f25b00b0b0"
+        },
         "WETH": {
             43113: "0x70dC2c5F81BC18e115759398aF197e99f228f713",
-            42261: "0xe3B60b4b30AB59c749f4f7edb859F7E8b735CC40"
+            42261: "0xe3B60b4b30AB59c749f4f7edb859F7E8b735CC40",
+            18: "0xE88Cae7399bd545b9eD47aba7ec158e29e480EDb"
         },
         "WBTC": {
             43113: "0x31AbD3aA54cb7bdda3f52e304A5Ed9c1a783D289",
-            42261: "0xB5421Ef8e226D9Dd8C210B62a2d919DF6Bf5Af53"
+            42261: "0xB5421Ef8e226D9Dd8C210B62a2d919DF6Bf5Af53",
+            18: "0xf7fCD3BEB3CA6cB131d44fA67931cFAEC7dE013b"
         },
         "BUSD": {
-            42261: "0x8391032ef5654B796A7719D106ee74c2e48e03aa"
+            42261: "0x8391032ef5654B796A7719D106ee74c2e48e03aa",
+            18: "0xc2FEE91e549A0468Aa45BA391a72b4F10F9a8bFf"
         },
         "TUSD": {
             43113: "0xccf7ed44c5a0f3cb5c9a9b9f765f8d836fb93ba1"
         },
         "DAI": {
             43113: "0xaea51e4fee50a980928b4353e852797b54deacd8",
-            42261: "0xBe06eF2E4a0891CA2761012523af75769bDB2668"
+            42261: "0xBe06eF2E4a0891CA2761012523af75769bDB2668",
+            18: "0x31A936852dfc5A1aAb1c541F11e5fe6417b28F9d"
         },
         "USDC": {
             43113: "0xCa9eC7085Ed564154a9233e1e7D8fEF460438EEA",
-            42261: "0x2AD57C6d4144e218c02760640685cdF6CB58669E"
+            42261: "0x2AD57C6d4144e218c02760640685cdF6CB58669E",
+            18: "0x28eBB49B3543b6c86CeD4Bd39907e2fdFc95E45D"
         },
         "USDT": {
             43113: "0xffb3ed4960cac85372e6838fbc9ce47bcf2d073e",
@@ -158,45 +173,71 @@ const addresses = {
         42261: {
             "admin": "0x619359d5E5a96878CF2515794dB2E4C3b17bC9Eb",
             "logic": "0xf95c9041cccdfe27f06da7be62257b50994d0fd1",
-            "proxy": "0x98d64e2457cB508630e38A3b9e700e6985F49fAd"
+            "proxy": "0x22F3dfc6c8830DDb3140158B9f9a9d3a1134EE9C"
+        },
+        18: {
+            "logic": "0x3F9eD8Ac8374B3D2A322BcFA29Ce0bBaB3841fc9",
+            "proxy": "0x827B8EABee7F0805c402ea559F62FA6bb43Dc35f"
         }
     },
     "pair": {
         42261: {
-            "pairAdmin": '0xa1387be92727A59e8B20E8E74B99803e2ed517a1',
-            "formula": '0x7B514a86382f4482C23FdE9c8128f0ca757AfAdE',
-            "creator": '0x6EDba060B6597237A9a68a74b83b13044c634D4f',
-            "factory": '0xB0c904E2aD98c78FF9Bc5d61006c6E5ab123CDfA',
-            "router": '0x9959c550652c8F0f08cE655828DE0285f9322407'
-
-
+            "pairAdmin": "0xa1387be92727A59e8B20E8E74B99803e2ed517a1",
+            "formula": "0x7B514a86382f4482C23FdE9c8128f0ca757AfAdE",
+            "creator": "0x6EDba060B6597237A9a68a74b83b13044c634D4f",
+            "factory": "0xB0c904E2aD98c78FF9Bc5d61006c6E5ab123CDfA",
+            "router": "0x9959c550652c8F0f08cE655828DE0285f9322407"
+        },
+        18: {
+            "pairAdmin": "0x274b1f7f8e66b044b2dc773e017750957f70490c",
+            "formula": "0xb3a65e1bF6884eC96fdA1e8F09e477d203357BF0",
+            "creator": "0x38495C15F5B68Fddd6E9c56A3C043eD4d682c445",
+            "factory": "0xc00d9cf36e1d223A815c8446694A165858B973Db",
+            "router": "0x00c9ac8d414Ea3C7466F27431133dD989d8f20Df"
         }
     },
     "weighted": {
         42261: {
-            "library": '0x81ad70c7B7a0d8A8E353a9b6aE07C62e02fFaC57',
-            "poolCreator": '0x25DD19981C5C4F51F1749ED650A7E5Dd0aE5213b',
-            "factory": '0xbFb0Da817176F7Ca37F888A6ED73cB523330e049',
+            "library": "0x81ad70c7B7a0d8A8E353a9b6aE07C62e02fFaC57",
+            "poolCreator": "0x25DD19981C5C4F51F1749ED650A7E5Dd0aE5213b",
+            "factory": "0xbFb0Da817176F7Ca37F888A6ED73cB523330e049",
             "pools": [
-                '0xb288d26a17aab729a64d8320836c2ea4794b3baf' // WETH-WBTC-USDT
+                "0xb288d26a17aab729a64d8320836c2ea4794b3baf" // WETH-WBTC-USDT
             ]
 
+        },
+        18: {
+            "library": "0xeBe1e633202b364bEe21eaB952B29b4B1B2d910f",
+            "poolCreator": "0xB6bcC8b771ef17b50e6B7Cc53F18dB81498691DB",
+            "factory": "0xd69f1F7E6B280B0501D83eE21599c84DB2935b7b",
+            "pools": [
+                "0x7c2184b96ed6881ab49b238adbe6d905d7512bf5"  // WETH-WBTC-USDT
+            ]
         }
     },
     "stable": {
         42261: {
-            "library": '0xC6f31c0b56b32E24B851FD79C5E852A304FE0c77',
-            "poolCreator": '0x542109224a295aAAd53EF53C2d1030CF656494dB',
-            "factory": '0x910498C01C98f4254a214316e4f5557D05250366',
+            "library": "0xC6f31c0b56b32E24B851FD79C5E852A304FE0c77",
+            "poolCreator": "0x542109224a295aAAd53EF53C2d1030CF656494dB",
+            "factory": "0x910498C01C98f4254a214316e4f5557D05250366",
             "pools": [
                 "0x9912aafb08f9c018bd0317c673951a5f4967831f" // BUSD-USDC-USDT
+            ]
+
+        },
+        18: {
+            "library": "0xd97d8F2a013a96D1C0713768d0A96d2A39d4DA2D",
+            "poolCreator": "0x450b8B1276c6Dad41dda9432bE52684ff749ca90",
+            "factory": "0x0ae7FEc2e7616aF887D9CC478EfAcA8c21D1B7FE",
+            "pools": [
+                "0x3bdc229cd04cebbccfdaf20c379bcc0a6a25167d" // BUSD-DAI-USDC
             ]
 
         }
     },
     "pairs": {
         42261: {
-            "ROSE_USDC": '0x3B2b78e1F16985a77AFbdf63Fa594119E5D7629D'
+            "ROSE_USDC": "0x3B2b78e1F16985a77AFbdf63Fa594119E5D7629D"
         }
     }
 }

@@ -17,8 +17,8 @@ async function main() {
     const chainId = await operator.getChainId()
 
     // deposit parameters
-    const amount = one18.mul(1).div(100000000000)
-    const market = 0
+    const amount = one18.mul(1).div(100000)
+    const market = 1
 
     const bondDepositoryContract = new ethers.Contract(addresses.bondDepo[chainId], new ethers.utils.Interface(BondDepositoryArtifact.abi), operator)
 

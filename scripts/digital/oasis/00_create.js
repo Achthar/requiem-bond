@@ -21,7 +21,7 @@ async function main() {
 
     // parameters
     const capacity = ethers.BigNumber.from(1000).mul(one18);
-    const initialPrice = ethers.BigNumber.from(1535).mul(one18).div(100);
+    const initialPrice = ethers.BigNumber.from(1235).mul(one18).div(100);
     const buffer = 2e5;
 
     const vesting = 60 * 60 * 24 * 7;
@@ -35,7 +35,7 @@ async function main() {
 
     // option parameters
     const oracle = ["ROSE", "USD"]
-    const strike = one18.mul(500).div(10000)
+    const strike = one18.mul(550).div(10000)
     const exerciseDuration = 60 * 60 * 24
     const cap = one18.mul(5).div(100)
 

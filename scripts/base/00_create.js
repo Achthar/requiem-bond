@@ -21,12 +21,12 @@ async function main() {
 
 
     // parameters
-    const capacity = ethers.BigNumber.from(1000).mul(one18);
-    const initialPrice = ethers.BigNumber.from(1555).mul(one18).div(100);
+    const capacity = ethers.BigNumber.from(10000).mul(one18);
+    const initialPrice = ethers.BigNumber.from(1355).mul(one18).div(100);
     const buffer = 2e5;
 
     const vesting = 60 * 60 * 24 * 3;
-    const timeToConclusion = 60 * 60 * 24 * 28;
+    const timeToConclusion = 60 * 60 * 24 * 50;
     const block = await ethers.provider.getBlock("latest");
     const conclusion = block.timestamp + timeToConclusion;
     const capacityInQuote = false
